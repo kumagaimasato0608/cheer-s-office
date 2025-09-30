@@ -1,0 +1,14 @@
+[
+  {
+    "room_id": "r001",
+    "room_name": "開発チーム雑談",
+    "room_icon": "/images/default_room_icon.png",
+    "members": ["u001_auto", "u999_test"]
+  },
+  {
+    "room_id": "r002",
+    "room_name": "一般雑談ルーム",
+    "room_icon": "/images/default_room_icon.png",
+    "members": ["u001_auto"]
+  }
+]

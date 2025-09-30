@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="ja" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <title>チャットルーム一覧 | Cheers Office</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .room-item { 
+            border: 1px solid #ddd; 
+            padding: 15px; 
+            margin-bottom: 10px; 
+            border-radius: 5px; 
+            box-shadow: 2px 2px 5px rgba(0,0,0,0.1);
+        }
+        .room-item h3 { margin-top: 0; }
+        .room-link { 
+            display: inline-block; 
+            background-color: #28a745; 
+            color: white; 
+            padding: 8px 15px; 
+            text-decoration: none; 
+            border-radius: 4px;
+        }
+        .user-info { margin-bottom: 20px; font-size: 0.9em; color: #555; }
+    </style>
+</head>
+<body>
+    <h1>チャットルーム一覧</h1>
+    
+    <div sec:authorize="isAuthenticated()" class="user-info">
+        <p>ログインユーザーID: <span sec:authentication="principal.user.userId"></span></p>
+        <p>現在のユーザー (メールアドレス): <span sec:authentication="name"></span></p>
+    </div>
+    
+    <hr>
+    
+    <div th:each="room : ${rooms}" class="room-item">
+        <h3 th:text="${room.roomName}">開発チーム雑談</h3>
+        <p>ルームID: <span th:text="${room.roomId}">r001</span></p>
+        
+        <p>参加メンバー数: <span th:text="${#lists.size(room.members)}">2</span></p>
+        
+        <a th:href="@{/chat/{roomId}(roomId=${room.roomId})}" class="room-link">
+            チャットに参加
+        </a>
+    </div>
+    
+    <div th:if="${#lists.isEmpty(rooms)}">
+        <p>現在、参加可能なチャットルームはありません。</p>
+    </div>
+    
+</body>
+</html>

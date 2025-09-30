@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="ja" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Header Fragment</title>
+    <style>
+        .header {
+            background-color: #f8f9fa;
+            padding: 10px 20px;
+            border-bottom: 1px solid #e7e7e7;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 24px;
+        }
+        .header nav ul {
+            list-style: none;
+            margin: 0;
+            padding: 0;
+            display: flex;
+        }
+        .header nav ul li {
+            margin-left: 20px;
+        }
+        .header nav ul li a {
+            text-decoration: none;
+            color: #007bff;
+            font-weight: bold;
+        }
+        .header nav ul li a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+
+    <div th:fragment="header" class="header">
+        <h1><a th:href="@{/}">Cheers Office</a></h1>
+        <nav>
+            <ul>
+                <li><a th:href="@{/board}">掲示板</a></li>
+                <li th:if="${#authorization.expression('isAuthenticated()')}">
+                    <a th:href="@{/logout}">ログアウト</a>
+                </li>
+                <li th:unless="${#authorization.expression('isAuthenticated()')}">
+                    <a th:href="@{/login}">ログイン</a>
+                </li>
+            </ul>
+        </nav>
+    </div>
+
+</body>
+</html>

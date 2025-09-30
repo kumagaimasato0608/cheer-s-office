@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="ja" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <title>Cheers Office - ホーム</title>
+</head>
+<body>
+    <div sec:authorize="isAuthenticated()" style="float: right;">
+        <span sec:authentication="name"></span> さんとしてログイン中 | 
+        <form th:action="@{/logout}" method="post" style="display: inline;">
+            <button type="submit">ログアウト</button>
+        </form>
+    </div>
+    
+    <h1>🎉 Cheers Office ホーム</h1>
+    <p>認証基盤が正常に動作しています。</p>
+    <hr>
+    
+    <h2>次へのステップ：初期データ登録</h2>
+    <p>このままではログインできませんので、次のステップで **<code>user.json</code>** に初期ユーザーを登録します。</p>
+    
+    <p>現在のパスワードハッシュは **BCrypt** です。ログインに使用するパスワードを **"password"** とします。</p>
+    
+</body>
+</html>
