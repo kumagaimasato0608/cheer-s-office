@@ -37,20 +37,20 @@
 </head>
 <body>
 
-    <div th:fragment="header" class="header">
-        <h1><a th:href="@{/}">Cheers Office</a></h1>
-        <nav>
-            <ul>
-                <li><a th:href="@{/board}">掲示板</a></li>
-                <li th:if="${#authorization.expression('isAuthenticated()')}">
-                    <a th:href="@{/logout}">ログアウト</a>
-                </li>
-                <li th:unless="${#authorization.expression('isAuthenticated()')}">
-                    <a th:href="@{/login}">ログイン</a>
-                </li>
-            </ul>
-        </nav>
-    </div>
+	<div th:fragment="header" class="header">
+	    <h1><a th:href="@{/}">Cheers Office</a></h1>
+	    <nav>
+	        <ul>
+	            <li><a th:href="@{/board}">掲示板</a></li>
+	            <li><a th:href="@{/chat/rooms}">チャット</a></li> <li><a th:href="@{/mypage}">マイページ</a></li>    <li><a th:href="@{/photopin}">フォトピン</a></li>  <li th:if="${#authorization.expression('isAuthenticated()')}">
+	                <a th:href="@{/logout}">ログアウト</a>
+	            </li>
+	            <li th:unless="${#authorization.expression('isAuthenticated()')}">
+	                <a th:href="@{/login}">ログイン</a>
+	            </li>
+	        </ul>
+	    </nav>
+	</div>
 
 </body>
 </html>
