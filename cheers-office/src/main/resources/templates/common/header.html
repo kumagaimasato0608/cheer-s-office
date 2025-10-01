@@ -1,56 +1,103 @@
 <!DOCTYPE html>
-<html lang="ja" xmlns:th="http://www.thymeleaf.org">
+<html lang="ja" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
 <head>
     <meta charset="UTF-8">
     <title>Header Fragment</title>
     <style>
+        /* ヘッダー全体のスタイル */
         .header {
-            background-color: #f8f9fa;
+            background-color: #f8f9fa; /* 薄いグレーの背景 */
             padding: 10px 20px;
-            border-bottom: 1px solid #e7e7e7;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
+            border-bottom: 1px solid #e7e7e7; /* 下線 */
+            display: flex; /* Flexboxで要素を横並びに */
+            justify-content: space-between; /* 左右に要素を配置 */
+            align-items: center; /* 垂直方向の中央揃え */
         }
+
+        /* サイトタイトル（Cheers Office）のスタイル */
         .header h1 {
             margin: 0;
             font-size: 24px;
         }
+
+        .header h1 a {
+            text-decoration: none; /* 下線なし */
+            color: #333; /* 文字色 */
+        }
+
+        /* ナビゲーションメニューの ul スタイル */
         .header nav ul {
-            list-style: none;
+            list-style: none; /* リストの黒丸を削除 */
             margin: 0;
             padding: 0;
-            display: flex;
+            display: flex; /* リストアイテムを横並びに */
+            align-items: center; /* 垂直方向の中央揃え */
         }
+
+        /* ナビゲーションメニューの li スタイル */
         .header nav ul li {
-            margin-left: 20px;
+            margin-left: 10px; /* 各アイテムの左に余白 */
         }
-        .header nav ul li a {
-            text-decoration: none;
-            color: #007bff;
-            font-weight: bold;
+
+        /* 全てのナビゲーションリンクとログアウトボタンの共通デザイン */
+        .nav-link-btn {
+            display: inline-block; /* インラインブロック要素に */
+            padding: 8px 12px; /* 内側の余白 */
+            text-decoration: none; /* 下線なし */
+            color: #007bff; /* リンクの文字色（青） */
+            font-weight: bold; /* 太字 */
+            border: 1px solid #007bff; /* ボタンの枠線（青） */
+            border-radius: 4px; /* 角を丸くする */
+            background-color: transparent; /* 背景透明 */
+            transition: all 0.2s; /* ホバー時のアニメーション */
+            cursor: pointer; /* マウスカーソルを指マークに */
+            font-size: 0.95em; /* フォントサイズを少し小さめに */
+            line-height: 1.2; /* 行の高さを調整してボタンの縦幅を制御 */
         }
-        .header nav ul li a:hover {
-            text-decoration: underline;
+
+        /* ホバー時のスタイル */
+        .nav-link-btn:hover {
+            background-color: #007bff; /* 背景色を青に */
+            color: white; /* 文字色を白に */
+            text-decoration: none; /* ホバー時も下線なし */
+        }
+
+        /* ログアウトボタン（POSTフォーム内のボタン）のスタイルを個別に調整 */
+        .logout-form .nav-link-btn {
+            border-color: #dc3545; /* ログアウトは赤の枠線 */
+            color: #dc3545; /* ログアウトの文字は赤 */
+        }
+
+        .logout-form .nav-link-btn:hover {
+            background-color: #dc3545; /* ホバーで赤に */
+            color: white;
         }
     </style>
 </head>
 <body>
 
-	<div th:fragment="header" class="header">
-	    <h1><a th:href="@{/}">Cheers Office</a></h1>
-	    <nav>
-	        <ul>
-	            <li><a th:href="@{/board}">掲示板</a></li>
-	            <li><a th:href="@{/chat/rooms}">チャット</a></li> <li><a th:href="@{/mypage}">マイページ</a></li>    <li><a th:href="@{/photopin}">フォトピン</a></li>  <li th:if="${#authorization.expression('isAuthenticated()')}">
-	                <a th:href="@{/logout}">ログアウト</a>
-	            </li>
-	            <li th:unless="${#authorization.expression('isAuthenticated()')}">
-	                <a th:href="@{/login}">ログイン</a>
-	            </li>
-	        </ul>
-	    </nav>
-	</div>
-
+    <div th:fragment="header" class="header">
+        
+        <h1><a th:href="@{/}">Cheers Office</a></h1>
+        
+        <nav>
+            <ul>
+                <li><a th:href="@{/board}" class="nav-link-btn">掲示板</a></li>
+                <li><a th:href="@{/chat/rooms}" class="nav-link-btn">チャット</a></li>
+                <li><a th:href="@{/mypage}" class="nav-link-btn">マイページ</a></li>
+                <li><a th:href="@{/photopin}" class="nav-link-btn">フォトピン</a></li>
+                
+                <li sec:authorize="isAuthenticated()">
+                    <form th:action="@{/logout}" method="post" class="logout-form">
+                        <button type="submit" class="nav-link-btn">ログアウト</button>
+                    </form>
+                </li>
+                
+                <li sec:authorize="!isAuthenticated()">
+                    <a th:href="@{/login}" class="nav-link-btn">ログイン</a>
+                </li>
+            </ul>
+        </nav>
+    </div>
 </body>
 </html>
