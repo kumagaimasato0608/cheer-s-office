@@ -2,42 +2,125 @@
 <html lang="ja" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
-    <title>Cheers Office - ログイン</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ログイン</title>
+    
     <style>
-        body { font-family: Arial, sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; background-color: #f4f4f4; }
-        .login-container { background: white; padding: 40px; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.1); width: 300px;}
-        h2 { text-align: center; color: #333; }
-        input[type="text"], input[type="password"] { width: 100%; padding: 10px; margin: 8px 0; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
-        button { width: 100%; background-color: #007bff; color: white; padding: 10px 20px; margin: 8px 0; border: none; border-radius: 4px; cursor: pointer; }
-        .error-message { color: red; text-align: center; margin-bottom: 10px; }
-        .success-message { color: green; text-align: center; margin-bottom: 10px; }
+        /* 新規登録画面と同じ背景のスタイル */
+        body { 
+            font-family: Arial, sans-serif; 
+            background-color: #e6f0ff; /* 全体の薄い青背景 */
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            min-height: 100vh; 
+            margin: 0;
+        }
+        
+        /* 新規登録画面と同じ中央フォームのスタイル */
+        .auth-container { 
+            background-color: #fff; /* 白いフォーム背景 */
+            padding: 40px 60px;
+            border-radius: 20px; /* 角の丸み */
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1); 
+            width: 100%; 
+            max-width: 450px; 
+            text-align: center;
+            border: 1px solid #c0d8f0;
+        }
+        
+        h1 { 
+            text-align: center; 
+            margin-bottom: 25px; 
+            color: #007bff; /* 青色 */
+            font-size: 2em; 
+        }
+        
+        /* エラーメッセージのスタイル */
+        .error-message {
+            color: #dc3545; /* 赤 */
+            margin-bottom: 15px;
+            font-weight: bold;
+        }
+        
+        .form-group { 
+            margin-bottom: 15px; 
+            text-align: left;
+        }
+        
+        label { 
+            display: block; 
+            margin-bottom: 5px; 
+            font-weight: bold; 
+            color: #555;
+            font-size: 0.9em;
+        }
+        
+        input[type="text"], 
+        input[type="password"] { 
+            width: 100%; 
+            padding: 10px; 
+            border: 1px solid #ccc; 
+            border-radius: 5px; 
+            box-sizing: border-box;
+            font-size: 1em;
+        }
+        
+        button { 
+            width: 100%; 
+            padding: 12px; 
+            border: none; 
+            border-radius: 5px; 
+            background-color: #007bff; /* ログインボタンは青 */
+            color: white; 
+            font-size: 1.1em; 
+            font-weight: bold; 
+            cursor: pointer; 
+            margin-top: 20px;
+        }
+        
+        .register-link { 
+            text-align: center; 
+            margin-top: 20px;
+        }
+        
+        .register-link a { 
+            color: #007bff; 
+            text-decoration: none; 
+            font-size: 0.9em;
+        }
     </style>
 </head>
 <body>
-    <div class="login-container">
-        <h2>🍻 Cheers Office ログイン</h2>
+    <div class="auth-container">
+        <h1>ログイン</h1>
         
-        <div th:if="${param.error}" class="error-message">
-            メールアドレスまたはパスワードが正しくありません。
-        </div>
+        <p th:if="${param.error}" class="error-message">
+            ※メールアドレスまたはパスワードが間違っています。
+        </p>
         
-        <div th:if="${param.logout}" class="success-message">
+        <p th:if="${param.logout}" class="error-message" style="color: #28a745;">
             ログアウトしました。
-        </div>
+        </p>
 
         <form th:action="@{/authenticate}" method="post">
-            <label for="mailaddress">メールアドレス:</label>
-            <input type="text" id="mailaddress" name="mailaddress" placeholder="mailaddress" required>
+            
+            <div class="form-group">
+                <label for="mailaddress">メールアドレス:</label>
+                <input type="text" id="mailaddress" name="mailaddress" required>
+            </div>
 
-            <label for="password">パスワード:</label>
-            <input type="password" id="password" name="password" placeholder="password" required>
-
+            <div class="form-group">
+                <label for="password">パスワード:</label>
+                <input type="password" id="password" name="password" required>
+            </div>
+            
             <button type="submit">ログイン</button>
-			<div style="text-align: center; margin-top: 20px;">
-				    <a th:href="@{/register}">新しくアカウントを登録する方はこちら</a>
-				</div>
         </form>
+        
+        <div class="register-link">
+            <a th:href="@{/register}">新しくアカウントを登録する方はこちら</a>
+        </div>
     </div>
-	
 </body>
 </html>
