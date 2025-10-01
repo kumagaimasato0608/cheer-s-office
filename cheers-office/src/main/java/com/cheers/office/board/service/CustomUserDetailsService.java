@@ -5,8 +5,8 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
-import com.cheers.office.board.model.CustomUserDetails;
-import com.cheers.office.board.repository.UserRepository;
+import com.cheers.office.board.model.CustomUserDetails; // CustomUserDetailsのインポート
+import com.cheers.office.board.repository.UserRepository; // ★UserRepositoryのインポート
 
 @Service
 public class CustomUserDetailsService implements UserDetailsService {
