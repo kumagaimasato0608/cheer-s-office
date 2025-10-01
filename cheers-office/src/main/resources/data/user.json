@@ -28,14 +28,5 @@
   "hobby" : "未設定",
   "icon" : "/images/default-avatar.png",
   "statusMessage" : null
-}, {
-  "user_id" : "f0d5fd3f-8070-4860-b833-ee209b882e75",
-  "user_name" : "masato",
-  "mailaddress" : "231035kumagai@tid.ac.jp",
-  "password" : "$2a$10$AvgbjGJiKZ8iDgzB/aC.perFBXLuOYihIVxQkZPFjiQok2VRb.eO6",
-  "my_boom" : "未設定",
-  "group" : "未設定",
-  "hobby" : "未設定",
-  "icon" : "/images/default-avatar.png",
-  "statusMessage" : null
+
 } ]
