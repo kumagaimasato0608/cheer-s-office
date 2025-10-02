@@ -2,95 +2,158 @@
 <html lang="ja" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
-    <title>マイページ - プロフィール編集</title>
-    <div th:replace="common/header :: header"></div> 
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>マイページ</title>
+
     <style>
-        body { font-family: 'Arial', sans-serif; background-color: #e6f0ff; margin: 0; padding: 0; }
-        .container { 
-            max-width: 600px; 
-            margin: 50px auto; 
-            padding: 30px; 
-            background-color: #ffffff; 
-            border-radius: 10px; 
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1); 
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #e6f0ff; /* 全体の薄い青背景 */
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start; /* 上部に寄せる */
+            min-height: calc(100vh - 60px); /* ヘッダーの高さ分を引く */
+            padding-top: 80px; /* ヘッダーとの間にスペースを設ける */
+            box-sizing: border-box;
         }
-        h1 { color: #007bff; text-align: center; margin-bottom: 30px; border-bottom: 2px solid #e0e0e0; padding-bottom: 10px; }
-        .form-group { margin-bottom: 20px; }
-        .form-group label { display: block; font-weight: bold; margin-bottom: 5px; color: #333; }
-        .form-group input[type="text"] { 
-            width: 100%; 
-            padding: 10px; 
-            border: 1px solid #ccc; 
-            border-radius: 5px; 
-            box-sizing: border-box; 
+        .mypage-container {
+            background-color: #ffffff;
+            padding: 40px 40px;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 800px;
+            margin: 20px;
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 30px;
+            font-size: 2.2em;
+            border-bottom: 2px solid #007bff;
+            padding-bottom: 10px;
+        }
+        .form-group {
+            margin-bottom: 20px;
+            text-align: left;
+        }
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+            color: #555;
+            font-size: 1.1em;
+        }
+        input[type="text"],
+        input[type="email"] {
+            width: calc(100% - 20px);
+            padding: 12px;
+            border: 1px solid rgb(0, 128, 255);
+            border-radius: 6px;
+            box-sizing: border-box;
             font-size: 1em;
+            transition: border-color 0.3s ease;
         }
-        .form-group input[disabled] { background-color: #f0f0f0; color: #777; }
-        .save-button { 
-            width: 100%; 
-            padding: 12px; 
-            border: none; 
-            border-radius: 5px; 
-            background-color: #28a745; /* 緑色 */
-            color: white; 
-            font-size: 1.1em; 
-            font-weight: bold; 
-            cursor: pointer; 
-            margin-top: 10px;
+        input[type="text"]:focus,
+        input[type="email"]:focus {
+            border-color: #007bff;
+            outline: none;
         }
-        .message-success { color: #28a745; font-weight: bold; margin-bottom: 20px; text-align: center; }
-        .message-error { color: #dc3545; font-weight: bold; margin-bottom: 20px; text-align: center; }
+        input[disabled] {
+            background-color: #e9ecef;
+            color: #6c757d;
+            cursor: not-allowed;
+        }
+        button {
+            width: 100%;
+            padding: 15px;
+            border: none;
+            border-radius: 6px;
+            background-color: #007bff;
+            color: white;
+            font-size: 1.2em;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 20px;
+            transition: background-color 0.3s ease;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        .message {
+            padding: 12px;
+            margin-bottom: 20px;
+            border-radius: 6px;
+            text-align: center;
+            font-weight: bold;
+        }
+        .success-message {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .error-message {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .link-section {
+            text-align: center;
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #eee;
+        }
+        .link-section a {
+            display: inline-block;
+            margin: 0 15px;
+            color: #007bff;
+            text-decoration: none;
+            font-weight: bold;
+            font-size: 1.05em;
+        }
+        .link-section a:hover {
+            text-decoration: underline;
+        }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1>プロフィール編集</h1>
+    <div class="mypage-container">
+        <h1>マイページ</h1>
 
-        <p th:if="${successMessage}" class="message-success" th:text="${successMessage}"></p>
-        <p th:if="${errorMessage}" class="message-error" th:text="${errorMessage}"></p>
-        
+        <p th:if="${successMessage}" class="message success-message" th:text="${successMessage}"></p>
+        <p th:if="${errorMessage}" class="message error-message" th:text="${errorMessage}"></p>
+
         <form th:action="@{/mypage/update}" method="post" th:object="${user}">
+            <input type="hidden" th:field="*{userId}" />
             
             <div class="form-group">
-                <label for="mailAddress">メールアドレス (ログインID):</label>
-                <input type="text" id="mailAddress" th:value="*{mailAddress}" disabled="disabled">
+                <label for="mailAddress">メールアドレス:</label>
+                <input type="email" id="mailAddress" th:field="*{mailAddress}" disabled="disabled" />
             </div>
-            
+
             <div class="form-group">
                 <label for="userName">ユーザー名:</label>
-                <input type="text" id="userName" th:field="*{userName}" required>
+                <input type="text" id="userName" th:field="*{userName}" />
             </div>
 
             <div class="form-group">
                 <label for="group">所属グループ:</label>
-                <input type="text" id="group" th:field="*{group}">
+                <input type="text" id="group" th:field="*{group}" />
             </div>
 
             <div class="form-group">
                 <label for="myBoom">マイブーム:</label>
-                <input type="text" id="myBoom" th:field="*{myBoom}">
+                <input type="text" id="myBoom" th:field="*{myBoom}" />
             </div>
 
-            <div class="form-group">
-                <label for="hobby">趣味:</label>
-                <input type="text" id="hobby" th:field="*{hobby}">
-            </div>
-            
-            <div class="form-group">
-                <label for="icon">アイコンURL/パス:</label>
-                <input type="text" id="icon" th:field="*{icon}">
-                <div style="margin-top: 10px; text-align: center;">
-                    現在のアイコン: <img th:src="*{icon}" alt="現在のアイコン" style="width: 50px; height: 50px; border-radius: 50%; vertical-align: middle;">
-                </div>
-            </div>
-
-            <button type="submit" class="save-button">プロフィールを更新</button>
+            <button type="submit">プロフィールを更新</button>
         </form>
-        
-        <div style="margin-top: 30px; text-align: center;">
-            <p><a href="#">パスワードを変更する</a></p>
-        </div>
-        
+
+        <div class="link-section">
+            <a th:href="@{/mypage/password}">パスワード・メールアドレスを変更する</a>
+            </div>
     </div>
 </body>
 </html>

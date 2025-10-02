@@ -23,4 +23,8 @@ public class PasswordUtil {
     public static boolean matches(String rawPassword, String encodedPassword) {
         return passwordEncoder.matches(rawPassword, encodedPassword);
     }
+    public static boolean isDuplicate(String newRawPassword, String currentEncodedPassword) {
+        // BCryptのmatchesメソッドを使って、新しい平文パスワードが古いハッシュ値と一致するか確認する
+        return passwordEncoder.matches(newRawPassword, currentEncodedPassword);
+    }
 }

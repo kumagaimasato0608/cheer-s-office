@@ -2,20 +2,20 @@
   "user_id" : "u001_auto",
   "user_name" : "自動登録ユーザー",
   "mailaddress" : "test@cheers.com",
-  "password" : "$2a$10$hm1kuWLSDJgzKDLUz0O7.OVwbQbFjS898oZfqJxq1qVHKE1Z5V48u",
+  "password" : "$2a$10$q.PCfLyMDcKD2a0NC7QNzefvI4inr9RYOikTQwvL4RzIcHw56NHWi",
   "my_boom" : "Java開発",
   "group" : "帰宅部",
-  "hobby" : "読書",
-  "icon" : "/images/default_icon.png",
+  "hobby" : null,
+  "icon" : null,
   "statusMessage" : null
 }, {
   "user_id" : "1b260d20-be31-4277-b617-81bd0a42a9d9",
   "user_name" : "09.kumagaimasato@gmail.com",
   "mailaddress" : "09.kumagaimasato@gmail.com",
   "password" : "$2a$10$tv/gEUyWxcYXpSF4HuUw7uEDbnpc9eVPaxwTVrkI/UyAYc4gxtkii",
-  "my_boom" : "未設定",
-  "group" : "未設定",
-  "hobby" : "未設定",
+  "my_boom" : "[ALEXANDROS]",
+  "group" : "軽音部",
+  "hobby" : "音楽を聴くこと",
   "icon" : "/images/default-avatar.png",
   "statusMessage" : null
 }, {

@@ -2,102 +2,90 @@
 <html lang="ja" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
 <head>
     <meta charset="UTF-8">
-    <title>Header Fragment</title>
+    <title>共通ヘッダー</title>
     <style>
-        /* ヘッダー全体のスタイル */
+        /* 以前のCSSスタイル... */
         .header {
-            background-color: #f8f9fa; /* 薄いグレーの背景 */
+            background-color: #007bff;
+            color: white;
             padding: 10px 20px;
-            border-bottom: 1px solid #e7e7e7; /* 下線 */
-            display: flex; /* Flexboxで要素を横並びに */
-            justify-content: space-between; /* 左右に要素を配置 */
-            align-items: center; /* 垂直方向の中央揃え */
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            position: fixed; /* ヘッダーを固定 */
+            width: 100%;
+            top: 0;
+            left: 0;
+            z-index: 1000;
         }
-
-        /* サイトタイトル（Cheers Office）のスタイル */
         .header h1 {
             margin: 0;
-            font-size: 24px;
+            font-size: 1.8em;
         }
-
         .header h1 a {
-            text-decoration: none; /* 下線なし */
-            color: #333; /* 文字色 */
+            color: white;
+            text-decoration: none;
         }
-
-        /* ナビゲーションメニューの ul スタイル */
-        .header nav ul {
-            list-style: none; /* リストの黒丸を削除 */
+        .nav-menu ul {
+            list-style: none;
             margin: 0;
             padding: 0;
-            display: flex; /* リストアイテムを横並びに */
-            align-items: center; /* 垂直方向の中央揃え */
+            display: flex;
         }
-
-        /* ナビゲーションメニューの li スタイル */
-        .header nav ul li {
-            margin-left: 10px; /* 各アイテムの左に余白 */
+        .nav-menu li {
+            margin-left: 20px;
         }
-
-        /* 全てのナビゲーションリンクとログアウトボタンの共通デザイン */
-        .nav-link-btn {
-            display: inline-block; /* インラインブロック要素に */
-            padding: 8px 12px; /* 内側の余白 */
-            text-decoration: none; /* 下線なし */
-            color: #007bff; /* リンクの文字色（青） */
-            font-weight: bold; /* 太字 */
-            border: 1px solid #007bff; /* ボタンの枠線（青） */
-            border-radius: 4px; /* 角を丸くする */
-            background-color: transparent; /* 背景透明 */
-            transition: all 0.2s; /* ホバー時のアニメーション */
-            cursor: pointer; /* マウスカーソルを指マークに */
-            font-size: 0.95em; /* フォントサイズを少し小さめに */
-            line-height: 1.2; /* 行の高さを調整してボタンの縦幅を制御 */
-        }
-
-        /* ホバー時のスタイル */
-        .nav-link-btn:hover {
-            background-color: #007bff; /* 背景色を青に */
-            color: white; /* 文字色を白に */
-            text-decoration: none; /* ホバー時も下線なし */
-        }
-
-        /* ログアウトボタン（POSTフォーム内のボタン）のスタイルを個別に調整 */
-        .logout-form .nav-link-btn {
-            border-color: #dc3545; /* ログアウトは赤の枠線 */
-            color: #dc3545; /* ログアウトの文字は赤 */
-        }
-
-        .logout-form .nav-link-btn:hover {
-            background-color: #dc3545; /* ホバーで赤に */
+        .nav-menu a {
             color: white;
+            text-decoration: none;
+            font-weight: bold;
+            padding: 5px 10px;
+            border-radius: 5px;
+            transition: background-color 0.3s ease;
+        }
+        .nav-menu a:hover {
+            background-color: #0056b3;
+        }
+        .user-info {
+            display: flex;
+            align-items: center;
+            color: white;
+            font-weight: bold;
+        }
+        .user-info .logout-btn {
+            background-color: #dc3545;
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-left: 15px;
+            transition: background-color 0.3s ease;
+            font-size: 0.9em;
+        }
+        .user-info .logout-btn:hover {
+            background-color: #c82333;
         }
     </style>
 </head>
 <body>
-
     <div th:fragment="header" class="header">
-        
         <h1><a th:href="@{/}">Cheers Office</a></h1>
         
-        <nav>
-            <ul>
-                <li><a th:href="@{/board}" class="nav-link-btn">掲示板</a></li>
-                <li><a th:href="@{/chat/rooms}" class="nav-link-btn">チャット</a></li>
-                <li><a th:href="@{/mypage}" class="nav-link-btn">マイページ</a></li>
-                <li><a th:href="@{/photopin}" class="nav-link-btn">フォトピン</a></li>
-                
-                <li sec:authorize="isAuthenticated()">
-                    <form th:action="@{/logout}" method="post" class="logout-form">
-                        <button type="submit" class="nav-link-btn">ログアウト</button>
-                    </form>
-                </li>
-                
-                <li sec:authorize="!isAuthenticated()">
-                    <a th:href="@{/login}" class="nav-link-btn">ログイン</a>
-                </li>
+        <nav class="nav-menu" th:fragment="navigationMenu"> <ul>
+                <li><a th:href="@{/board/list}">掲示板</a></li>
+                <li><a th:href="@{/chat/rooms}">チャット</a></li>
+                <li><a th:href="@{/photopin}">フォトピン</a></li>
+				<li><a th:href="@{/mypage}">マイページ</a></li>
             </ul>
         </nav>
+
+        <div class="user-info" th:fragment="userProfileAndLogout"> <span sec:authentication="name"></span> さん
+            <form th:action="@{/logout}" method="post" style="display:inline;">
+                <button type="submit" class="logout-btn">ログアウト</button>
+            </form>
+        </div>
     </div>
 </body>
 </html>

@@ -119,7 +119,6 @@ public class UserRepositoryImpl implements UserRepository {
             if (existingUser.getMailAddress().equals(updatedUser.getMailAddress())) {
                 
                 // 【重要】パスワードとIDは更新処理では変更せず、既存の値を保持する
-                updatedUser.setPassword(existingUser.getPassword()); 
                 updatedUser.setUserId(existingUser.getUserId()); 
                 
                 // リスト内のオブジェクトを新しいデータで置き換え、JSONファイルに保存
