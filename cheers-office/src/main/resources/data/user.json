@@ -4,10 +4,10 @@
   "mailaddress" : "test@cheers.com",
   "password" : "$2a$10$hm1kuWLSDJgzKDLUz0O7.OVwbQbFjS898oZfqJxq1qVHKE1Z5V48u",
   "my_boom" : "Java開発",
-  "group" : "開発部",
+  "group" : "帰宅部",
   "hobby" : "読書",
   "icon" : "/images/default_icon.png",
-  "statusMessage" : "よろしくお願いします！"
+  "statusMessage" : null
 }, {
   "user_id" : "1b260d20-be31-4277-b617-81bd0a42a9d9",
   "user_name" : "09.kumagaimasato@gmail.com",
@@ -28,5 +28,4 @@
   "hobby" : "未設定",
   "icon" : "/images/default-avatar.png",
   "statusMessage" : null
-
 } ]

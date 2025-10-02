@@ -13,11 +13,11 @@ import com.cheers.office.board.repository.UserRepository;
 import com.cheers.office.util.PasswordUtil;
 
 @Controller
-public class AuthController {
+public class LoginController {
 
     private final UserRepository userRepository;
 
-    public AuthController(UserRepository userRepository) {
+    public LoginController(UserRepository userRepository) {
         this.userRepository = userRepository;
     }
 
