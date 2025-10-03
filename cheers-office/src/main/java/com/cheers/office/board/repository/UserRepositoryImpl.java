@@ -5,139 +5,113 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import java.util.UUID;
-import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.stream.Collectors;
 
+import jakarta.annotation.PostConstruct;
+import jakarta.annotation.PreDestroy;
+
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Repository;
 
 import com.cheers.office.board.model.User;
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-@Repository 
-// JsonFileUserRepositoryをリネームしたものとして、UserRepositoryインターフェースを実装
-public class UserRepositoryImpl implements UserRepository { 
+@Repository
+public class UserRepositoryImpl implements UserRepository {
 
+    @Value("${app.user-file-path}")
+    private String userFilePath;
+    private List<User> users;
     private final ObjectMapper objectMapper = new ObjectMapper();
-    private static final String FILE_PATH = "src/main/resources/data/user.json";
-    private final File userFile;
-    private final Object fileLock = new Object();
 
-    public UserRepositoryImpl() {
-        this.userFile = new File(FILE_PATH);
-        // dataフォルダが存在しない場合、作成する
-        if (!userFile.getParentFile().exists()) {
-            userFile.getParentFile().mkdirs();
-        }
-        // ファイルが存在しない場合、空のJSON配列で初期化する
-        if (!userFile.exists()) {
+    @PostConstruct
+    private void loadUsers() {
+        File file = new File(userFilePath);
+        if (file.exists() && file.length() > 0) {
             try {
-                objectMapper.writeValue(userFile, new ArrayList<User>());
+                User[] userArray = objectMapper.readValue(file, User[].class);
+                users = new ArrayList<>(List.of(userArray));
             } catch (IOException e) {
-                System.err.println("user.jsonの初期化エラー: " + e.getMessage());
+                System.err.println("Failed to load users from " + userFilePath + ": " + e.getMessage());
+                users = new ArrayList<>();
             }
+        } else {
+            users = new ArrayList<>();
         }
     }
 
-    // JSONファイルからユーザーリストを読み込む (排他制御あり)
-    private List<User> loadUsersFromFile() {
-        synchronized (fileLock) {
-            try {
-                if (userFile.length() == 0) {
-                    return new CopyOnWriteArrayList<>();
-                }
-                return objectMapper.readValue(userFile, new TypeReference<List<User>>() {});
-            } catch (IOException e) {
-                System.err.println("ユーザーデータ (JSON) の読み込みエラー: " + e.getMessage());
-                return new CopyOnWriteArrayList<>();
-            }
+    @PreDestroy
+    private void saveUsers() {
+        try {
+            objectMapper.writerWithDefaultPrettyPrinter().writeValue(new File(userFilePath), users);
+        } catch (IOException e) {
+            System.err.println("Failed to save users to " + userFilePath + ": " + e.getMessage());
         }
-    }
-
-    // ユーザーリストをJSONファイルに書き込む (排他制御あり)
-    private void saveUsersToFile(List<User> users) {
-        synchronized (fileLock) {
-            try {
-                objectMapper.writerWithDefaultPrettyPrinter().writeValue(userFile, users);
-            } catch (IOException e) {
-                System.err.println("ユーザーデータ (JSON) の書き込みエラー: " + e.getMessage());
-            }
-        }
-    }
-
-    @Override
-    public List<User> findAll() {
-        return loadUsersFromFile();
-    }
-
-    @Override
-    public Optional<User> findById(String userId) {
-        return loadUsersFromFile().stream()
-                .filter(user -> user.getUserId().equals(userId))
-                .findFirst();
     }
 
     @Override
     public Optional<User> findByMailAddress(String mailAddress) {
-        return loadUsersFromFile().stream()
-                .filter(user -> user.getMailAddress().equals(mailAddress))
+        return users.stream()
+                .filter(user -> user.getMailAddress() != null && user.getMailAddress().equals(mailAddress))
                 .findFirst();
     }
 
-    /**
-     * 新規ユーザー登録時に使用 (IDの自動生成を含む)
-     */
+    // ★findByUserId は @Override を付けて定義
+    @Override
+    public Optional<User> findByUserId(String userId) {
+        return users.stream()
+                .filter(user -> user.getUserId() != null && user.getUserId().equals(userId))
+                .findFirst();
+    }
+    
+    // ★findById はインターフェースから削除したので、実装も不要
+
     @Override
     public User save(User user) {
-        List<User> users = loadUsersFromFile();
-        
-        // ユーザーIDがなければ新規生成
-        if (user.getUserId() == null || user.getUserId().isEmpty()) {
-            user.setUserId(UUID.randomUUID().toString());
-        } else {
-            // 既存ユーザーの重複防止（updateメソッドを使うため、ここではシンプルな処理）
-            users.removeIf(u -> u.getUserId().equals(user.getUserId()));
-        }
-        
         users.add(user);
-        saveUsersToFile(users);
+        saveUsers();
         return user;
     }
 
-    /**
-     * ★★★ プロフィール更新メソッドの実装 ★★★
-     * mailAddressでユーザーを特定し、データを上書き保存する。
-     */
     @Override
     public User update(User updatedUser) {
-        List<User> users = loadUsersFromFile();
-        
-        for (int i = 0; i < users.size(); i++) {
-            User existingUser = users.get(i);
-            
-            // ログインID（メールアドレス）で対象ユーザーを特定
-            if (existingUser.getMailAddress().equals(updatedUser.getMailAddress())) {
-                
-                // 【重要】パスワードとIDは更新処理では変更せず、既存の値を保持する
-                updatedUser.setUserId(existingUser.getUserId()); 
-                
-                // リスト内のオブジェクトを新しいデータで置き換え、JSONファイルに保存
-                users.set(i, updatedUser); 
-                saveUsersToFile(users);
-                
-                // 更新されたユーザーを返す
-                return updatedUser; 
-            }
+        Optional<User> existingUserOpt = findByUserId(updatedUser.getUserId());
+        if (existingUserOpt.isPresent()) {
+            User existingUser = existingUserOpt.get();
+            existingUser.setUserName(updatedUser.getUserName());
+            existingUser.setMailAddress(updatedUser.getMailAddress());
+            existingUser.setGroup(updatedUser.getGroup());
+            existingUser.setMyBoom(updatedUser.getMyBoom());
+            existingUser.setHobby(updatedUser.getHobby());
+            existingUser.setIcon(updatedUser.getIcon());
+            existingUser.setStatusMessage(updatedUser.getStatusMessage());
+            saveUsers();
+            return existingUser;
         }
-        
-        // ログインユーザーの更新でここに来るべきではないため、例外を投げます
-        throw new IllegalArgumentException("User not found for update: " + updatedUser.getMailAddress());
+        return null;
     }
 
+    // ★deleteByMailAddress は @Override を付けて定義
+    @Override
+    public void deleteByMailAddress(String mailAddress) {
+        users = users.stream()
+                     .filter(user -> user.getMailAddress() == null || !user.getMailAddress().equals(mailAddress))
+                     .collect(Collectors.toList());
+        saveUsers();
+    }
+    
+    // ★findAll は @Override を付けて定義
+    @Override
+    public List<User> findAll() {
+        return new ArrayList<>(users);
+    }
+    
+    // ★deleteById は @Override を付けて定義
     @Override
     public void deleteById(String userId) {
-        List<User> users = loadUsersFromFile();
-        users.removeIf(user -> user.getUserId().equals(userId));
-        saveUsersToFile(users);
+        users = users.stream()
+                     .filter(user -> !user.getUserId().equals(userId))
+                     .collect(Collectors.toList());
+        saveUsers();
     }
 }

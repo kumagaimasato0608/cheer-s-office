@@ -14,39 +14,29 @@ public class CustomUserDetails implements UserDetails {
         this.user = user;
     }
 
-    public User getUser() {
-        return user;
-    }
-
-    // ★★★ このセッターメソッドを追加 ★★★
     public void setUser(User user) {
         this.user = user;
     }
 
-    @Override
-    public Collection<? extends GrantedAuthority> getAuthorities() {
-        return Collections.emptyList();
+    public User getUser() {
+        return user;
     }
 
     @Override
-    public String getPassword() {
-        return user.getPassword();
-    }
+    public Collection<? extends GrantedAuthority> getAuthorities() { return Collections.emptyList(); }
 
     @Override
-    public String getUsername() {
-        return user.getMailAddress(); 
-    }
+    public String getPassword() { return user.getPassword(); }
+
+    @Override
+    public String getUsername() { return user.getMailAddress(); } 
 
     @Override
     public boolean isAccountNonExpired() { return true; }
-
     @Override
     public boolean isAccountNonLocked() { return true; }
-
     @Override
     public boolean isCredentialsNonExpired() { return true; }
-
     @Override
     public boolean isEnabled() { return true; }
 }

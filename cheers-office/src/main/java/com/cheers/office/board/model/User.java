@@ -1,44 +1,38 @@
 package com.cheers.office.board.model;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
+import java.io.Serializable; 
 
-import lombok.Data;
-
-@Data
-public class User {
-    // JSON定義: user_id
-    @JsonProperty("user_id")
+public class User implements Serializable { 
     private String userId;
-
-    // JSON定義: user_name
-    @JsonProperty("user_name")
     private String userName;
-
-    // JSON定義: mailaddress (ログインID)
-    @JsonProperty("mailaddress")
     private String mailAddress;
-
-    // JSON定義: password (ハッシュ化されたパスワードを格納)
-    @JsonProperty("password")
-    private String password;
-
-    // JSON定義: my_boom
-    @JsonProperty("my_boom")
-    private String myBoom;
-
-    // JSON定義: group
-    @JsonProperty("group")
+    private String password; // ハッシュ化されたパスワード
     private String group;
-
-    // JSON定義: hobby
-    @JsonProperty("hobby")
+    private String myBoom;
     private String hobby;
-
-    // JSON定義: icon (画像ファイルのローカルパス)
-    @JsonProperty("icon")
     private String icon;
-
-    // JSON定義: statusMessage
-    @JsonProperty("statusMessage")
     private String statusMessage;
+
+    public User() {
+    }
+
+    // --- GetterとSetter ---
+    public String getUserId() { return userId; }
+    public void setUserId(String userId) { this.userId = userId; }
+    public String getUserName() { return userName; }
+    public void setUserName(String userName) { this.userName = userName; }
+    public String getMailAddress() { return mailAddress; }
+    public void setMailAddress(String mailAddress) { this.mailAddress = mailAddress; }
+    public String getPassword() { return password; }
+    public void setPassword(String password) { this.password = password; }
+    public String getGroup() { return group; }
+    public void setGroup(String group) { this.group = group; }
+    public String getMyBoom() { return myBoom; }
+    public void setMyBoom(String myBoom) { this.myBoom = myBoom; }
+    public String getHobby() { return hobby; }
+    public void setHobby(String hobby) { this.hobby = hobby; }
+    public String getIcon() { return icon; }
+    public void setIcon(String icon) { this.icon = icon; }
+    public String getStatusMessage() { return statusMessage; }
+    public void setStatusMessage(String statusMessage) { this.statusMessage = statusMessage; }
 }
