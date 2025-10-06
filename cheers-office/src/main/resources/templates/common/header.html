@@ -2,90 +2,118 @@
 <html lang="ja" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
 <head>
     <meta charset="UTF-8">
-    <title>共通ヘッダー</title>
+    <title>共通ヘッダー (サイドバー)</title>
     <style>
-        /* 以前のCSSスタイル... */
-        .header {
-            background-color: #007bff;
+        /* アイコンのフォント（今回はアイコン画像があるため、フォントの代わりに画像参照を想定） */
+        /* アイコンが画像として/images/に存在することを前提とします。 */
+        
+        /* 全体レイアウト */
+        body { margin-left: 70px; } /* サイドバーの幅を考慮 */
+        
+        /* ★★★ サイドバーナビゲーション (共通ボタン) ★★★ */
+        .sidebar {
+            height: 100%;
+            width: 70px; /* 固定幅 */
+            position: fixed; /* 常に左側に固定 */
+            z-index: 1000;
+            top: 0;
+            left: 0;
+            background-color: #212529; /* 暗い背景 */
+            padding-top: 10px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            box-shadow: 2px 0 5px rgba(0,0,0,0.2);
+        }
+        
+        /* ナビゲーションリンク */
+        .nav-item {
+            display: block;
+            width: 100%;
+            text-align: center;
+            padding: 15px 0;
+            text-decoration: none;
+            color: #ccc;
+            transition: background-color 0.2s ease;
+        }
+        .nav-item:hover {
+            background-color: #343a40;
             color: white;
+        }
+        
+        /* アイコンの画像スタイル */
+        .nav-item img {
+            width: 30px;
+            height: 30px;
+            margin: 0 auto;
+            display: block;
+        }
+
+        /* ★★★ 上部ヘッダー (ユーザー情報とタイトル) ★★★ */
+        .top-header {
+            width: calc(100% - 70px);
+            margin-left: 70px;
             padding: 10px 20px;
+            background-color: #f8f9fa;
+            border-bottom: 1px solid #e7e7e7;
+            position: fixed;
+            top: 0;
+            right: 0;
+            z-index: 999;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-            position: fixed; /* ヘッダーを固定 */
-            width: 100%;
-            top: 0;
-            left: 0;
-            z-index: 1000;
         }
-        .header h1 {
-            margin: 0;
-            font-size: 1.8em;
-        }
-        .header h1 a {
-            color: white;
-            text-decoration: none;
-        }
-        .nav-menu ul {
-            list-style: none;
-            margin: 0;
-            padding: 0;
-            display: flex;
-        }
-        .nav-menu li {
-            margin-left: 20px;
-        }
-        .nav-menu a {
-            color: white;
-            text-decoration: none;
+        .app-title {
+            font-size: 1.5rem;
             font-weight: bold;
-            padding: 5px 10px;
-            border-radius: 5px;
-            transition: background-color 0.3s ease;
+            color: #333;
         }
-        .nav-menu a:hover {
-            background-color: #0056b3;
-        }
-        .user-info {
+        .user-controls {
             display: flex;
             align-items: center;
-            color: white;
-            font-weight: bold;
         }
-        .user-info .logout-btn {
+        .logout-btn {
+            padding: 8px 12px;
             background-color: #dc3545;
             color: white;
             border: none;
-            padding: 8px 12px;
-            border-radius: 5px;
+            border-radius: 4px;
             cursor: pointer;
             margin-left: 15px;
-            transition: background-color 0.3s ease;
-            font-size: 0.9em;
-        }
-        .user-info .logout-btn:hover {
-            background-color: #c82333;
         }
     </style>
 </head>
 <body>
-    <div th:fragment="header" class="header">
-        <h1><a th:href="@{/}">Cheers Office</a></h1>
+    
+    <div th:fragment="sidebar" class="sidebar">
+        <a th:href="@{/home}" class="nav-item">
+            <img th:src="@{/images/icon-home.png}" alt="Home">
+        </a>
+        <a th:href="@{/chat/rooms}" class="nav-item">
+            <img th:src="@{/images/icon-chat.png}" alt="Chat">
+        </a>
+        <a th:href="@{/board}" class="nav-item">
+            <img th:src="@{/images/icon-board.png}" alt="Board">
+        </a>
+        <a th:href="@{/photopin}" class="nav-item">
+            <img th:src="@{/images/icon-map.png}" alt="Map">
+        </a>
+        <a th:href="@{/mypage}" class="nav-item">
+            <img th:src="@{/images/icon-user.png}" alt="Profile">
+        </a>
         
-        <nav class="nav-menu" th:fragment="navigationMenu"> <ul>
-                <li><a th:href="@{/board/list}">掲示板</a></li>
-                <li><a th:href="@{/chat/rooms}">チャット</a></li>
-                <li><a th:href="@{/photopin}">フォトピン</a></li>
-				<li><a th:href="@{/mypage}">マイページ</a></li>
-            </ul>
-        </nav>
-
-        <div class="user-info" th:fragment="userProfileAndLogout"> <span sec:authentication="name"></span> さん
-            <form th:action="@{/logout}" method="post" style="display:inline;">
+        </div>
+    
+    <header th:fragment="topHeader" class="top-header" sec:authorize="isAuthenticated()">
+        <span class="app-title">Cheers Office</span>
+        <div class="user-controls">
+            <span style="margin-right: 15px;">ようこそ、<span sec:authentication="name"></span> さん</span>
+            <form th:action="@{/logout}" method="post">
                 <button type="submit" class="logout-btn">ログアウト</button>
             </form>
         </div>
-    </div>
+    </header>
+    
 </body>
 </html>

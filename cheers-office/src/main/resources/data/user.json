@@ -28,4 +28,14 @@
   "hobby" : null,
   "icon" : null,
   "statusMessage" : null
+}, {
+  "userId" : "61206030-e80b-4bbc-80d7-9a3ae9233ed9",
+  "userName" : "kumagai",
+  "mailAddress" : "a@a",
+  "password" : "$2a$10$NZV1d70ptCub0L437POS2e6gef9JeJeFEa1DrN2AA6xoDTS0/QgiC",
+  "group" : "未設定",
+  "myBoom" : "未設定",
+  "hobby" : "未設定",
+  "icon" : "/images/default_icon.png",
+  "statusMessage" : "よろしくお願いします！"
 } ]
