@@ -2,20 +2,20 @@
   "userId" : "u001_auto",
   "userName" : "自動登録ユーザー",
   "mailAddress" : "test@cheers.com",
-  "password" : "$2a$10$jTcF3QPLtB6oUmwcwYAgLeGKJxkZ5LFfPS3Ec52JQwn.v2D92FjQG",
+  "password" : "$2a$10$6x.A2Kep.0gGJiAn6m9btuTKdWWlc9jA4qKZXGsvt.dF4sScB7EGu",
   "group" : "開発部",
   "myBoom" : "Java開発",
-  "hobby" : "本を読む",
+  "hobby" : "読書",
   "icon" : "/images/default_icon.png",
   "statusMessage" : "よろしくお願いします！"
 }, {
-  "userId" : "905cc025-efe4-4809-80cc-a682305b886a",
-  "userName" : "masato",
+  "userId" : "02223fb2-6a8f-42fd-8c1c-27875c8a103d",
+  "userName" : "09.kumagaimasato@gmail.com",
   "mailAddress" : "09.kumagaimasato@gmail.com",
-  "password" : "$2a$10$P2qOIjVcY.nPRM2PoiYbReSch1m3Dx2ju0V1oXXYiJBko7BhEE8Ca",
+  "password" : "$2a$10$aDTfIHajOreOqTU4mj6ove3pZMvxHgILT0M3WdH2tWKebyv7j.e7W",
   "group" : "未設定",
-  "myBoom" : "未設定",
-  "hobby" : "未設定",
+  "myBoom" : null,
+  "hobby" : null,
   "icon" : "/images/default_icon.png",
-  "statusMessage" : "よろしくお願いします！"
+  "statusMessage" : null
 } ]

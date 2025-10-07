@@ -103,11 +103,11 @@
             ログアウトしました。
         </p>
 
-        <form th:action="@{/authenticate}" method="post">
+        <form th:action="@{/login}" method="post">
             
             <div class="form-group">
-                <label for="mailaddress">メールアドレス:</label>
-                <input type="text" id="mailaddress" name="mailaddress" required>
+                <label for="username">メールアドレス:</label>
+                <input type="text" id="username" name="username" required>
             </div>
 
             <div class="form-group">

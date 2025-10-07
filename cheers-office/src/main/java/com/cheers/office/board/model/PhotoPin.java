@@ -1,40 +1,40 @@
 package com.cheers.office.board.model;
 
-import java.time.LocalDateTime;
-// Lombokを使用している場合は @Data を使うとGetter/Setterは不要
-// import lombok.Data; 
+import java.util.ArrayList;
+import java.util.List;
 
-/**
- * フォトピン機能：地図上のピンと関連付けられた写真データ
- */
-// @Data // Lombokを使用しない場合は手動でGetter/Setterを記述
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
 public class PhotoPin {
-    
-    private String pinId;
-    private String userId;        // 投稿者
-    private String photoPath;     // サーバー上の公開ファイルパス
-    private String caption;       // 写真の説明
-    private double latitude;      // 緯度
-    private double longitude;     // 経度
-    private LocalDateTime createdAt; // 投稿日時
+    private String pinId;         // ピンの一意識別子
+    private Location location;    // ピンの地理座標 (緯度・経度)
+    private String title;         // ピンのタイトル
+    private String description;   // ピンの詳細説明
+    private String createdBy;     // ピンを作成したユーザーのID
+    private String createdDate;   // ピンの作成日時 (ISO 8601形式など)
+    private List<Photo> photos = new ArrayList<>();   // ★修正: 必ず初期化
 
-    // --- GetterとSetter ---
-    // PhotopinServiceで利用しているsetPinId, setUserId, setPhotoPath, setCaption, setLatitude, setLongitude, setCreatedAt 
-    // および、対応する Getter メソッドをすべて実装する必要があります。
+    // Lombokの@Dataがゲッター/セッターを自動生成しますが、
+    // 明示的に初期化を保証するコンストラクタも保持
+    public PhotoPin(String pinId, Location location, String title, String description, String createdBy, String createdDate) {
+        this.pinId = pinId;
+        this.location = location;
+        this.title = title;
+        this.description = description;
+        this.createdBy = createdBy;
+        this.createdDate = createdDate;
+        this.photos = new ArrayList<>(); // 必ず初期化
+    }
+
+    // photosリストがnullになることを防ぐためのセッター (Lombokが生成するが、念のため)
+    public void setPhotos(List<Photo> photos) {
+        this.photos = (photos != null) ? photos : new ArrayList<>();
+    }
     
-    public String getPinId() { return pinId; }
-    public void setPinId(String pinId) { this.pinId = pinId; }
-    // ... (他のフィールドについても同様にGetter/Setterを記述してください) ...
-    public String getUserId() { return userId; }
-    public void setUserId(String userId) { this.userId = userId; }
-    public String getPhotoPath() { return photoPath; }
-    public void setPhotoPath(String photoPath) { this.photoPath = photoPath; }
-    public String getCaption() { return caption; }
-    public void setCaption(String caption) { this.caption = caption; }
-    public double getLatitude() { return latitude; }
-    public void setLatitude(double latitude) { this.latitude = latitude; }
-    public double getLongitude() { return longitude; }
-    public void setLongitude(double longitude) { this.longitude = longitude; }
-    public LocalDateTime getCreatedAt() { return createdAt; }
-    public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
+    // getPhotos() は @Data が生成
 }

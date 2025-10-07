@@ -1,1 +1,45 @@
-[]
+[ {
+  "pinId" : "5a146f86-e339-46df-a8dd-10aa0d098f2a",
+  "location" : {
+    "latitude" : 35.682582743769764,
+    "longitude" : 139.76510349788637
+  },
+  "title" : "あ",
+  "description" : "あ",
+  "createdBy" : "u001_auto",
+  "createdDate" : "2025-10-07T16:35:01.7293263",
+  "photos" : [ ]
+}, {
+  "pinId" : "e7ab012d-a62d-4e4a-aa54-d220d0b20aae",
+  "location" : {
+    "latitude" : 64.86994072403172,
+    "longitude" : 78.04687500000001
+  },
+  "title" : "ロシア",
+  "description" : "",
+  "createdBy" : "u001_auto",
+  "createdDate" : "2025-10-07T16:50:31.5740341",
+  "photos" : [ ]
+}, {
+  "pinId" : "2a6c31a1-bece-4485-8584-69cf7df5f2c9",
+  "location" : {
+    "latitude" : 35.675376215685326,
+    "longitude" : 139.67502593994143
+  },
+  "title" : "テスト",
+  "description" : "",
+  "createdBy" : "02223fb2-6a8f-42fd-8c1c-27875c8a103d",
+  "createdDate" : "2025-10-07T16:51:14.6048334",
+  "photos" : [ ]
+}, {
+  "pinId" : "104e2792-d5d8-461d-a0c2-cfdb82d362e5",
+  "location" : {
+    "latitude" : 43.685997987160796,
+    "longitude" : 142.38281250000003
+  },
+  "title" : "北海道",
+  "description" : "でっかいどう",
+  "createdBy" : "02223fb2-6a8f-42fd-8c1c-27875c8a103d",
+  "createdDate" : "2025-10-07T16:56:39.4465528",
+  "photos" : [ ]
+} ]
