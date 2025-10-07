@@ -1,93 +1,84 @@
-package com.cheers.office.board.controller;
+package com.cheers.office.board.controller; 
+
+import java.util.Optional;
 
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import com.cheers.office.board.dto.EmailUpdateForm;
+import com.cheers.office.board.dto.PasswordUpdateForm;
 import com.cheers.office.board.model.CustomUserDetails;
 import com.cheers.office.board.model.User;
 import com.cheers.office.board.repository.UserRepository;
+import com.cheers.office.board.service.UserAccountService;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 @Controller
 @RequestMapping("/mypage")
 public class MypageController {
 
     private final UserRepository userRepository;
+    private final UserAccountService userAccountService;
+    private final ObjectMapper objectMapper = new ObjectMapper(); 
 
-    // パスワード/メールアドレス関連の処理を分離したため、PasswordEncoderは不要
-    public MypageController(UserRepository userRepository) {
+    public MypageController(UserRepository userRepository, UserAccountService userAccountService) {
         this.userRepository = userRepository;
+        this.userAccountService = userAccountService;
     }
-
+    
+    // --- 既存のメソッド（プロフィール表示・更新） ---
+    
     /**
      * プロフィール編集画面の表示 (GET /mypage)
-     * mypage.html を返します。
      */
     @GetMapping
     public String mypage(Model model) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-
         if (authentication != null && authentication.getPrincipal() instanceof CustomUserDetails) {
             CustomUserDetails customUserDetails = (CustomUserDetails) authentication.getPrincipal();
-            // ログイン中のユーザー情報をModelに渡す
             model.addAttribute("user", customUserDetails.getUser());
         } else {
-            return "redirect:/login"; // 認証されていない場合はログイン画面へ
+            return "redirect:/login"; 
         }
-
-        return "mypage"; 
+        return "mypage";
     }
-
+    
     /**
-     * プロフィール情報（ユーザー名、グループ、趣味、一言など）の更新処理
-     * POST /mypage/updateProfile
+     * プロフィール情報の更新処理 (POST /mypage/update)
      */
-    @PostMapping("/updateProfile")
-    public String updateProfile(
-            @RequestParam("userName") String userName,
-            @RequestParam("group") String group,
-            @RequestParam("myBoom") String myBoom,
-            @RequestParam("hobby") String hobby,
-            @RequestParam("icon") String icon,
-            @RequestParam("statusMessage") String statusMessage,
-            RedirectAttributes redirectAttributes) {
-
+    @PostMapping("/update")
+    public String updateProfile(User updatedUser, RedirectAttributes redirectAttributes) {
+        
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication == null || !(authentication.getPrincipal() instanceof CustomUserDetails)) {
             redirectAttributes.addFlashAttribute("errorMessage", "セッションが無効です。再度ログインしてください。");
             return "redirect:/login";
         }
-
         CustomUserDetails customUserDetails = (CustomUserDetails) authentication.getPrincipal();
         User currentUser = customUserDetails.getUser();
-
-        // フォームから受け取った値でUserオブジェクトを作成し、更新対象外の項目は既存の値を引き継ぐ
-        User updatedUser = new User();
-        updatedUser.setUserName(userName);
-        updatedUser.setGroup(group);
-        updatedUser.setMyBoom(myBoom);
-        updatedUser.setHobby(hobby);
-        updatedUser.setIcon(icon);
-        updatedUser.setStatusMessage(statusMessage);
-
-        // 変更されないフィールドは元の値を保持させる
+        
+        // 既存の値を保持
         updatedUser.setMailAddress(currentUser.getMailAddress());
         updatedUser.setPassword(currentUser.getPassword()); 
-        updatedUser.setUserId(currentUser.getUserId()); 
-
+        updatedUser.setUserId(currentUser.getUserId());
+        
         // UserRepositoryで更新を実行
         User resultUser = userRepository.update(updatedUser); 
-
+        
         if (resultUser != null) { 
-            // SecurityContextの情報を更新 (セッション内の古いユーザー情報を置き換える)
             customUserDetails.setUser(resultUser);
-            
             redirectAttributes.addFlashAttribute("successMessage", "プロフィール情報が更新されました。");
         } else {
             redirectAttributes.addFlashAttribute("errorMessage", "プロフィールの更新に失敗しました。");
@@ -95,9 +86,131 @@ public class MypageController {
         
         return "redirect:/mypage"; 
     }
+
+    // --- パスワード・メールアドレス変更メソッド ---
+
+    /**
+     * パスワード/メールアドレス変更画面の表示 (GET /mypage/password)
+     */
+    @GetMapping("/password")
+    public String showPasswordChangeForm(
+        Model model, 
+        @AuthenticationPrincipal CustomUserDetails customUserDetails
+    ) {
+        model.addAttribute("user", customUserDetails.getUser());
+        return "password_change";
+    }
+
+    /**
+     * メールアドレスの更新処理 (POST /mypage/password/update/email)
+     */
+    @PostMapping("/password/update/email")
+    public String updateEmail(
+            @ModelAttribute EmailUpdateForm form, 
+            RedirectAttributes redirectAttributes) {
+
+        boolean success = userAccountService.updateEmail(
+            form.getCurrentMailAddress(),
+            form.getCurrentPasswordForEmail(),
+            form.getNewMailAddress()
+        );
+        
+        if (success) {
+            redirectAttributes.addFlashAttribute("successMessage", "メールアドレスが更新されました。新しいメールアドレスで再度ログインしてください。");
+            return "redirect:/logout";
+        } else {
+            redirectAttributes.addFlashAttribute("errorMessage", "現在のパスワードが正しくないか、そのメールアドレスは既に使用されています。");
+            return "redirect:/mypage/password";
+        }
+    }
+
+
+    /**
+     * パスワードの更新処理 (POST /mypage/password/update/password)
+     */
+    @PostMapping("/password/update/password")
+    public String updatePassword(
+            @ModelAttribute PasswordUpdateForm form, 
+            RedirectAttributes redirectAttributes,
+            @AuthenticationPrincipal CustomUserDetails customUserDetails) {
+
+        if (!form.getNewPassword().equals(form.getConfirmPassword())) {
+            redirectAttributes.addFlashAttribute("errorMessage", "新しいパスワードが確認用と一致しません。");
+            return "redirect:/mypage/password";
+        }
+        
+        Optional<User> updatedUserOpt = userAccountService.updatePassword(
+            form.getCurrentMailAddress(),
+            form.getCurrentPassword(),
+            form.getNewPassword()
+        );
+
+        if (updatedUserOpt.isPresent()) {
+            customUserDetails.setUser(updatedUserOpt.get());
+            redirectAttributes.addFlashAttribute("successMessage", "パスワードが正常に更新されました。");
+        } else {
+            redirectAttributes.addFlashAttribute("errorMessage", "現在のパスワードが正しくないか、新しいパスワードが現在のものと同じです。");
+        }
+        
+        return "redirect:/mypage/password";
+    }
+
+    // --- アイコンアップロードメソッド ---
+
+    /**
+     * プロフィールアイコンのアップロードと保存処理 (POST /mypage/uploadIcon)
+     */
+    @PostMapping("/uploadIcon")
+    @ResponseBody 
+    public String uploadIcon(
+        @RequestParam("file") MultipartFile file, 
+        @AuthenticationPrincipal CustomUserDetails userDetails) throws JsonProcessingException {
+
+        String userId = userDetails.getUser().getUserId();
+
+        if (file.isEmpty()) {
+            return objectMapper.writeValueAsString(new ResponseDto(false, "ファイルが空です。"));
+        }
+
+        try {
+            String newIconPath = userAccountService.saveProfileIcon(file, userId);
+            
+            User updatedUser = userAccountService.updateUserIcon(userId, newIconPath);
+            userDetails.setUser(updatedUser); 
+
+            return objectMapper.writeValueAsString(new IconResponseDto(true, "アイコンが更新されました。", newIconPath));
+
+        } catch (Exception e) {
+            System.err.println("Icon Upload Error for user " + userId + ": " + e.getMessage());
+            return objectMapper.writeValueAsString(new ResponseDto(false, "アイコンの保存中にサーバーエラーが発生しました。"));
+        }
+    }
     
-    // ★★★ 以前あった以下のメソッドは、PasswordChangeControllerに移動したため削除しました ★★★
-    // - showPasswordChangeForm(Model model)
-    // - updateEmail(...)
-    // - updatePassword(...)
+    // --- 警告を解消するための修正済み JSONレスポンス用内部クラス ---
+
+    @SuppressWarnings("unused") 
+    private static class ResponseDto {
+        private boolean success;
+        private String message;
+        
+        public ResponseDto(boolean success, String message) {
+            this.success = success;
+            this.message = message;
+        }
+
+        public boolean isSuccess() { return success; }
+        public String getMessage() { return message; }
+    }
+
+    @SuppressWarnings("unused")
+    private static class IconResponseDto extends ResponseDto {
+        private String iconPath;
+        
+        public IconResponseDto(boolean success, String message, String iconPath) {
+            super(success, message);
+            this.iconPath = iconPath;
+        }
+        
+        public String getIconPath() { return iconPath; }
+    }
 }

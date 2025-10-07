@@ -1,101 +1,33 @@
 <!DOCTYPE html>
-<html lang="ja" xmlns:th="http://www.thymeleaf.org">
+<html lang="ja" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>フォトピン</title>
-    <div th:replace="common/header :: header"></div>
-    <style>
-        .container {
-            max-width: 1000px;
-            margin: 20px auto;
-            padding: 20px;
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            background-color: #fff;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-        h1 {
-            color: #333;
-            border-bottom: 2px solid #007bff;
-            padding-bottom: 10px;
-            margin-bottom: 20px;
-        }
-        .upload-section {
-            margin-bottom: 30px;
-            padding: 15px;
-            background-color: #f0f8ff;
-            border: 1px dashed #007bff;
-            border-radius: 5px;
-            text-align: center;
-        }
-        .upload-section input[type="file"] {
-            display: block;
-            margin: 10px auto;
-        }
-        .photo-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-            gap: 20px;
-        }
-        .photo-item {
-            border: 1px solid #eee;
-            border-radius: 8px;
-            overflow: hidden;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-            background-color: #fff;
-        }
-        .photo-item img {
-            width: 100%;
-            height: 200px;
-            object-fit: cover;
-            display: block;
-        }
-        .photo-info {
-            padding: 10px;
-        }
-        .photo-info h3 {
-            margin-top: 0;
-            font-size: 1.1em;
-            color: #333;
-        }
-        .photo-info p {
-            font-size: 0.9em;
-            color: #666;
-            margin-bottom: 0;
-        }
-    </style>
-</head>
+    <title>フォトピン | Cheers Office</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    
+    </head>
 <body>
+    <div th:replace="common/header :: header"></div> 
     <div class="container">
         <h1>フォトピン</h1>
-
-        <div class="upload-section">
-            <h2>写真をアップロード</h2>
-            <form action="/photopin/upload" method="post" enctype="multipart/form-data">
-                <input type="file" name="file" accept="image/*" required>
-                <input type="text" name="caption" placeholder="キャプションを追加" style="width: 80%; padding: 8px; margin-top: 10px;">
-                <button type="submit" style="display: block; margin: 15px auto; padding: 10px 20px; background-color: #28a745; color: white; border: none; border-radius: 5px; cursor: pointer;">アップロード</button>
-            </form>
-        </div>
-
-        <h2>アップロードされた写真</h2>
-        <div class="photo-grid">
-            <div class="photo-item">
-                <img th:src="@{/images/sample1.jpg}" alt="サンプル画像1">
-                <div class="photo-info">
-                    <h3>桜の花</h3>
-                    <p>投稿者: ユーザーA</p>
-                </div>
-            </div>
-            <div class="photo-item">
-                <img th:src="@{/images/sample2.jpg}" alt="サンプル画像2">
-                <div class="photo-info">
-                    <h3>美しい風景</h3>
-                    <p>投稿者: ユーザーB</p>
-                </div>
-            </div>
-            </div>
+        
+        <div id="map" style="height: 500px; width: 100%; border: 1px solid #ccc; border-radius: 5px; margin-bottom: 20px;"></div>
+        
+        <form th:action="@{/photopin/upload}" method="post" enctype="multipart/form-data">
+            <h2>写真をピンする</h2>
+            
+            <input type="file" name="file" accept="image/*" required>
+            <input type="text" name="caption" placeholder="キャプション (必須)" required>
+            <input type="hidden" id="latitudeInput" name="latitude">
+            <input type="hidden" id="longitudeInput" name="longitude">
+            
+            <p id="coordDisplay">地図上の座標を選択してください。</p>
+            <button type="submit">アップロード</button>
+        </form>
     </div>
+
+    <script th:src="@{/js/photopin.js}"></script>
 </body>
 </html>

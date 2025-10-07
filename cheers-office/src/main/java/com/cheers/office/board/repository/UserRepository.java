@@ -1,3 +1,5 @@
+// UserRepository.java (最終修正版)
+
 package com.cheers.office.board.repository;
 
 import java.util.List;
@@ -6,13 +8,20 @@ import java.util.Optional;
 import com.cheers.office.board.model.User;
 
 public interface UserRepository {
-    Optional<User> findByMailAddress(String mailAddress);
-    Optional<User> findByUserId(String userId); // findByUserId を明示的に定義
-    User save(User user);
-    User update(User user);
+
+    List<User> findAll();
     
-    void deleteByMailAddress(String mailAddress); // 追加
-    List<User> findAll(); // 追加
-    void deleteById(String userId); // 追加
-    // Optional<User> findById(String userId); // findByUserId と同じなので、今回はどちらか一方に統一します
+    // 実装クラスと名前を一致させる (エラーの原因となっていたfindByUserIdを回避)
+    Optional<User> findById(String userId); 
+    
+    Optional<User> findByMailAddress(String mailAddress);
+    
+    // ユーザー新規登録時や初期データ保存時に使用 (戻り値はUser)
+    User save(User user);
+    
+    // プロフィール更新用メソッド (戻り値はUser)
+    User update(User user); 
+
+    // ユーザー削除用（任意）：deleteByMailAddressは削除します
+    void deleteById(String userId);
 }

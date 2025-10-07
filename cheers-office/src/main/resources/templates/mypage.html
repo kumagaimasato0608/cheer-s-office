@@ -1,159 +1,165 @@
 <!DOCTYPE html>
-<html lang="ja" xmlns:th="http://www.thymeleaf.org">
+<html lang="ja" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>マイページ</title>
+    <title>マイページ - プロフィール編集</title>
+    
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/jquery-jcrop/0.9.12/css/jquery.Jcrop.min.css" rel="stylesheet">
 
     <style>
-        body {
+        /* ★★★ password_change.html から統一するスタイルを継承 ★★★ */
+        body { 
             font-family: 'Arial', sans-serif;
             background-color: #e6f0ff; /* 全体の薄い青背景 */
+            display: flex; 
+            justify-content: center; 
+            align-items: flex-start;
+            min-height: calc(100vh - 60px); 
+            padding-top: 80px; 
             margin: 0;
-            padding: 0;
-            display: flex;
-            justify-content: center;
-            align-items: flex-start; /* 上部に寄せる */
-            min-height: calc(100vh - 60px); /* ヘッダーの高さ分を引く */
-            padding-top: 80px; /* ヘッダーとの間にスペースを設ける */
             box-sizing: border-box;
         }
-        .mypage-container {
-            background-color: #ffffff;
-            padding: 40px 40px;
+        .mypage-container { 
+            background-color: #ffffff; 
+            padding: 30px 40px; /* パスワード変更ページと合わせたパディング */
             border-radius: 10px;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-            width: 100%;
-            max-width: 800px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1); 
+            width: 100%; 
+            max-width: 800px; /* パスワード変更ページと合わせた幅 */
             margin: 20px;
         }
-        h1 {
-            text-align: center;
-            color: #333;
-            margin-bottom: 30px;
-            font-size: 2.2em;
-            border-bottom: 2px solid #007bff;
-            padding-bottom: 10px;
+        h1 { 
+            color: #333; text-align: center; margin-bottom: 30px; 
+            font-size: 2.2em; border-bottom: 2px solid #007bff; padding-bottom: 10px; 
         }
-        .form-group {
-            margin-bottom: 20px;
-            text-align: left;
-        }
-        label {
-            display: block;
-            margin-bottom: 8px;
-            font-weight: bold;
-            color: #555;
-            font-size: 1.1em;
-        }
-        input[type="text"],
-        input[type="email"] {
-            width: calc(100% - 20px);
-            padding: 12px;
-            border: 1px solid rgb(0, 128, 255);
-            border-radius: 6px;
-            box-sizing: border-box;
+        .form-group { margin-bottom: 20px; text-align: left; }
+        label { display: block; margin-bottom: 8px; font-weight: bold; color: #555; font-size: 1.1em; }
+        
+        /* 入力フィールドの統一スタイル */
+        input[type="text"], input[type="email"], textarea { 
+            width: 100%; 
+            padding: 12px; 
+            border: 1px solid rgb(0, 128, 255); /* 青いボーダー */
+            border-radius: 6px; 
+            box-sizing: border-box; 
             font-size: 1em;
-            transition: border-color 0.3s ease;
         }
-        input[type="text"]:focus,
-        input[type="email"]:focus {
-            border-color: #007bff;
-            outline: none;
+        input[disabled], textarea[disabled] { background-color: #e9ecef; color: #6c757d; cursor: not-allowed; }
+        
+        /* ボタンの統一スタイル */
+        .btn-update { 
+            width: 100%; padding: 15px; border: none; border-radius: 6px; 
+            background-color: #007bff; /* 青色（メールアドレス更新ボタンの色）を継承 */
+            color: white; font-size: 1.2em; font-weight: bold; cursor: pointer; margin-top: 20px;
         }
-        input[disabled] {
-            background-color: #e9ecef;
-            color: #6c757d;
-            cursor: not-allowed;
+        .btn-update:hover { background-color: #0056b3; }
+
+        /* メッセージの統一スタイル */
+        .alert { padding: 12px; margin-bottom: 20px; border-radius: 6px; font-weight: bold; text-align: center;}
+        .alert-success { color: #155724; background-color: #d4edda; border: 1px solid #c3e6cb; }
+        .alert-danger { color: #721c24; background-color: #f8d7da; border: 1px solid #f5c6cb; }
+
+        /* アイコン関連（固有スタイル） */
+        .profile-icon-container {
+            width: 120px; height: 120px; border-radius: 50%; 
+            overflow: hidden; margin: 0 auto 20px auto; border: 3px solid #007bff;
         }
-        button {
-            width: 100%;
-            padding: 15px;
-            border: none;
-            border-radius: 6px;
-            background-color: #007bff;
-            color: white;
-            font-size: 1.2em;
-            font-weight: bold;
-            cursor: pointer;
-            margin-top: 20px;
-            transition: background-color 0.3s ease;
-        }
-        button:hover {
-            background-color: #0056b3;
-        }
-        .message {
-            padding: 12px;
-            margin-bottom: 20px;
-            border-radius: 6px;
-            text-align: center;
-            font-weight: bold;
-        }
-        .success-message {
-            background-color: #d4edda;
-            color: #155724;
-            border: 1px solid #c3e6cb;
-        }
-        .error-message {
-            background-color: #f8d7da;
-            color: #721c24;
-            border: 1px solid #f5c6cb;
-        }
-        .link-section {
-            text-align: center;
-            margin-top: 30px;
-            padding-top: 20px;
-            border-top: 1px solid #eee;
-        }
-        .link-section a {
-            display: inline-block;
-            margin: 0 15px;
-            color: #007bff;
-            text-decoration: none;
-            font-weight: bold;
-            font-size: 1.05em;
-        }
-        .link-section a:hover {
-            text-decoration: underline;
+        .profile-icon {
+            width: 100%; height: 100%; object-fit: cover; 
         }
     </style>
 </head>
 <body>
     <div class="mypage-container">
-        <h1>マイページ</h1>
+        <h1>プロフィール編集</h1>
 
-        <p th:if="${successMessage}" class="message success-message" th:text="${successMessage}"></p>
-        <p th:if="${errorMessage}" class="message error-message" th:text="${errorMessage}"></p>
+        <p th:if="${successMessage}" class="message alert alert-success" th:text="${successMessage}"></p>
+        <p th:if="${errorMessage}" class="message alert alert-danger" th:text="${errorMessage}"></p>
 
         <form th:action="@{/mypage/update}" method="post" th:object="${user}">
             <input type="hidden" th:field="*{userId}" />
+            <input type="hidden" th:field="*{password}" />
+            <input type="hidden" th:field="*{icon}" id="iconPathInput" /> 
             
-            <div class="form-group">
-                <label for="mailAddress">メールアドレス:</label>
-                <input type="email" id="mailAddress" th:field="*{mailAddress}" disabled="disabled" />
+            <div class="profile-icon-container">
+                <img th:src="@{${user.icon} ?: '/images/default-avatar.png'}" 
+                     alt="プロフィールアイコン" 
+                     class="profile-icon" 
+                     id="currentProfileIcon">
+            </div>
+            
+            <div class="text-center mb-4">
+                <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#iconChangeModal">
+                    アイコンを変更
+                </button>
             </div>
 
             <div class="form-group">
                 <label for="userName">ユーザー名:</label>
-                <input type="text" id="userName" th:field="*{userName}" />
+                <input type="text" id="userName" th:field="*{userName}" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="mailAddress">メールアドレス (ログインID):</label>
+                <input type="email" id="mailAddress" th:field="*{mailAddress}" disabled>
+            </div>
+            
+            <div class="form-group">
+                <label for="statusMessage">ステータスメッセージ:</label>
+                <textarea id="statusMessage" th:field="*{statusMessage}" rows="2"></textarea>
+            </div>
+            
+            <div class="form-group">
+                <label for="group">所属グループ/チーム:</label>
+                <input type="text" id="group" th:field="*{group}">
             </div>
 
             <div class="form-group">
-                <label for="group">所属グループ:</label>
-                <input type="text" id="group" th:field="*{group}" />
+                <label for="hobby">趣味:</label>
+                <input type="text" id="hobby" th:field="*{hobby}">
             </div>
 
             <div class="form-group">
                 <label for="myBoom">マイブーム:</label>
-                <input type="text" id="myBoom" th:field="*{myBoom}" />
+                <input type="text" id="myBoom" th:field="*{myBoom}">
             </div>
 
-            <button type="submit">プロフィールを更新</button>
+            <button type="submit" class="btn-update">プロフィールを更新</button>
+            
+            <div class="link-section text-center mt-3">
+                <a th:href="@{/mypage/password}" style="color: #007bff; text-decoration: none; font-weight: bold;">
+                    パスワード・メールアドレスを変更する
+                </a>
+            </div>
         </form>
-
-        <div class="link-section">
-            <a th:href="@{/mypage/password}">パスワード・メールアドレスを変更する</a>
+        
+        <div class="modal fade" id="iconChangeModal" tabindex="-1" aria-labelledby="iconChangeModalLabel" aria-hidden="true">
+             <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="iconChangeModalLabel">プロフィールアイコンを変更</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <input type="file" id="iconInput" accept="image/*" class="form-control mb-3">
+                        <div id="imageContainer" style="text-align: center; max-height: 500px; overflow-y: auto;">
+                            <img id="previewImage" src="" alt="プレビュー" style="display: none;">
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">キャンセル</button>
+                        <button type="button" class="btn btn-primary" id="saveCroppedIcon">決定</button>
+                    </div>
+                </div>
             </div>
+        </div>
+        
     </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-jcrop/0.9.12/js/jquery.Jcrop.min.js"></script>
+    <script th:src="@{/js/mypage.js}"></script>
 </body>
 </html>

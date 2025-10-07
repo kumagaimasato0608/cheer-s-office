@@ -5,50 +5,71 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
-
-import jakarta.annotation.PostConstruct;
-import jakarta.annotation.PreDestroy;
+import java.util.UUID; // UUIDのためのインポートを追加
+import java.util.concurrent.CopyOnWriteArrayList;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Repository;
 
 import com.cheers.office.board.model.User;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 @Repository
 public class UserRepositoryImpl implements UserRepository {
 
-    @Value("${app.user-file-path}")
-    private String userFilePath;
-    private List<User> users;
-    private final ObjectMapper objectMapper = new ObjectMapper();
+    private final ObjectMapper objectMapper;
+    private final File userFile;
+    private final CopyOnWriteArrayList<User> users; // スレッドセーフなリストに変更
 
-    @PostConstruct
+    // 💡 コンストラクタでObjectMapperとファイルパスをDIで受け取る方式は優秀です
+    public UserRepositoryImpl(ObjectMapper objectMapper, @Value("${app.user-file-path:src/main/resources/data/user.json}") String userFilePath) {
+        this.objectMapper = objectMapper;
+        this.userFile = new File(userFilePath);
+        this.users = new CopyOnWriteArrayList<>();
+        loadUsers();
+    }
+    
+    // ... loadUsers(), saveUsers() メソッドは省略（前述のコードと同一） ...
+    
+    // 【再掲】JSONファイルの読み込み（loadUsers()）
     private void loadUsers() {
-        File file = new File(userFilePath);
-        if (file.exists() && file.length() > 0) {
+        if (userFile.exists() && userFile.length() > 0) {
             try {
-                User[] userArray = objectMapper.readValue(file, User[].class);
-                users = new ArrayList<>(List.of(userArray));
+                List<User> loadedUsers = objectMapper.readValue(userFile, new TypeReference<List<User>>() {});
+                this.users.clear();
+                this.users.addAll(loadedUsers);
             } catch (IOException e) {
-                System.err.println("Failed to load users from " + userFilePath + ": " + e.getMessage());
-                users = new ArrayList<>();
+                System.err.println("Failed to load users from file: " + e.getMessage());
             }
-        } else {
-            users = new ArrayList<>();
         }
     }
 
-    @PreDestroy
+    // 【再掲】JSONファイルへの書き込み（saveUsers()）
     private void saveUsers() {
         try {
-            objectMapper.writerWithDefaultPrettyPrinter().writeValue(new File(userFilePath), users);
+            objectMapper.writerWithDefaultPrettyPrinter().writeValue(userFile, users);
         } catch (IOException e) {
-            System.err.println("Failed to save users to " + userFilePath + ": " + e.getMessage());
+            System.err.println("Failed to save users to file: " + e.getMessage());
         }
     }
 
+
+    // --- 抽象メソッドの実装 ---
+
+    @Override
+    public List<User> findAll() {
+        return new ArrayList<>(users); // defensive copy
+    }
+
+    @Override
+    public Optional<User> findById(String userId) {
+        return users.stream()
+                .filter(user -> user.getUserId().equals(userId))
+                .findFirst();
+    }
+    
+    // 💡 UserRepositoryインターフェースに findByMailAddress があると仮定して実装
     @Override
     public Optional<User> findByMailAddress(String mailAddress) {
         return users.stream()
@@ -56,62 +77,46 @@ public class UserRepositoryImpl implements UserRepository {
                 .findFirst();
     }
 
-    // ★findByUserId は @Override を付けて定義
-    @Override
-    public Optional<User> findByUserId(String userId) {
-        return users.stream()
-                .filter(user -> user.getUserId() != null && user.getUserId().equals(userId))
-                .findFirst();
-    }
-    
-    // ★findById はインターフェースから削除したので、実装も不要
-
+    // 💡 戻り値の型を User に修正し、新規IDの割り当てロジックを追加
     @Override
     public User save(User user) {
+        if (user.getUserId() == null || user.getUserId().isEmpty()) {
+             user.setUserId(UUID.randomUUID().toString()); // 新規IDを割り当て
+        }
         users.add(user);
         saveUsers();
-        return user;
+        return user; // 保存したユーザーオブジェクトを返す
     }
-
     @Override
     public User update(User updatedUser) {
-        Optional<User> existingUserOpt = findByUserId(updatedUser.getUserId());
-        if (existingUserOpt.isPresent()) {
-            User existingUser = existingUserOpt.get();
-            existingUser.setUserName(updatedUser.getUserName());
-            existingUser.setMailAddress(updatedUser.getMailAddress());
-            existingUser.setGroup(updatedUser.getGroup());
-            existingUser.setMyBoom(updatedUser.getMyBoom());
-            existingUser.setHobby(updatedUser.getHobby());
-            existingUser.setIcon(updatedUser.getIcon());
-            existingUser.setStatusMessage(updatedUser.getStatusMessage());
-            saveUsers();
-            return existingUser;
+        // userIdが一致するユーザーを見つけ、更新
+        for (int i = 0; i < users.size(); i++) {
+            User existingUser = users.get(i);
+            
+            // 💡 修正点: userIdでの一意な特定のみを行う
+            if (existingUser.getUserId().equals(updatedUser.getUserId())) {
+                
+                // 【重要】パスワードを既存の値で上書きして保持する
+                // 💡 Service層でこの処理を行うのが理想的ですが、リポジトリ側で安全を担保します
+                updatedUser.setPassword(existingUser.getPassword());
+                
+                // 既存のユーザーを更新（リスト内の要素を置き換え）
+                users.set(i, updatedUser); 
+                saveUsers(); // ファイルに保存
+                return updatedUser;
+            }
         }
-        return null;
-    }
-
-    // ★deleteByMailAddress は @Override を付けて定義
-    @Override
-    public void deleteByMailAddress(String mailAddress) {
-        users = users.stream()
-                     .filter(user -> user.getMailAddress() == null || !user.getMailAddress().equals(mailAddress))
-                     .collect(Collectors.toList());
-        saveUsers();
+        
+        // ユーザーIDに一致するユーザーが見つからなかった場合
+        throw new IllegalArgumentException("User not found for update: ID " + updatedUser.getUserId());
     }
     
-    // ★findAll は @Override を付けて定義
-    @Override
-    public List<User> findAll() {
-        return new ArrayList<>(users);
-    }
-    
-    // ★deleteById は @Override を付けて定義
+    // 💡 UserRepositoryインターフェースに deleteById があると仮定して実装
     @Override
     public void deleteById(String userId) {
-        users = users.stream()
-                     .filter(user -> !user.getUserId().equals(userId))
-                     .collect(Collectors.toList());
-        saveUsers();
+        boolean removed = users.removeIf(user -> user.getUserId().equals(userId));
+        if (removed) {
+            saveUsers();
+        }
     }
 }

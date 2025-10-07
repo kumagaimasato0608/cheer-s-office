@@ -1,38 +1,18 @@
 [ {
   "userId" : "u001_auto",
-  "userName" : "テスト",
+  "userName" : "自動登録ユーザー",
   "mailAddress" : "test@cheers.com",
-  "password" : "$2a$10$6PkPeC7QiW3tvJ0V5RrP3ulXVOMlLbFYC3zSjwXMYsbsz.DivLL/y",
+  "password" : "$2a$10$jTcF3QPLtB6oUmwcwYAgLeGKJxkZ5LFfPS3Ec52JQwn.v2D92FjQG",
   "group" : "開発部",
   "myBoom" : "Java開発",
-  "hobby" : null,
-  "icon" : null,
-  "statusMessage" : null
+  "hobby" : "本を読む",
+  "icon" : "/images/default_icon.png",
+  "statusMessage" : "よろしくお願いします！"
 }, {
-  "userId" : "8e88ef90-f35a-4e39-bafc-cdae0d0ae6f3",
-  "userName" : null,
-  "mailAddress" : null,
-  "password" : null,
-  "group" : null,
-  "myBoom" : null,
-  "hobby" : null,
-  "icon" : null,
-  "statusMessage" : null
-}, {
-  "userId" : "ec7ca2a9-72b9-49d0-a56e-0f804907686d",
-  "userName" : "まさと",
+  "userId" : "905cc025-efe4-4809-80cc-a682305b886a",
+  "userName" : "masato",
   "mailAddress" : "09.kumagaimasato@gmail.com",
-  "password" : "$2a$10$dXsgdKXOc9mV2IlgG4u36uToM4J1dj/5bdtYOeQsbfQRdpQ2lPEiS",
-  "group" : "軽音部",
-  "myBoom" : "[ALEXANDROS]",
-  "hobby" : null,
-  "icon" : null,
-  "statusMessage" : null
-}, {
-  "userId" : "61206030-e80b-4bbc-80d7-9a3ae9233ed9",
-  "userName" : "kumagai",
-  "mailAddress" : "a@a",
-  "password" : "$2a$10$NZV1d70ptCub0L437POS2e6gef9JeJeFEa1DrN2AA6xoDTS0/QgiC",
+  "password" : "$2a$10$P2qOIjVcY.nPRM2PoiYbReSch1m3Dx2ju0V1oXXYiJBko7BhEE8Ca",
   "group" : "未設定",
   "myBoom" : "未設定",
   "hobby" : "未設定",
