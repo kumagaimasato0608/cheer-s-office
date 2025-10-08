@@ -5,7 +5,8 @@ $(document).ready(function() {
     let currentImageBlob; 
     let cropCoords = {};
     
-    // CSRFトークンを取得
+    // ★★★ ここを修正 ★★★
+    // jQueryを使ってHTMLのmetaタグからCSRFトークンとヘッダー名を取得する
     const csrfToken = $('meta[name="_csrf"]').attr('content');
     const csrfHeader = $('meta[name="_csrf_header"]').attr('content');
 
@@ -15,9 +16,8 @@ $(document).ready(function() {
             jcropApi.destroy();
             jcropApi = null;
         }
-        $('#previewImage').hide();
+        $('#previewImage').hide().removeAttr('src');
         cropCoords = {};
-        // 以前のファイル選択をリセット
         $('#iconInput').val(''); 
     });
 
@@ -35,25 +35,23 @@ $(document).ready(function() {
                     jcropApi.destroy();
                 }
 
-                // Jcropは画像が完全にロードされてから初期化 (重要!)
                 img.off('load').on('load', function() {
                     const imgElement = this;
                     const naturalWidth = imgElement.naturalWidth;
                     const naturalHeight = imgElement.naturalHeight;
                     const boxWidth = $('#imageContainer').width();
-                    const minDim = Math.min(naturalWidth, naturalHeight, 200); // 最小初期サイズを200pxとして設定
+                    const minDim = Math.min(naturalWidth, naturalHeight, 200);
 
                     $(imgElement).Jcrop({
-                        aspectRatio: 1, // 正方形の切り抜き
+                        aspectRatio: 1,
                         onSelect: function(c) {
-                            cropCoords = c; // 切り抜き座標を保存
+                            cropCoords = c;
                         },
-                        // 初期選択範囲を明示的に設定して、w > 0 を保証する
                         setSelect: [0, 0, minDim, minDim], 
                         boxWidth: boxWidth, 
                     }, function() {
-                        jcropApi = this; // APIインスタンスを保存
-                        cropCoords = {x: 0, y: 0, x2: minDim, y2: minDim, w: minDim, h: minDim}; // 初期座標も設定
+                        jcropApi = this;
+                        cropCoords = {x: 0, y: 0, x2: minDim, y2: minDim, w: minDim, h: minDim};
                     });
                     img.off('load');
                 });
@@ -64,25 +62,22 @@ $(document).ready(function() {
 
     // ★★★ 「決定」ボタンクリック時の処理 (サーバーへのアップロード) ★★★
     $('#saveCroppedIcon').click(function() {
-        if (!jcropApi || !currentImageBlob || cropCoords.w === 0 || cropCoords.h === 0) {
+        if (!jcropApi || !currentImageBlob || !cropCoords || cropCoords.w === 0 || cropCoords.h === 0) {
             alert('画像を読み込むか、切り抜き範囲を選択してください。');
             return;
         }
 
-        // Canvasを使って画像を切り抜き（ロジックは前回確認済み）
         const img = new Image();
         img.src = $('#previewImage').attr('src');
         img.onload = function() {
             const canvas = document.createElement('canvas');
-            // ... (切り抜き座標計算ロジックは省略) ...
-            
             const displayedImgWidth = $('#previewImage').width();
             const displayedImgHeight = $('#previewImage').height();
             const scaleX = img.naturalWidth / displayedImgWidth;
             const scaleY = img.naturalHeight / displayedImgHeight;
 
-            canvas.width = cropCoords.w;
-            canvas.height = cropCoords.h;
+            canvas.width = 200; // 固定サイズにリサイズ
+            canvas.height = 200;
             const ctx = canvas.getContext('2d');
 
             ctx.drawImage(
@@ -92,16 +87,13 @@ $(document).ready(function() {
                 cropCoords.w * scaleX, 
                 cropCoords.h * scaleY, 
                 0, 0,
-                cropCoords.w,
-                cropCoords.h
+                200, 200 // 固定サイズで描画
             );
 
-            // 切り抜かれた画像をBlob形式（バイナリ）で取得
             canvas.toBlob(function(blob) {
                 const formData = new FormData();
                 formData.append('file', blob, 'cropped_icon.png');
 
-                // サーバーにアップロード
                 $.ajax({
                     url: '/mypage/uploadIcon',
                     type: 'POST',
@@ -109,15 +101,15 @@ $(document).ready(function() {
                     processData: false, 
                     contentType: false, 
                     
-                    // CSRFトークンをヘッダーに追加
                     beforeSend: function(xhr) {
-                        xhr.setRequestHeader(csrfHeader, csrfToken);
+                        // 取得しておいたヘッダー名とトークンを使ってヘッダーを設定
+                        if (csrfHeader && csrfToken) {
+                            xhr.setRequestHeader(csrfHeader, csrfToken);
+                        }
                     },
                     
                     success: function(response) {
-                        // サーバーのJSON {"success": true, "iconPath": "..."} を処理
                         if (response.success) { 
-                            // 💡 修正済み: response.iconPath を使用し、UIを更新
                             const newIconUrl = response.iconPath + '?t=' + new Date().getTime(); 
                             
                             $('#currentProfileIcon').attr('src', newIconUrl); 

@@ -6,13 +6,23 @@
   "group" : "開発部",
   "myBoom" : "Java開発",
   "hobby" : "読書",
-  "icon" : "/images/default_icon.png",
-  "statusMessage" : "よろしくお願いします！"
+  "icon" : "/images/profile/u001_auto.png",
+  "statusMessage" : "よろしくお願いします！＾"
 }, {
   "userId" : "02223fb2-6a8f-42fd-8c1c-27875c8a103d",
-  "userName" : "09.kumagaimasato@gmail.com",
+  "userName" : "しんご",
   "mailAddress" : "09.kumagaimasato@gmail.com",
   "password" : "$2a$10$aDTfIHajOreOqTU4mj6ove3pZMvxHgILT0M3WdH2tWKebyv7j.e7W",
+  "group" : "軽音部",
+  "myBoom" : "[ALEXANDROS]",
+  "hobby" : "音楽を聴くこと",
+  "icon" : "/images/profile/02223fb2-6a8f-42fd-8c1c-27875c8a103d.png",
+  "statusMessage" : "こんにちは！"
+}, {
+  "userId" : "92d3bd2b-d5de-4b65-86bd-73ad410751d4",
+  "userName" : "テスト２",
+  "mailAddress" : "test2@cheer.com",
+  "password" : "$2a$10$NBk4Cr0PVLxtnDBgHGrWpeRfOiZTeq32dw9QIvLUmbbXc4H./EEb6",
   "group" : "未設定",
   "myBoom" : null,
   "hobby" : null,

@@ -5,8 +5,8 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import java.util.UUID; // UUIDのためのインポートを追加
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.stream.IntStream;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Repository;
@@ -20,19 +20,15 @@ public class UserRepositoryImpl implements UserRepository {
 
     private final ObjectMapper objectMapper;
     private final File userFile;
-    private final CopyOnWriteArrayList<User> users; // スレッドセーフなリストに変更
+    private final CopyOnWriteArrayList<User> users;
 
-    // 💡 コンストラクタでObjectMapperとファイルパスをDIで受け取る方式は優秀です
-    public UserRepositoryImpl(ObjectMapper objectMapper, @Value("${app.user-file-path:src/main/resources/data/user.json}") String userFilePath) {
+    public UserRepositoryImpl(ObjectMapper objectMapper, @Value("${app.user-file-path:src/main/resources/data/users.json}") String userFilePath) {
         this.objectMapper = objectMapper;
         this.userFile = new File(userFilePath);
         this.users = new CopyOnWriteArrayList<>();
         loadUsers();
     }
-    
-    // ... loadUsers(), saveUsers() メソッドは省略（前述のコードと同一） ...
-    
-    // 【再掲】JSONファイルの読み込み（loadUsers()）
+
     private void loadUsers() {
         if (userFile.exists() && userFile.length() > 0) {
             try {
@@ -40,26 +36,22 @@ public class UserRepositoryImpl implements UserRepository {
                 this.users.clear();
                 this.users.addAll(loadedUsers);
             } catch (IOException e) {
-                System.err.println("Failed to load users from file: " + e.getMessage());
+                e.printStackTrace();
             }
         }
     }
 
-    // 【再掲】JSONファイルへの書き込み（saveUsers()）
-    private void saveUsers() {
+    private void saveUsersToFile() {
         try {
             objectMapper.writerWithDefaultPrettyPrinter().writeValue(userFile, users);
         } catch (IOException e) {
-            System.err.println("Failed to save users to file: " + e.getMessage());
+            e.printStackTrace();
         }
     }
 
-
-    // --- 抽象メソッドの実装 ---
-
     @Override
     public List<User> findAll() {
-        return new ArrayList<>(users); // defensive copy
+        return new ArrayList<>(users);
     }
 
     @Override
@@ -68,8 +60,7 @@ public class UserRepositoryImpl implements UserRepository {
                 .filter(user -> user.getUserId().equals(userId))
                 .findFirst();
     }
-    
-    // 💡 UserRepositoryインターフェースに findByMailAddress があると仮定して実装
+
     @Override
     public Optional<User> findByMailAddress(String mailAddress) {
         return users.stream()
@@ -77,46 +68,32 @@ public class UserRepositoryImpl implements UserRepository {
                 .findFirst();
     }
 
-    // 💡 戻り値の型を User に修正し、新規IDの割り当てロジックを追加
     @Override
     public User save(User user) {
-        if (user.getUserId() == null || user.getUserId().isEmpty()) {
-             user.setUserId(UUID.randomUUID().toString()); // 新規IDを割り当て
+        Optional<Integer> indexOpt = IntStream.range(0, users.size())
+                .filter(i -> users.get(i).getUserId().equals(user.getUserId()))
+                .boxed()
+                .findFirst();
+
+        if (indexOpt.isPresent()) {
+            users.set(indexOpt.get(), user);
+        } else {
+            users.add(user);
         }
-        users.add(user);
-        saveUsers();
-        return user; // 保存したユーザーオブジェクトを返す
+        saveUsersToFile();
+        return user;
     }
-    @Override
-    public User update(User updatedUser) {
-        // userIdが一致するユーザーを見つけ、更新
-        for (int i = 0; i < users.size(); i++) {
-            User existingUser = users.get(i);
-            
-            // 💡 修正点: userIdでの一意な特定のみを行う
-            if (existingUser.getUserId().equals(updatedUser.getUserId())) {
-                
-                // 【重要】パスワードを既存の値で上書きして保持する
-                // 💡 Service層でこの処理を行うのが理想的ですが、リポジトリ側で安全を担保します
-                updatedUser.setPassword(existingUser.getPassword());
-                
-                // 既存のユーザーを更新（リスト内の要素を置き換え）
-                users.set(i, updatedUser); 
-                saveUsers(); // ファイルに保存
-                return updatedUser;
-            }
-        }
-        
-        // ユーザーIDに一致するユーザーが見つからなかった場合
-        throw new IllegalArgumentException("User not found for update: ID " + updatedUser.getUserId());
-    }
-    
-    // 💡 UserRepositoryインターフェースに deleteById があると仮定して実装
+
     @Override
     public void deleteById(String userId) {
-        boolean removed = users.removeIf(user -> user.getUserId().equals(userId));
-        if (removed) {
-            saveUsers();
-        }
+        users.removeIf(user -> user.getUserId().equals(userId));
+        saveUsersToFile();
+    }
+
+    // ★★★ このメソッドを追加 ★★★
+    @Override
+    public User update(User user) {
+        // saveメソッドが更新処理も兼ねているので、そのまま呼び出す
+        return save(user);
     }
 }
