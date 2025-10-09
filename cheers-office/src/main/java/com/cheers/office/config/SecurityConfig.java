@@ -14,39 +14,41 @@ import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 @EnableWebSecurity
 public class SecurityConfig {
 
-    // PasswordEncoderのBean定義はそのまま
-    @Bean
-    public PasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder();
-    }
-
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
+            // ------------------ CSRF設定 ------------------
             .csrf(csrf -> csrf
-                // ★ photopin.jsでCookieからCSRFトークンを取得するため、httpOnlyをfalseに設定
+                // Vue.jsなどからトークン取得できるようCookieに保存
                 .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
+                // ✅ ファイルアップロード用APIをCSRF除外（重要！）
+                .ignoringRequestMatchers("/api/**", "/mypage/uploadIcon")
             )
-            .authorizeHttpRequests(authorize -> authorize
-                // ★ 認証なしでアクセスできるパスをここにまとめる
+
+            // ------------------ 認可設定 ------------------
+            .authorizeHttpRequests(auth -> auth
                 .requestMatchers(
-                    "/login", 
-                    "/register", 
-                    "/css/**", 
-                    "/js/**", 
-                    "/images/**",
-                    "/uploads/**" // アップロードされた画像ファイル
-                ).permitAll()
-                // ★ /api/ で始まるパスはすべて認証（ログイン）を必須にする
-                .requestMatchers("/api/**").authenticated()
-                // ★ 上記以外のすべてのリクエストも認証を必須にする
-                .anyRequest().authenticated()
+                    "/login", "/register", "/error",
+                    "/css/**", "/js/**",
+                    "/images/**",      // 画像（static/images/）
+                    "/uploads/**",     // ✅ プロフィール画像（static/uploads/）
+                    "/favicon.ico"
+                ).permitAll() // 認証不要
+                .anyRequest().authenticated() // それ以外はログイン必須
             )
+
+            // ------------------ ログイン設定 ------------------
             .formLogin(form -> form
                 .loginPage("/login")
-                .defaultSuccessUrl("/home", true)
+                .loginProcessingUrl("/login")
+                .usernameParameter("username")
+                .passwordParameter("password")
+                .defaultSuccessUrl("/home", false)
+                .failureUrl("/login?error")
                 .permitAll()
             )
+
+            // ------------------ ログアウト設定 ------------------
             .logout(logout -> logout
                 .logoutRequestMatcher(new AntPathRequestMatcher("/logout"))
                 .logoutSuccessUrl("/login?logout")
@@ -54,6 +56,12 @@ public class SecurityConfig {
                 .deleteCookies("JSESSIONID")
                 .permitAll()
             );
+
         return http.build();
+    }
+
+    @Bean
+    public PasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder();
     }
 }

@@ -1,39 +1,31 @@
 package com.cheers.office.board.model;
 
-import java.time.LocalDateTime;
-
 public class ChatMessage {
     private String roomId;
-    private String sender;
+    private String userId;
+    private String userName;
     private String content;
-    private LocalDateTime timestamp;
+    private String timestamp;
 
-    public ChatMessage() { }
+    // ★ 追加：プロフィールアイコン
+    private String icon;
 
-    public ChatMessage(String roomId, String sender, String content, LocalDateTime timestamp) {
-        this.roomId = roomId;
-        this.sender = sender;
-        this.content = content;
-        this.timestamp = timestamp;
-    }
-
-    // --- GetterとSetter (Eclipseで自動生成する推奨) ---
     public String getRoomId() { return roomId; }
     public void setRoomId(String roomId) { this.roomId = roomId; }
-    public String getSender() { return sender; }
-    public void setSender(String sender) { this.sender = sender; }
+
+    public String getUserId() { return userId; }
+    public void setUserId(String userId) { this.userId = userId; }
+
+    public String getUserName() { return userName; }
+    public void setUserName(String userName) { this.userName = userName; }
+
     public String getContent() { return content; }
     public void setContent(String content) { this.content = content; }
-    public LocalDateTime getTimestamp() { return timestamp; }
-    public void setTimestamp(LocalDateTime timestamp) { this.timestamp = timestamp; }
 
-    @Override
-    public String toString() {
-        return "ChatMessage{" +
-               "roomId='" + roomId + '\'' +
-               ", sender='" + sender + '\'' +
-               ", content='" + content + '\'' +
-               ", timestamp=" + timestamp +
-               '}';
-    }
+    public String getTimestamp() { return timestamp; }
+    public void setTimestamp(String timestamp) { this.timestamp = timestamp; }
+
+    // ★ getter/setter 追加
+    public String getIcon() { return icon; }
+    public void setIcon(String icon) { this.icon = icon; }
 }

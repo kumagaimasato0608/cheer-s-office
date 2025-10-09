@@ -1,14 +1,21 @@
-[
-  {
-    "room_id": "r001",
-    "room_name": "開発チーム雑談",
-    "room_icon": "/images/default_room_icon.png",
-    "members": ["u001_auto", "u999_test"]
-  },
-  {
-    "room_id": "r002",
-    "room_name": "一般雑談ルーム",
-    "room_icon": "/images/default_room_icon.png",
-    "members": ["u001_auto"]
-  }
-]
+[ {
+  "roomId" : "r1",
+  "roomName" : null,
+  "members" : [ "u001_auto", "02223fb2-6a8f-42fd-8c1c-27875c8a103d" ],
+  "createdAt" : "2025-10-08T17:50:49.845944200"
+}, {
+  "roomId" : "r3",
+  "roomName" : null,
+  "members" : [ "4d192e66-4444-4da7-9003-16f8f4252b14", "u001_auto" ],
+  "createdAt" : "2025-10-08T21:35:19.536562200"
+}, {
+  "roomId" : "r3",
+  "roomName" : null,
+  "members" : [ "u001_auto", "92d3bd2b-d5de-4b65-86bd-73ad410751d4" ],
+  "createdAt" : "2025-10-09T01:29:43.222182900"
+}, {
+  "roomId" : "r4",
+  "roomName" : null,
+  "members" : [ "82ed8462-4559-47d1-860a-f66cb79de6f7", "4d192e66-4444-4da7-9003-16f8f4252b14" ],
+  "createdAt" : "2025-10-09T01:33:39.155077500"
+} ]

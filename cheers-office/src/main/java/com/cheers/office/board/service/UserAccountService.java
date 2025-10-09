@@ -1,12 +1,13 @@
 package com.cheers.office.board.service;
 
-import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Optional;
+import java.util.UUID;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -18,15 +19,13 @@ import com.cheers.office.util.PasswordUtil;
 public class UserAccountService {
 
     private final UserRepository userRepository;
-    
-    // 【重要】ファイルの保存先ディレクトリを定義
-    // アプリケーションが読み込める静的リソースの場所に設定
-    private static final String ICON_UPLOAD_DIR = "src/main/resources/static/images/profile/";
+
+    // application.properties の設定値を使用
+    @Value("${app.upload-dir}")
+    private String uploadDir; // src/main/resources/static/uploads/
 
     public UserAccountService(UserRepository userRepository) {
         this.userRepository = userRepository;
-        // ディレクトリが存在しない場合は作成
-        new File(ICON_UPLOAD_DIR).mkdirs();
     }
 
     // ----------------------------------------------------------------------
@@ -34,112 +33,115 @@ public class UserAccountService {
     // ----------------------------------------------------------------------
 
     /**
-     * プロフィールアイコンをディスクに保存し、ユーザーDBのアイコンパスを更新する
-     * @param file アップロードされた切り抜き済みファイル
+     * プロフィールアイコンを保存し、公開URLを返す
+     * @param file アップロードされた画像ファイル
      * @param userId ユーザーID
-     * @return 保存されたアイコンの公開パス (例: /images/profile/ユーザーID.png)
+     * @return 公開URL (例: /uploads/ユーザーID_xxxxx.png)
      */
     public String saveProfileIcon(MultipartFile file, String userId) throws IOException {
-        
-        // ファイル名: ユーザーID.png (既存ファイルを上書きすることで一意性を担保)
-        String fileName = userId + ".png";
-        Path filePath = Paths.get(ICON_UPLOAD_DIR, fileName);
-        
-        // 1. ファイルをディスクに書き込む
-        Files.write(filePath, file.getBytes());
+        // 拡張子を取得
+        String originalName = file.getOriginalFilename();
+        String ext = ".png";
+        if (originalName != null && originalName.contains(".")) {
+            ext = originalName.substring(originalName.lastIndexOf("."));
+        }
 
-        // 2. ユーザーのDB情報を更新
-        String publicPath = "/images/profile/" + fileName;
-        updateUserIcon(userId, publicPath); // DB更新
-        
-        return publicPath; // 新しいアイコンパスをControllerに返す
+        // ファイル名を一意にする（例: u001_8a2b3c.png）
+        String fileName = userId + "_" + UUID.randomUUID() + ext;
+        Path filePath = Paths.get(uploadDir, fileName);
+
+        // ディレクトリ作成（存在しない場合）
+        Files.createDirectories(filePath.getParent());
+
+        // ファイル保存
+        file.transferTo(filePath.toFile());
+
+        // 公開用URL（Spring Bootがstatic配下を公開するため）
+        String publicPath = "/uploads/" + fileName;
+
+        // DB更新
+        updateUserIcon(userId, publicPath);
+
+        return publicPath;
     }
-    
+
     /**
-     * ユーザーDBのアイコンパスを更新し、更新されたUserオブジェクトを返す
+     * ユーザーDBのアイコンパスを更新し、更新後のUserを返す
      */
     public User updateUserIcon(String userId, String iconPath) {
         Optional<User> userOpt = userRepository.findById(userId);
 
         if (userOpt.isPresent()) {
             User user = userOpt.get();
-            // パスワードなどの既存情報を保持したまま、アイコンパスのみを変更
             user.setIcon(iconPath);
-            
-            // UserRepositoryのupdateメソッドで保存し、更新されたユーザーを返す
-            return userRepository.update(user);
+            return userRepository.update(user); // JSON更新
         }
-        
         throw new IllegalArgumentException("User not found for icon update: " + userId);
     }
-    
+
     // ----------------------------------------------------------------------
-    // アカウント更新ロジック (MyPageControllerで使用)
+    // パスワード更新ロジック
     // ----------------------------------------------------------------------
 
     /**
-     * パスワード更新処理を実行
-     * @param currentMailAddress ログイン中のユーザーのメールアドレス
-     * @param currentPassword ユーザーが入力した現在のパスワード(平文)
-     * @param newPassword ユーザーが入力した新しいパスワード(平文)
-     * @return 更新後のUserオブジェクト (失敗時はOptional.empty())
+     * パスワード更新処理
      */
     public Optional<User> updatePassword(String currentMailAddress, String currentPassword, String newPassword) {
         Optional<User> userOpt = userRepository.findByMailAddress(currentMailAddress);
 
         if (userOpt.isEmpty()) {
-            return Optional.empty(); 
+            return Optional.empty();
         }
 
         User user = userOpt.get();
 
-        // 1. 現在のパスワードの検証
+        // 現在のパスワードを照合
         if (!PasswordUtil.matches(currentPassword, user.getPassword())) {
-            return Optional.empty(); // パスワード不一致
+            return Optional.empty();
         }
 
-        // 2. 新しいパスワードが現在のハッシュ値と同じでないかチェック
+        // 同一パスワードを防止
         if (PasswordUtil.isDuplicate(newPassword, user.getPassword())) {
-             return Optional.empty(); // 新しいパスワードが現在のパスワードと同じ
+            return Optional.empty();
         }
-        
-        // 3. パスワードをハッシュ化して更新
+
+        // 新パスワードをハッシュ化して更新
         user.setPassword(PasswordUtil.encode(newPassword));
-        
-        // 4. リポジトリに保存
         User updatedUser = userRepository.update(user);
-        
+
         return Optional.of(updatedUser);
     }
-    
+
+    // ----------------------------------------------------------------------
+    // メールアドレス更新ロジック
+    // ----------------------------------------------------------------------
+
     /**
-     * メールアドレス更新処理を実行
+     * メールアドレス更新処理
      */
     public boolean updateEmail(String currentMailAddress, String currentPassword, String newMailAddress) {
         Optional<User> userOpt = userRepository.findByMailAddress(currentMailAddress);
 
         if (userOpt.isEmpty()) {
-            return false; // ユーザーが存在しない
+            return false;
         }
-        
-        // 新しいメールアドレスが既に他のユーザーに使用されていないかチェック
+
+        // 新しいメールアドレスが既に使用されていないかチェック
         if (userRepository.findByMailAddress(newMailAddress).isPresent()) {
-            return false; // すでに使用されている
+            return false;
         }
 
         User user = userOpt.get();
 
-        // 1. 現在のパスワードの検証
+        // 現在のパスワード確認
         if (!PasswordUtil.matches(currentPassword, user.getPassword())) {
-            return false; // パスワード不一致
+            return false;
         }
-        
-        // 2. メールアドレスを更新
+
+        // メールアドレス更新
         user.setMailAddress(newMailAddress);
-        
-        // 3. リポジトリに保存
         userRepository.update(user);
-        
+
         return true;
     }
 }

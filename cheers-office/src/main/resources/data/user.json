@@ -28,4 +28,24 @@
   "hobby" : null,
   "icon" : "/images/default_icon.png",
   "statusMessage" : null
+}, {
+  "userId" : "4d192e66-4444-4da7-9003-16f8f4252b14",
+  "userName" : "izumi",
+  "mailAddress" : "231010izumi@tid.ac.jp",
+  "password" : "$2a$10$rJ0OIM5zVa/FJrqDAM4W1eARo6lrwBBfLmIk9n5jlM0AH1WbyKrQe",
+  "group" : "インターン",
+  "myBoom" : "",
+  "hobby" : "FPSゲーム",
+  "icon" : "/images/profile/4d192e66-4444-4da7-9003-16f8f4252b14.png",
+  "statusMessage" : "よろしくお願いいたします。"
+}, {
+  "userId" : "82ed8462-4559-47d1-860a-f66cb79de6f7",
+  "userName" : "kuro",
+  "mailAddress" : "231010izumi@tid.ac.jpp",
+  "password" : "$2a$10$A9388nXVeZ7JqDBZp.CR3.NBru1mo.0mTT8A.KGPc6vZynseiIPnS",
+  "group" : "未設定",
+  "myBoom" : null,
+  "hobby" : null,
+  "icon" : "/images/default_icon.png",
+  "statusMessage" : null
 } ]

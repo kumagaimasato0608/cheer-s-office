@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="ja" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8" />
+  <title>Cheers Office - チャット</title>
+
+  <script src="https://cdn.jsdelivr.net/npm/vue@3.4.38/dist/vue.global.prod.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/axios@1.7.7/dist/axios.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sockjs-client/dist/sockjs.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/stompjs/lib/stomp.min.js"></script>
+
+  <style>
+    body { margin:0; padding:0; background:#201710; color:#f4f4f4; font-family:"Zen Maru Gothic","Noto Sans JP",sans-serif;}
+    main { display:flex; height:calc(100vh - 120px); margin-top:120px; background:#201710; }
+
+    /* ===== 左サイド ===== */
+    .room-list { width:260px; background:#2b2118; border-right:1px solid #3a2e25; padding:15px; display:flex; flex-direction:column; justify-content:space-between;}
+    .room-item { display:flex; align-items:center; gap:10px; padding:10px 12px; margin-bottom:8px; background:#3a2e25; border-radius:8px; cursor:pointer; transition:background .2s;}
+    .room-item:hover { background:#5a4030; }
+    .room-item.active { outline:2px solid #d4a373; }
+    .room-icon { width:36px; height:36px; border-radius:50%; object-fit:cover; border:1px solid #d4a373; }
+    .room-name { font-weight:bold; color:#fffaf0; flex:1; }
+
+    .create-room, .delete-room {
+      text-align:center;
+      background:linear-gradient(90deg,#b07d44,#d4a373);
+      color:#fff;
+      border-radius:8px;
+      padding:10px;
+      cursor:pointer;
+      font-weight:bold;
+      margin-top:10px;
+      transition:.2s;
+    }
+    .delete-room { background:linear-gradient(90deg,#a33,#d66); }
+    .delete-room:hover { background:linear-gradient(90deg,#b44,#f55); }
+    .empty-hint { opacity:.7; font-size:13px; padding:8px 0; }
+
+    /* ===== チャットエリア ===== */
+    .chat-main { flex:1; display:flex; flex-direction:column; background:#1a130d; }
+    .chat-header { padding:15px; background:#3a2e25; font-weight:bold; border-bottom:1px solid #4b3827; color:#f5deb3; display:flex; align-items:center; gap:10px; }
+    .header-icon { width:42px; height:42px; border-radius:50%; border:2px solid #d4a373; object-fit:cover; }
+
+    .messages { flex:1; padding:15px; overflow-y:auto; display:flex; flex-direction:column; gap:10px; scroll-behavior:smooth; }
+    .msg-wrapper { display:flex; align-items:flex-end; gap:8px; }
+    .msg-wrapper.me { flex-direction:row-reverse; }
+    .msg { padding:10px 14px; border-radius:10px; max-width:70%; font-size:14px; word-wrap:break-word; color:#fffaf0; box-shadow:0 2px 6px rgba(0,0,0,.2); }
+    .me .msg { background:linear-gradient(145deg,#d4a373,#b07d44); }
+    .other .msg { background:#3a2e25; }
+    .msg-icon { width:36px; height:36px; border-radius:50%; object-fit:cover; border:1px solid #d4a373; }
+    .meta { font-size:11px; color:#c8b7a6; margin-top:3px; text-align:right; }
+
+    .input-area { display:flex; gap:10px; padding:15px; border-top:1px solid #4b3827; background:#2b2118; }
+    input[type="text"] { flex:1; border:1px solid #8b5a2b; border-radius:8px; padding:10px; font-size:14px; color:#f3e9dc; background:#1f150d; }
+    button { background:linear-gradient(90deg,#8b5a2b,#d4a373); color:#fff; border:none; border-radius:8px; padding:10px 16px; cursor:pointer; font-weight:bold; transition:.2s; }
+    button:hover { transform:translateY(-2px); }
+
+    /* ===== モーダル ===== */
+    .modal-backdrop { position:fixed; inset:0; background:rgba(0,0,0,.7); display:flex; align-items:center; justify-content:center; z-index:9999; }
+    .modal-content { background:#2b2118; border-radius:10px; padding:20px 24px; width:400px; color:#f4f4f4; box-shadow:0 0 20px rgba(0,0,0,.5); }
+    .user-row { display:flex; align-items:center; gap:10px; padding:8px 0; }
+    .user-icon { width:32px; height:32px; border-radius:50%; object-fit:cover; border:1px solid #d4a373; }
+    .confirm-btn { background:linear-gradient(90deg,#a33,#f55); color:#fff; border:none; border-radius:8px; padding:10px 16px; font-weight:bold; width:100%; margin-top:12px; cursor:pointer; }
+    .cancel-btn { background:#555; color:#fff; border:none; border-radius:8px; padding:10px 16px; width:100%; margin-top:8px; cursor:pointer; }
+  </style>
+</head>
+<body>
+  <main id="app" th:inline="none">
+    <!-- 左：ルーム一覧 -->
+    <aside class="room-list">
+      <div>
+        <div v-for="room in rooms" :key="room.roomId"
+             class="room-item"
+             :class="{active: currentRoom && currentRoom.roomId === room.roomId}">
+          <img :src="getOtherUserIcon(room)" class="room-icon">
+          <span class="room-name" @click="selectRoom(room)">{{ getOtherUserName(room) }}</span>
+        </div>
+        <div v-if="rooms.length === 0" class="empty-hint">まだチャットがありません</div>
+      </div>
+
+      <div>
+        <div class="create-room" @click="openCreate">＋ 新規チャット</div>
+        <div class="delete-room" @click="openDeleteModal">🗑 チャット削除</div>
+      </div>
+    </aside>
+
+    <!-- 右：チャット -->
+    <section class="chat-main">
+      <div class="chat-header">
+        <img v-if="currentRoom" :src="getOtherUserIcon(currentRoom)" class="header-icon">
+        <span>{{ headerTitle }}</span>
+      </div>
+
+      <div class="messages" ref="msgBox">
+        <div v-for="m in messages" :key="m.timestamp"
+             class="msg-wrapper" :class="m.userId === meId ? 'me' : 'other'">
+          <img :src="m.icon || '/images/default-avatar.png'" class="msg-icon">
+          <div class="msg">
+            <div>{{ m.content }}</div>
+            <div class="meta">{{ m.userName }}・{{ m.timestamp }}</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="input-area" v-if="currentRoom">
+        <input type="text" v-model.trim="draft" placeholder="メッセージを入力..." @keydown.enter.prevent="send" />
+        <button @click="send" :disabled="!draft">送信</button>
+      </div>
+    </section>
+
+    <!-- モーダル：新規チャット作成 -->
+    <div v-if="showModal" class="modal-backdrop" @click.self="showModal=false">
+      <div class="modal-content">
+        <h3>👥 チャット相手を選択</h3>
+        <div v-for="u in users" :key="u.userId" class="user-row">
+          <img :src="u.icon || '/images/default-avatar.png'" class="user-icon">
+          <label>
+            <input type="radio" name="targetUser" :value="u.userId" v-model="selectedUserId" />
+            {{ u.userName }}
+          </label>
+        </div>
+        <div v-if="users.length === 0" class="empty-hint">相手ユーザーがいません</div>
+        <button class="confirm-btn" @click="createRoom">ルーム作成</button>
+        <button class="cancel-btn" @click="showModal=false">閉じる</button>
+      </div>
+    </div>
+
+    <!-- モーダル：削除確認 -->
+    <div v-if="showDeleteModal" class="modal-backdrop" @click.self="showDeleteModal=false">
+      <div class="modal-content">
+        <h3>🗑 チャット削除確認</h3>
+        <p>選択中のチャットを完全に削除します。履歴も復元できません。</p>
+        <button class="confirm-btn" @click="deleteRoomConfirm">削除する</button>
+        <button class="cancel-btn" @click="showDeleteModal=false">キャンセル</button>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    const { createApp, ref, computed, onMounted, nextTick } = Vue;
+
+    createApp({
+      setup() {
+        const rooms = ref([]);
+        const currentRoom = ref(null);
+        const messages = ref([]);
+        const draft = ref("");
+        const meId = ref("");
+        const meName = ref("");
+        const users = ref([]);
+        const showModal = ref(false);
+        const showDeleteModal = ref(false);
+        const selectedUserId = ref(null);
+        const msgBox = ref(null);
+        let stomp = null;
+        let currentSubscription = null;
+
+        const scrollToBottom = () => nextTick(() => {
+          if (msgBox.value) msgBox.value.scrollTop = msgBox.value.scrollHeight;
+        });
+
+        const loadSessionUser = async () => {
+          const res = await axios.get("/api/sessionUser");
+          meId.value = res.data?.userId || "";
+          meName.value = res.data?.userName || "Me";
+        };
+        const loadUsers = async () => {
+          const res = await axios.get("/api/users");
+          users.value = (res.data || []).filter(u => u.userId !== meId.value);
+        };
+        const loadRooms = async () => {
+          const res = await axios.get("/api/rooms");
+          rooms.value = (res.data || []).filter(r =>
+            Array.isArray(r.members) && r.members.includes(meId.value)
+          );
+        };
+
+        const connectWS = (onConnected) => {
+          const socket = new SockJS("/ws");
+          stomp = Stomp.over(socket);
+          stomp.debug = null;
+          stomp.connect({}, () => {
+            console.log("✅ WebSocket接続成功");
+            if (onConnected) onConnected();
+          });
+        };
+
+        const subscribeToRoom = (roomId) => {
+          if (currentSubscription) currentSubscription.unsubscribe();
+          currentSubscription = stomp.subscribe(`/topic/chat/${roomId}`, (message) => {
+            const msg = JSON.parse(message.body);
+            messages.value.push(msg);
+            scrollToBottom();
+          });
+        };
+
+        const selectRoom = async (room) => {
+          currentRoom.value = room;
+          const res = await axios.get(`/api/chat/${room.roomId}`);
+          messages.value = res.data || [];
+          if (!stomp || !stomp.connected) {
+            connectWS(() => subscribeToRoom(room.roomId));
+          } else {
+            subscribeToRoom(room.roomId);
+          }
+          scrollToBottom();
+        };
+
+        const send = () => {
+          if (!draft.value || !currentRoom.value) return;
+          const payload = {
+            roomId: currentRoom.value.roomId,
+            userId: meId.value,
+            userName: meName.value,
+            content: draft.value,
+            timestamp: new Date().toLocaleString()
+          };
+          stomp.send(`/app/chat/${payload.roomId}`, {}, JSON.stringify(payload));
+          draft.value = "";
+        };
+
+        const openCreate = async () => {
+          selectedUserId.value = null;
+          showModal.value = true;
+          await loadUsers();
+        };
+
+        const createRoom = async () => {
+          if (!selectedUserId.value) return alert("相手を選択してください。");
+          const res = await axios.post("/api/rooms", { members: [meId.value, selectedUserId.value] });
+          const newRoom = res.data;
+          if (!rooms.value.some(r => r.roomId === newRoom.roomId)) {
+            rooms.value.push(newRoom);
+          }
+          showModal.value = false;
+          await selectRoom(newRoom);
+        };
+
+        const openDeleteModal = () => {
+          if (!currentRoom.value) return alert("削除するチャットを選択してください。");
+          showDeleteModal.value = true;
+        };
+
+        const deleteRoomConfirm = async () => {
+          if (!currentRoom.value) return;
+          try {
+            await axios.delete(`/api/rooms/${currentRoom.value.roomId}`);
+            rooms.value = rooms.value.filter(r => r.roomId !== currentRoom.value.roomId);
+            currentRoom.value = null;
+            messages.value = [];
+            showDeleteModal.value = false;
+            alert("チャットを完全に削除しました。");
+          } catch (e) {
+            console.error(e);
+            alert("削除に失敗しました。");
+          }
+        };
+
+        const getOtherId = (room) => room.members.find(id => id !== meId.value);
+        const getOtherUser = (room) => users.value.find(u => u.userId === getOtherId(room));
+        const getOtherUserName = (room) => getOtherUser(room)?.userName || "チャット";
+        const getOtherUserIcon = (room) => getOtherUser(room)?.icon || "/images/default-avatar.png";
+
+        const headerTitle = computed(() =>
+          currentRoom.value ? getOtherUserName(currentRoom.value) : "ルーム未選択"
+        );
+
+        onMounted(async () => {
+          await loadSessionUser();
+          await loadUsers();
+          await loadRooms();
+          connectWS();
+        });
+
+        return {
+          rooms, currentRoom, messages, draft, send,
+          showModal, showDeleteModal, users, selectedUserId, openCreate, createRoom,
+          openDeleteModal, deleteRoomConfirm,
+          meId, meName, selectRoom,
+          getOtherUserName, getOtherUserIcon, headerTitle, msgBox
+        };
+      }
+    }).mount("#app");
+  </script>
+</body>
+</html>
+

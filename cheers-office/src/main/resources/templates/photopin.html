@@ -1,116 +1,263 @@
 <!DOCTYPE html>
-<html lang="ja" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<html lang="ja"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
 <head>
-    <meta charset="UTF-8">
-    <meta name="_csrf" th:content="${_csrf.token}"/>
-    <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
-    <title>フォトピンマップ</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+  <meta charset="UTF-8">
+  <meta name="_csrf" th:content="${_csrf.token}"/>
+  <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>フォトピンマップ | Cheers Office</title>
 
-    <div th:replace="~{common/header :: sidebar}"></div>
-    <header th:replace="~{common/header :: topHeader}"></header>
+  <!-- ライブラリ -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
 
-    <style>
-        body { margin-left: 70px; } .main-content { margin-top: 80px; padding: 20px; display: flex; }
-        .user-list-sidebar { width: 280px; margin-right: 20px; background-color: #ffffff; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); padding: 15px; overflow-y: auto; height: calc(100vh - 120px); }
-        .user-list-sidebar h4, .user-list-sidebar h5 { margin-bottom: 15px; color: #007bff; border-bottom: 1px solid #eee; padding-bottom: 10px; }
-        .user-icon { width: 32px; height: 32px; border-radius: 50%; object-fit: cover; }
-        .pin-list-item { padding: 8px 12px; cursor: pointer; border-radius: 4px; margin-bottom: 4px; transition: background-color 0.2s; font-size: 0.9em; }
-        .pin-list-item:hover { background-color: #e9ecef; }
-        #map-container { flex-grow: 1; height: calc(100vh - 120px); box-shadow: 0 4px 15px rgba(0,0,0,0.1); border-radius: 8px; display: flex; flex-direction: column; }
-        #mapid { flex-grow: 1; border-radius: 8px; }
-        .pin-controls { padding: 15px; border-top: 1px solid #eee; background-color: #fff; border-radius: 0 0 8px 8px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; }
-        .pin-controls .form-control { flex-grow: 1; }
-        .current-user-info { font-weight: bold; color: #555; white-space: nowrap;}
-        .photo-thumbnail { width: 100px; height: 100px; object-fit: cover; border-radius: 5px; margin: 5px; cursor: pointer; }
-        .photo-list { display: flex; flex-wrap: wrap; margin-top: 10px; }
-        .ranking-item { display: flex; align-items: center; padding: 8px; margin-bottom: 5px; border-radius: 5px; border: 2px solid; }
-        .rank-1 { border-color: #FFD700; background-color: #FFFACD; } .rank-2 { border-color: #C0C0C0; background-color: #F5F5F5; } .rank-3 { border-color: #CD7F32; background-color: #FFE4B5; }
-        .rank-badge { font-weight: bold; margin-right: 10px; }
-        .search-ranking-item { padding: 8px; border-bottom: 1px solid #eee; }
-        .pin-popup-content { text-align: center; width: 200px; } .pin-popup-content h5 { margin: 5px 0; font-size: 1.1em; } .pin-popup-content img { max-width: 100%; height: auto; border-radius: 5px; margin-top: 5px; }
-    </style>
+  <!-- ✅ 共通ヘッダー -->
+  <div th:replace="common/header :: header"></div>
+  <div th:replace="common/header :: nav"></div>
+
+  <style>
+    /* === 全体レイアウト === */
+    body {
+      margin: 0;
+      background-color: #f0f2f5;
+      font-family: "Segoe UI", "Noto Sans JP", sans-serif;
+    }
+
+    main {
+      margin-top: 140px;   /* ヘッダー分 */
+      margin-left: 240px;  /* サイドバー分 */
+      padding: 20px;
+      display: flex;
+      height: calc(100vh - 140px);
+      overflow: hidden;
+    }
+
+    /* === 左サイド（ランキング・ユーザー一覧） === */
+    .user-list-sidebar {
+      width: 280px;
+      background-color: #ffffff;
+      border-radius: 8px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+      padding: 15px;
+      overflow-y: auto;
+      height: calc(100vh - 160px);
+      margin-right: 20px;
+    }
+
+    .user-list-sidebar h4, .user-list-sidebar h5 {
+      margin-bottom: 15px;
+      color: #007bff;
+      border-bottom: 1px solid #eee;
+      padding-bottom: 10px;
+      font-size: 1.1em;
+    }
+
+    .pin-list-item {
+      padding: 8px 12px;
+      cursor: pointer;
+      border-radius: 4px;
+      margin-bottom: 4px;
+      transition: background-color 0.2s;
+      font-size: 0.9em;
+    }
+
+    .pin-list-item:hover {
+      background-color: #e9ecef;
+    }
+
+    .user-icon {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      object-fit: cover;
+    }
+
+    /* === 右側：マップエリア === */
+    #map-container {
+      flex-grow: 1;
+      height: calc(100vh - 160px);
+      box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+      border-radius: 8px;
+      display: flex;
+      flex-direction: column;
+    }
+
+    #mapid {
+      flex-grow: 1;
+      border-radius: 8px;
+    }
+
+    .pin-controls {
+      padding: 15px;
+      border-top: 1px solid #eee;
+      background-color: #fff;
+      border-radius: 0 0 8px 8px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .pin-controls .form-control {
+      flex-grow: 1;
+    }
+
+    .current-user-info {
+      font-weight: bold;
+      color: #555;
+      white-space: nowrap;
+    }
+
+    /* === ランキング === */
+    .ranking-item {
+      display: flex;
+      align-items: center;
+      padding: 8px;
+      margin-bottom: 5px;
+      border-radius: 5px;
+      border: 2px solid;
+    }
+
+    .rank-1 { border-color: #FFD700; background-color: #FFFACD; }
+    .rank-2 { border-color: #C0C0C0; background-color: #F5F5F5; }
+    .rank-3 { border-color: #CD7F32; background-color: #FFE4B5; }
+
+    .rank-badge { font-weight: bold; margin-right: 10px; }
+
+    .search-ranking-item {
+      padding: 8px;
+      border-bottom: 1px solid #eee;
+      font-size: 0.9em;
+    }
+
+    /* === ポップアップ === */
+    .pin-popup-content {
+      text-align: center;
+      width: 200px;
+    }
+
+    .pin-popup-content h5 {
+      margin: 5px 0;
+      font-size: 1.1em;
+    }
+
+    .pin-popup-content img {
+      max-width: 100%;
+      height: auto;
+      border-radius: 5px;
+      margin-top: 5px;
+    }
+
+    /* === 写真表示 === */
+    .photo-thumbnail {
+      width: 100px;
+      height: 100px;
+      object-fit: cover;
+      border-radius: 5px;
+      margin: 5px;
+      cursor: pointer;
+    }
+
+    .photo-list {
+      display: flex;
+      flex-wrap: wrap;
+      margin-top: 10px;
+    }
+  </style>
 </head>
+
 <body>
-    <div class="main-content">
-        <div class="user-list-sidebar">
-            <div class="mb-4">
-                <h5>今月のBest3</h5>
-                <div id="pinRankingList"></div>
-                <a href="#" class="text-end d-block mt-2 small">もっと見る</a>
-            </div>
-            <div class="mb-4">
-                <h5>検索数が多い場所</h5>
-                <div id="searchRankingList">
-                    <div class="search-ranking-item">（未実装）</div>
-                </div>
-                <a href="#" class="text-end d-block mt-2 small">もっと見る</a>
-            </div>
-            <h4>ユーザー別ピン一覧</h4>
-            <div class="accordion" id="userPinAccordion"></div>
+  <main>
+    <!-- 左：ランキングとユーザー別ピン -->
+    <aside class="user-list-sidebar">
+      <div class="mb-4">
+        <h5>今月のBest3</h5>
+        <div id="pinRankingList"></div>
+        <a href="#" class="text-end d-block mt-2 small">もっと見る</a>
+      </div>
+
+      <div class="mb-4">
+        <h5>検索数が多い場所</h5>
+        <div id="searchRankingList">
+          <div class="search-ranking-item">（未実装）</div>
         </div>
-        <div id="map-container">
-            <div id="mapid"></div>
-            <div class="pin-controls">
-                <input type="text" placeholder="場所検索" id="location-search" class="form-control">
-                <button class="btn btn-primary btn-sm" id="search-button">検索</button>
-                <button class="btn btn-info btn-sm" id="current-location-button">現在地</button>
-                <button class="btn btn-success btn-sm" id="place-pin-button">ピンを配置</button>
-                <span class="current-user-info" th:text="'ユーザー: ' + ${#authentication.name}"></span>
-            </div>
+        <a href="#" class="text-end d-block mt-2 small">もっと見る</a>
+      </div>
+
+      <h4>ユーザー別ピン一覧</h4>
+      <div class="accordion" id="userPinAccordion"></div>
+    </aside>
+
+    <!-- 右：マップ -->
+    <section id="map-container">
+      <div id="mapid"></div>
+
+      <div class="pin-controls">
+        <input type="text" placeholder="場所検索" id="location-search" class="form-control">
+        <button class="btn btn-primary btn-sm" id="search-button">検索</button>
+        <button class="btn btn-info btn-sm" id="current-location-button">現在地</button>
+        <button class="btn btn-success btn-sm" id="place-pin-button">ピンを配置</button>
+        <span class="current-user-info" th:text="'ユーザー: ' + ${#authentication.name}"></span>
+      </div>
+    </section>
+  </main>
+
+  <!-- === モーダル：ピン詳細 === -->
+  <div class="modal fade" id="pinDetailModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="pinDetailModalLabel">ピン詳細</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
         </div>
-        <div class="modal fade" id="pinDetailModal" tabindex="-1">
-            <div class="modal-dialog modal-lg">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title" id="pinDetailModalLabel">ピン詳細</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                    </div>
-                    <div class="modal-body">
-                        <div id="pinDetailContent"></div>
-                    </div>
-                    <div class="modal-footer" id="pinDetailFooter">
-                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">閉じる</button>
-                    </div>
-                </div>
-            </div>
+        <div class="modal-body">
+          <div id="pinDetailContent"></div>
         </div>
-        <div class="modal fade" id="createPinModal" tabindex="-1">
-            <div class="modal-dialog">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title">新しいピンを作成</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                    </div>
-                    <div class="modal-body">
-                        <div class="mb-3">
-                            <label for="pinTitle" class="form-label">タイトル</label>
-                            <input type="text" class="form-control" id="pinTitle">
-                        </div>
-                        <div class="mb-3">
-                            <label for="pinDescription" class="form-label">説明</label>
-                            <textarea class="form-control" id="pinDescription" rows="3"></textarea>
-                        </div>
-                        <div class="mb-3">
-                            <label for="pinFile" class="form-label">写真 (必須)</label>
-                            <input type="file" class="form-control" id="pinFile" accept="image/*">
-                        </div>
-                        <p id="newPinLocationText"></p>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">キャンセル</button>
-                        <button type="button" class="btn btn-primary" id="saveNewPinButton">作成</button>
-                    </div>
-                </div>
-            </div>
+        <div class="modal-footer" id="pinDetailFooter">
+          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">閉じる</button>
         </div>
-    </div> 
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script th:src="@{/js/photopin.js}"></script>
+      </div>
+    </div>
+  </div>
+
+  <!-- === モーダル：新規ピン作成 === -->
+  <div class="modal fade" id="createPinModal" tabindex="-1">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">新しいピンを作成</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <div class="mb-3">
+            <label for="pinTitle" class="form-label">タイトル</label>
+            <input type="text" class="form-control" id="pinTitle">
+          </div>
+          <div class="mb-3">
+            <label for="pinDescription" class="form-label">説明</label>
+            <textarea class="form-control" id="pinDescription" rows="3"></textarea>
+          </div>
+          <div class="mb-3">
+            <label for="pinFile" class="form-label">写真 (必須)</label>
+            <input type="file" class="form-control" id="pinFile" accept="image/*">
+          </div>
+          <p id="newPinLocationText"></p>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">キャンセル</button>
+          <button type="button" class="btn btn-primary" id="saveNewPinButton">作成</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- === スクリプト === -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script th:src="@{/js/photopin.js}"></script>
 </body>
 </html>
