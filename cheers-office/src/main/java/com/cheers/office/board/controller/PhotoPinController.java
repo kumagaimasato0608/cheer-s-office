@@ -6,18 +6,17 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.Comparator;
+import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -28,191 +27,78 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.cheers.office.board.model.Comment;
 import com.cheers.office.board.model.CustomUserDetails;
 import com.cheers.office.board.model.Location;
 import com.cheers.office.board.model.Photo;
 import com.cheers.office.board.model.PhotoPin;
-import com.cheers.office.board.model.User;
 import com.cheers.office.board.repository.PhotoPinRepository;
-import com.cheers.office.board.repository.UserRepository;
+import com.cheers.office.board.service.UserAccountService;
 
 @Controller
 public class PhotoPinController {
 
     private final PhotoPinRepository photoPinRepository;
-    private final UserRepository userRepository;
+    private final UserAccountService userAccountService;
 
-    @Value("${app.upload-dir:src/main/resources/static/uploads}")
-    private String uploadDir;
+    @Value("${app.upload-dir.photopin:src/main/resources/static/images/photopins}")
+    private String photopinUploadDir;
 
-    public PhotoPinController(PhotoPinRepository photoPinRepository, UserRepository userRepository) {
+    public PhotoPinController(PhotoPinRepository photoPinRepository, UserAccountService userAccountService) {
         this.photoPinRepository = photoPinRepository;
-        this.userRepository = userRepository;
+        this.userAccountService = userAccountService;
     }
 
+    // (showPhotoPinPage, getAllPhotoPins, createPhotoPin, updatePin, deletePin は変更なし)
     @GetMapping("/photopin")
-    public String showPhotoPinPage() {
-        return "photopin";
-    }
-
+    public String showPhotoPinPage(Model model, @AuthenticationPrincipal CustomUserDetails userDetails) { if (userDetails != null && (userDetails.getUser().getTeamColor() == null || userDetails.getUser().getTeamColor().isEmpty())) { model.addAttribute("showColorModal", true); } return "photopin"; }
+    @GetMapping("/api/photopins")
+    @ResponseBody
+    public ResponseEntity<List<PhotoPin>> getAllPhotoPins() { List<PhotoPin> pins = photoPinRepository.findAll(); return ResponseEntity.ok(pins); }
     @PostMapping("/api/photopins")
     @ResponseBody
-    public ResponseEntity<PhotoPin> createPhotoPin(
-            @RequestParam("title") String title,
-            @RequestParam(value = "description", required = false) String description,
-            @RequestParam("latitude") double latitude,
-            @RequestParam("longitude") double longitude,
-            @RequestParam("file") MultipartFile file,
-            @AuthenticationPrincipal CustomUserDetails customUserDetails) {
-
-        if (customUserDetails == null || file.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
-        }
-
-        PhotoPin newPin = new PhotoPin();
-        newPin.setTitle(title);
-        newPin.setDescription(description);
-        newPin.setLocation(new Location(latitude, longitude));
-        newPin.setCreatedBy(customUserDetails.getUser().getUserId());
-        newPin.setCreatedDate(LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME));
-
-        try {
-            Path uploadPath = Paths.get(uploadDir);
-            if (!Files.exists(uploadPath)) {
-                Files.createDirectories(uploadPath);
-            }
-            
-            String fileName = UUID.randomUUID().toString() + "_" + file.getOriginalFilename();
-            Path filePath = uploadPath.resolve(fileName);
-            Files.copy(file.getInputStream(), filePath);
-
-            Photo newPhoto = new Photo();
-            newPhoto.setPhotoId(UUID.randomUUID().toString());
-            newPhoto.setImageUrl("/uploads/" + fileName);
-            newPhoto.setComment("");
-            newPhoto.setUploadedBy(customUserDetails.getUser().getUserId());
-            newPhoto.setUploadedDate(newPin.getCreatedDate());
-
-            newPin.getPhotos().add(newPhoto);
-
-            PhotoPin savedPin = photoPinRepository.savePin(newPin);
-            return ResponseEntity.status(HttpStatus.CREATED).body(savedPin);
-
-        } catch (IOException e) {
-            e.printStackTrace();
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
-        }
-    }
-
-    @GetMapping("/api/ranking/pins")
+    public ResponseEntity<PhotoPin> createPhotoPin(@RequestParam("title") String title, @RequestParam(value = "description", required = false) String description, @RequestParam("latitude") double latitude, @RequestParam("longitude") double longitude, @RequestParam("file") MultipartFile file, @AuthenticationPrincipal CustomUserDetails customUserDetails) { if (customUserDetails == null || file.isEmpty()) { return ResponseEntity.status(HttpStatus.BAD_REQUEST).build(); } PhotoPin newPin = new PhotoPin(); newPin.setPinId(UUID.randomUUID().toString()); newPin.setTitle(title); newPin.setDescription(description); newPin.setLocation(new Location(latitude, longitude)); newPin.setCreatedBy(customUserDetails.getUser().getUserId()); newPin.setCreatedDate(LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME)); try { Path uploadPath = Paths.get(photopinUploadDir); if (!Files.exists(uploadPath)) { Files.createDirectories(uploadPath); } String fileName = newPin.getPinId() + "_" + file.getOriginalFilename(); Path filePath = uploadPath.resolve(fileName); Files.copy(file.getInputStream(), filePath); Photo newPhoto = new Photo(); newPhoto.setPhotoId(UUID.randomUUID().toString()); newPhoto.setImageUrl("/images/photopins/" + fileName); newPhoto.setUploadedBy(customUserDetails.getUser().getUserId()); newPhoto.setUploadedDate(newPin.getCreatedDate()); newPin.getPhotos().add(newPhoto); PhotoPin savedPin = photoPinRepository.savePin(newPin); return ResponseEntity.status(HttpStatus.CREATED).body(savedPin); } catch (IOException e) { e.printStackTrace(); return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build(); } }
+    @PutMapping("/api/photopins/{pinId}")
     @ResponseBody
-    public List<PinRankingDto> getPinRanking() {
-        List<PhotoPin> allPins = photoPinRepository.findAllPins();
-        Map<String, User> userMap = userRepository.findAll().stream()
-                .collect(Collectors.toMap(User::getUserId, user -> user));
+    public ResponseEntity<PhotoPin> updatePin(@PathVariable String pinId, @RequestBody PhotoPin updatedPinData, @AuthenticationPrincipal CustomUserDetails userDetails) { Optional<PhotoPin> pinOpt = photoPinRepository.findById(pinId); if (pinOpt.isEmpty()) { return ResponseEntity.notFound().build(); } PhotoPin pin = pinOpt.get(); if (!pin.getCreatedBy().equals(userDetails.getUser().getUserId())) { return ResponseEntity.status(HttpStatus.FORBIDDEN).build(); } pin.setTitle(updatedPinData.getTitle()); pin.setDescription(updatedPinData.getDescription()); photoPinRepository.savePin(pin); return ResponseEntity.ok(pin); }
+    @DeleteMapping("/api/photopins/{pinId}")
+    @ResponseBody
+    public ResponseEntity<Void> deletePin(@PathVariable String pinId, @AuthenticationPrincipal CustomUserDetails userDetails) { Optional<PhotoPin> pinOpt = photoPinRepository.findById(pinId); if (pinOpt.isEmpty()) { return ResponseEntity.notFound().build(); } if (!pinOpt.get().getCreatedBy().equals(userDetails.getUser().getUserId())) { return ResponseEntity.status(HttpStatus.FORBIDDEN).build(); } photoPinRepository.deleteById(pinId); return ResponseEntity.noContent().build(); }
 
-        Map<String, Long> pinCounts = allPins.stream()
-                .collect(Collectors.groupingBy(PhotoPin::getCreatedBy, Collectors.counting()));
 
-        return pinCounts.entrySet().stream()
-                .map(entry -> {
-                    User user = userMap.get(entry.getKey());
-                    if (user == null) return null;
-                    return new PinRankingDto(user.getUserName(), user.getIcon(), entry.getValue());
-                })
-                .filter(dto -> dto != null)
-                .sorted(Comparator.comparingLong(PinRankingDto::getPinCount).reversed())
-                .limit(3)
-                .collect(Collectors.toList());
-    }
-
-    @GetMapping("/api/photopins") 
-    @ResponseBody 
-    public List<PhotoPin> getAllPhotoPins() { 
-        return photoPinRepository.findAllPins(); 
-    }
-
-    @GetMapping("/api/photopins/{id}") 
-    @ResponseBody 
-    public ResponseEntity<PhotoPin> getPhotoPinById(@PathVariable String id) { 
-        return photoPinRepository.findPinById(id).map(ResponseEntity::ok).orElse(ResponseEntity.notFound().build()); 
-    }
-
-    @PutMapping("/api/photopins/{id}") 
-    @ResponseBody 
-    public ResponseEntity<PhotoPin> updatePhotoPin(@PathVariable String id, @RequestBody PhotoPin photoPin, @AuthenticationPrincipal CustomUserDetails customUserDetails) { 
-        if (customUserDetails == null) { return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build(); }
-        Optional<PhotoPin> existingPinOptional = photoPinRepository.findPinById(id);
-        if (existingPinOptional.isEmpty()) { return ResponseEntity.notFound().build(); }
-        PhotoPin existingPin = existingPinOptional.get();
-        if (!existingPin.getCreatedBy().equals(customUserDetails.getUser().getUserId())) { return ResponseEntity.status(HttpStatus.FORBIDDEN).build(); }
-        existingPin.setTitle(photoPin.getTitle());
-        existingPin.setDescription(photoPin.getDescription());
-        PhotoPin updatedPin = photoPinRepository.savePin(existingPin);
-        return ResponseEntity.ok(updatedPin);
-    }
-
-    @DeleteMapping("/api/photopins/{id}") 
-    @ResponseBody 
-    public ResponseEntity<Void> deletePhotoPin(@PathVariable String id, @AuthenticationPrincipal CustomUserDetails customUserDetails) { 
-        if (customUserDetails == null) { return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build(); }
-        Optional<PhotoPin> existingPinOptional = photoPinRepository.findPinById(id);
-        if (existingPinOptional.isEmpty()) { return ResponseEntity.notFound().build(); }
-        PhotoPin existingPin = existingPinOptional.get();
-        if (!existingPin.getCreatedBy().equals(customUserDetails.getUser().getUserId())) { return ResponseEntity.status(HttpStatus.FORBIDDEN).build(); }
-        photoPinRepository.deletePin(id);
-        return ResponseEntity.noContent().build();
-    }
-
-    @GetMapping("/api/photopins/users") 
-    @ResponseBody 
-    public List<User> getAllUsers() { 
-        return userRepository.findAll().stream()
-                .map(user -> {
-                    User safeUser = new User();
-                    safeUser.setUserId(user.getUserId());
-                    safeUser.setUserName(user.getUserName());
-                    safeUser.setIcon(user.getIcon());
-                    return safeUser;
-                })
-                .collect(Collectors.toList());
-    }
-
-    @PostMapping("/api/photopins/{pinId}/photos") 
-    @ResponseBody 
-    public ResponseEntity<PhotoPin> addPhotoToPin(@PathVariable String pinId, @RequestParam("file") MultipartFile file, @RequestParam(value = "comment", required = false) String comment, @AuthenticationPrincipal CustomUserDetails customUserDetails) { 
-        if (customUserDetails == null) { return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build(); }
-        Optional<PhotoPin> existingPinOptional = photoPinRepository.findPinById(pinId);
-        if (existingPinOptional.isEmpty()) { return ResponseEntity.notFound().build(); }
-        PhotoPin existingPin = existingPinOptional.get();
-        try {
-            Path uploadPath = Paths.get(uploadDir);
-            if (!Files.exists(uploadPath)) { Files.createDirectories(uploadPath); }
-            String fileName = UUID.randomUUID().toString() + "_" + file.getOriginalFilename();
-            Path filePath = uploadPath.resolve(fileName);
-            Files.copy(file.getInputStream(), filePath);
-            Photo newPhoto = new Photo();
-            newPhoto.setPhotoId(UUID.randomUUID().toString());
-            newPhoto.setImageUrl("/uploads/" + fileName);
-            newPhoto.setComment(comment != null ? comment : "");
-            newPhoto.setUploadedBy(customUserDetails.getUser().getUserId());
-            newPhoto.setUploadedDate(LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME));
-            existingPin.getPhotos().add(newPhoto);
-            PhotoPin updatedPin = photoPinRepository.savePin(existingPin);
-            return ResponseEntity.ok(updatedPin);
-        } catch (IOException e) {
-            e.printStackTrace();
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+    @GetMapping("/api/photopins/{pinId}/comments")
+    @ResponseBody
+    public ResponseEntity<List<Comment>> getComments(@PathVariable String pinId) {
+        Optional<PhotoPin> pinOpt = photoPinRepository.findById(pinId);
+        if (pinOpt.isPresent()) {
+            return ResponseEntity.ok(pinOpt.get().getComments());
         }
+        return ResponseEntity.ok(Collections.emptyList());
     }
 
-    public static class PinRankingDto {
-        private String userName;
-        private String userIcon;
-        private long pinCount;
-        public PinRankingDto(String userName, String userIcon, long pinCount) { this.userName = userName; this.userIcon = userIcon; this.pinCount = pinCount; }
-        public String getUserName() { return userName; }
-        public String getUserIcon() { return userIcon; }
-        public long getPinCount() { return pinCount; }
+    /**
+     * 特定のピンにコメントを追加する
+     */
+    @PostMapping("/api/photopins/{pinId}/comments")
+    @ResponseBody
+    public ResponseEntity<Comment> addComment(@PathVariable String pinId,
+                                            @RequestBody Comment newComment,
+                                            @AuthenticationPrincipal CustomUserDetails userDetails) {
+        Optional<PhotoPin> pinOpt = photoPinRepository.findById(pinId);
+        if (pinOpt.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+
+        // ★★★ 既存のComment.javaのフィールドに合わせて設定 ★★★
+        newComment.setCommentId(UUID.randomUUID().toString());
+        newComment.setPinId(pinId); // ピンのIDを設定
+        newComment.setUserId(userDetails.getUser().getUserId()); // 作成者ID
+        newComment.setTimestamp(LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME)); // タイムスタンプ
+
+        PhotoPin pin = pinOpt.get();
+        pin.getComments().add(newComment);
+        photoPinRepository.savePin(pin);
+        
+        return ResponseEntity.status(HttpStatus.CREATED).body(newComment);
     }
 }

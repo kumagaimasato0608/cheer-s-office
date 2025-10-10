@@ -3,17 +3,27 @@
   "userId" : "u001_auto",
   "userName" : "自動登録ユーザー",
   "content" : "あ",
-  "timestamp" : "2025-10-08T17:50:54.554087100"
+  "timestamp" : "2025-10-08T17:50:54.554087100",
+  "icon" : null
 }, {
   "roomId" : "r1",
   "userId" : "u001_auto",
   "userName" : "自動登録ユーザー",
   "content" : "あ",
-  "timestamp" : "2025-10-08T17:50:57.616974400"
+  "timestamp" : "2025-10-08T17:50:57.616974400",
+  "icon" : null
 }, {
   "roomId" : "r1",
   "userId" : "u001_auto",
   "userName" : "自動登録ユーザー",
   "content" : "いいい",
-  "timestamp" : "2025-10-08T17:51:47.076186800"
+  "timestamp" : "2025-10-08T17:51:47.076186800",
+  "icon" : null
+}, {
+  "roomId" : "r1",
+  "userId" : "02223fb2-6a8f-42fd-8c1c-27875c8a103d",
+  "userName" : "しんご",
+  "content" : "こんにちは",
+  "timestamp" : "2025-10-09T13:08:03.180671500",
+  "icon" : "/images/profile/02223fb2-6a8f-42fd-8c1c-27875c8a103d.png"
 } ]

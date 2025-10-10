@@ -2,50 +2,22 @@
   "userId" : "u001_auto",
   "userName" : "自動登録ユーザー",
   "mailAddress" : "test@cheers.com",
-  "password" : "$2a$10$6x.A2Kep.0gGJiAn6m9btuTKdWWlc9jA4qKZXGsvt.dF4sScB7EGu",
+  "password" : "$2a$10$Pl4ZCislUCrGsgzGy8UhgeFB9nJcOiNr/zWNLllW4p.dPFGQK2jcu",
   "group" : "開発部",
   "myBoom" : "Java開発",
   "hobby" : "読書",
   "icon" : "/images/profile/u001_auto.png",
-  "statusMessage" : "よろしくお願いします！＾"
+  "statusMessage" : "よろしくお願いします！",
+  "teamColor" : "yellow"
 }, {
-  "userId" : "02223fb2-6a8f-42fd-8c1c-27875c8a103d",
-  "userName" : "しんご",
+  "userId" : "870029bd-68ec-480c-923c-8fc4465a2669",
+  "userName" : "まさと",
   "mailAddress" : "09.kumagaimasato@gmail.com",
-  "password" : "$2a$10$aDTfIHajOreOqTU4mj6ove3pZMvxHgILT0M3WdH2tWKebyv7j.e7W",
-  "group" : "軽音部",
-  "myBoom" : "[ALEXANDROS]",
-  "hobby" : "音楽を聴くこと",
-  "icon" : "/images/profile/02223fb2-6a8f-42fd-8c1c-27875c8a103d.png",
-  "statusMessage" : "こんにちは！"
-}, {
-  "userId" : "92d3bd2b-d5de-4b65-86bd-73ad410751d4",
-  "userName" : "テスト２",
-  "mailAddress" : "test2@cheer.com",
-  "password" : "$2a$10$NBk4Cr0PVLxtnDBgHGrWpeRfOiZTeq32dw9QIvLUmbbXc4H./EEb6",
+  "password" : "$2a$10$k7jzk6FNraQN6WqEaeKGi.Gh.cRSqDwTtXNkUBgAr/QDDqZYcRdZu",
   "group" : "未設定",
-  "myBoom" : null,
-  "hobby" : null,
-  "icon" : "/images/default_icon.png",
-  "statusMessage" : null
-}, {
-  "userId" : "4d192e66-4444-4da7-9003-16f8f4252b14",
-  "userName" : "izumi",
-  "mailAddress" : "231010izumi@tid.ac.jp",
-  "password" : "$2a$10$rJ0OIM5zVa/FJrqDAM4W1eARo6lrwBBfLmIk9n5jlM0AH1WbyKrQe",
-  "group" : "インターン",
   "myBoom" : "",
-  "hobby" : "FPSゲーム",
-  "icon" : "/images/profile/4d192e66-4444-4da7-9003-16f8f4252b14.png",
-  "statusMessage" : "よろしくお願いいたします。"
-}, {
-  "userId" : "82ed8462-4559-47d1-860a-f66cb79de6f7",
-  "userName" : "kuro",
-  "mailAddress" : "231010izumi@tid.ac.jpp",
-  "password" : "$2a$10$A9388nXVeZ7JqDBZp.CR3.NBru1mo.0mTT8A.KGPc6vZynseiIPnS",
-  "group" : "未設定",
-  "myBoom" : null,
-  "hobby" : null,
-  "icon" : "/images/default_icon.png",
-  "statusMessage" : null
+  "hobby" : "",
+  "icon" : "/images/profile/870029bd-68ec-480c-923c-8fc4465a2669.png",
+  "statusMessage" : "",
+  "teamColor" : "blue"
 } ]

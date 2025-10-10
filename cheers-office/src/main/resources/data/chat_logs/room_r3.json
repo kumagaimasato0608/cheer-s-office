@@ -278,4 +278,18 @@
   "content" : "a",
   "timestamp" : "2025-10-09T01:42:47.975581500",
   "icon" : "/images/profile/4d192e66-4444-4da7-9003-16f8f4252b14.png"
+}, {
+  "roomId" : "r3",
+  "userId" : "u001_auto",
+  "userName" : "自動登録ユーザー",
+  "content" : "こ",
+  "timestamp" : "2025-10-09T11:37:00.046311500",
+  "icon" : "/images/profile/u001_auto.png"
+}, {
+  "roomId" : "r3",
+  "userId" : "u001_auto",
+  "userName" : "自動登録ユーザー",
+  "content" : "あ",
+  "timestamp" : "2025-10-09T13:07:08.451867900",
+  "icon" : "/images/profile/u001_auto.png"
 } ]

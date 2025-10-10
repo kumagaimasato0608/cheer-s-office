@@ -12,9 +12,8 @@ public class User implements Serializable {
     private String hobby;
     private String icon;
     private String statusMessage;
+    private String teamColor;
 
-    public User() {
-    }
 
     // --- GetterとSetter ---
     public String getUserId() { return userId; }
@@ -35,4 +34,6 @@ public class User implements Serializable {
     public void setIcon(String icon) { this.icon = icon; }
     public String getStatusMessage() { return statusMessage; }
     public void setStatusMessage(String statusMessage) { this.statusMessage = statusMessage; }
+    public String getTeamColor() { return teamColor; }
+    public void setTeamColor(String teamColor) { this.teamColor = teamColor; }
 }

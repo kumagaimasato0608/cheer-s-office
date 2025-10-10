@@ -7,11 +7,12 @@ import com.cheers.office.board.model.PhotoPin;
 
 public interface PhotoPinRepository {
 
-    List<PhotoPin> findAllPins();
+    // ★★★ このメソッドを追加 ★★★
+    List<PhotoPin> findAll();
 
-    Optional<PhotoPin> findPinById(String pinId);
+    Optional<PhotoPin> findById(String pinId);
 
     PhotoPin savePin(PhotoPin pin);
 
-    void deletePin(String pinId);
+    void deleteById(String pinId);
 }

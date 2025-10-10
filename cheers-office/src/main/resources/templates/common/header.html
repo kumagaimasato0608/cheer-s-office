@@ -1,126 +1,124 @@
-<!-- /templates/common/header.html -->
-<!-- /templates/common/header.html -->
-<!-- ✅ fragment専用：DOCTYPEや<html>タグは不要 -->
+<!DOCTYPE html>
+<html lang="ja" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+	<style th:fragment="header-style">
+	    /* === ページ全体の基本設定 === */
+	    body {
+			position: relative;
+			/* ★★★ 背景色を変更 ★★★ */
+			background-color: #e6f0ff; 
+			font-family: "Segoe UI", "Noto Sans JP", sans-serif;
+			margin: 0;
+	    }
 
-<style>
-  header {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 140px;
-    background: linear-gradient(to bottom, #3a2e25 0%, #2b2118 100%);
-    color: #f5deb3;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 32px;
-    font-family: "Zen Maru Gothic", "Noto Sans JP", sans-serif;
-    font-weight: bold;
-    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.5);
-    z-index: 1000;
-    letter-spacing: 3px;
-    border-bottom: 5px solid #b07d44;
-  }
+	    /* === ヘッダー === */
+	    .app-header {
+	        position: fixed;
+	        top: 0;
+	        left: 0;
+	        width: 100%;
+	        z-index: 1000;
+	        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+	        background-color: #ffffff; /* 背景色を追加 */
+	    }
+	    .header-top-tier {
+	        background-color: #f8f9fa;
+	        padding: 10px 20px;
+	        display: flex;
+	        justify-content: space-between;
+	        align-items: center;
+	        border-bottom: 1px solid #dee2e6;
+	    }
+	    .app-title { font-size: 1.5em; font-weight: bold; color: #007bff; }
+	    .header-nav { padding: 5px 20px; }
+	    .nav-list { list-style: none; margin: 0; padding: 0; display: flex; align-items: center; }
+	    .nav-item { padding: 5px 15px; }
+	    .nav-link { display: flex; flex-direction: column; align-items: center; text-decoration: none; color: #333; font-size: 0.8em; font-weight: bold; }
+	    .nav-link:hover { color: #007bff; }
+	    .nav-icon { width: 24px; height: 24px; margin-bottom: 3px; }
+	    .logout-item { margin-left: auto; }
+	    .logout-button { background-color: #007bff; color: white; border: none; padding: 8px 20px; border-radius: 20px; font-weight: bold; cursor: pointer; font-size: 0.9em; }
+	    .logout-button:hover { background-color: #0056b3; }
+	    
+	    /* ★★★ メニューボタンの大きさを調整 ★★★ */
+	    .header-toggle-button {
+	        background-color: #6c757d;
+	        color: white;
+	        border: none;
+	        padding: 8px 18px; /* paddingを調整して大きくする */
+	        font-size: 0.9em;  /* 文字サイズも少し大きく */
+	        border-radius: 5px;
+	        font-weight: bold;
+	        display: none;
+	    }
 
-  header .norens {
-    background: #b07d44;
-    padding: 6px 20px;
-    border-radius: 12px;
-    color: #fffaf0;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
-    font-size: 30px;
-  }
+	    /* === 共通コンテンツコンテナ === */
+	    .page-container {
+	        max-width: 1200px;
+	        margin: 20px auto; /* 上下の余白を追加 */
+	        padding: 30px 40px;
+	        background-color: #ffffff;
+	        border-radius: 10px;
+	        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+	    }
+	    /* フォトピン画面用の特殊なコンテナ */
+	    .page-wrapper {
+	        padding: 20px;
+	    }
+	</style>
+</head>
+<body>
 
-  nav {
-    position: fixed;
-    top: 140px;
-    left: 0;
-    width: 240px;
-    height: calc(100vh - 140px);
-    background: #2b2118;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    padding-top: 30px;
-    border-right: 1px solid #4b3827;
-    box-shadow: inset -2px 0 5px rgba(0, 0, 0, 0.3);
-  }
+    <header class="app-header" th:fragment="topHeader">
+        <div class="header-top-tier">
+            <div class="app-title">Cheers Office</div>
+            <button class="header-toggle-button" type="button" data-bs-toggle="collapse" data-bs-target="#headerNavCollapse" aria-expanded="false" aria-controls="headerNavCollapse">
+                メニュー
+            </button>
+        </div>
+        <div class="collapse" id="headerNavCollapse">
+            <nav class="header-nav">
+                <ul class="nav-list">
+                    <li class="nav-item">
+                        <a th:href="@{/home}" class="nav-link">
+                            <img th:src="@{/images/icon-home.png}" class="nav-icon" alt="Home">
+                            <span>ホーム</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a th:href="@{/mypage}" class="nav-link">
+                            <img th:src="@{/images/icon-user.png}" class="nav-icon" alt="MyPage">
+                            <span>マイページ</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a th:href="@{/chat/rooms}" class="nav-link">
+                            <img th:src="@{/images/icon-chat.png}" class="nav-icon" alt="Chat">
+                            <span>チャット</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a th:href="@{/board}" class="nav-link">
+                            <img th:src="@{/images/icon-board.png}" class="nav-icon" alt="Board">
+                            <span>掲示板</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a th:href="@{/photopin}" class="nav-link">
+                            <img th:src="@{/images/icon-map.png}" class="nav-icon" alt="PhotoPin">
+                            <span>フォトピン</span>
+                        </a>
+                    </li>
+                    <li class="nav-item logout-item">
+                        <form th:action="@{/logout}" method="post">
+                            <button type="submit" class="logout-button">ログアウト</button>
+                        </form>
+                    </li>
+                </ul>
+            </nav>
+        </div>
+    </header>
 
-  nav a {
-    width: 85%;
-    text-decoration: none;
-    color: #f5deb3;
-    background: #3a2e25;
-    border-radius: 10px;
-    margin: 10px 0;
-    padding: 14px;
-    text-align: center;
-    font-size: 16px;
-    font-weight: bold;
-    transition: 0.2s;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
-  }
-
-  nav a:hover {
-    background: #b07d44;
-    transform: translateY(-2px);
-    color: #fffaf0;
-  }
-
-  nav .active {
-    background: linear-gradient(90deg, #b07d44, #d4a373);
-    color: #fff;
-  }
-
-  .logout-btn {
-    position: absolute;
-    bottom: 20px;
-    left: 50%;
-    transform: translateX(-50%);
-    background: #8b5a2b;
-    color: white;
-    border: none;
-    border-radius: 8px;
-    padding: 10px 20px;
-    cursor: pointer;
-    font-weight: bold;
-    font-size: 14px;
-    transition: 0.2s;
-  }
-
-  .logout-btn:hover {
-    background: #d4a373;
-  }
-</style>
-
-<!-- === ヘッダー === -->
-<div th:fragment="header">
-  <header>
-    <div class="norens">Cheers Office 🍶</div>
-  </header>
-</div>
-
-<!-- === サイドバー === -->
-<div th:fragment="nav">
-  <nav>
-    <a th:href="@{/home}"
-       th:classappend="${#httpServletRequest != null and #httpServletRequest.requestURI.contains('/home')} ? 'active'">🏠 ホーム</a>
-
-    <a th:href="@{/chat}"
-       th:classappend="${#httpServletRequest != null and #httpServletRequest.requestURI.contains('/chat')} ? 'active'">💬 チャット</a>
-
-    <a th:href="@{/board}"
-       th:classappend="${#httpServletRequest != null and #httpServletRequest.requestURI.contains('/board')} ? 'active'">📋 掲示板</a>
-
-    <a th:href="@{/photopin}"
-       th:classappend="${#httpServletRequest != null and #httpServletRequest.requestURI.contains('/photopin')} ? 'active'">📸 フォトピン</a>
-
-    <a th:href="@{/mypage}"
-       th:classappend="${#httpServletRequest != null and #httpServletRequest.requestURI.contains('/mypage')} ? 'active'">👤 マイページ</a>
-
-    <form th:action="@{/logout}" method="post">
-      <button type="submit" class="logout-btn">🚪 ログアウト</button>
-    </form>
-  </nav>
-</div>
+</body>
+</html>

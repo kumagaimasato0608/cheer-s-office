@@ -55,12 +55,14 @@ public class JsonFilePhotopinRepositoryImpl implements PhotoPinRepository {
     }
 
     @Override
-    public List<PhotoPin> findAllPins() {
+    // ★★★ メソッド名を findAllPins から findAll に修正 ★★★
+    public List<PhotoPin> findAll() {
         return new ArrayList<>(photoPins);
     }
 
     @Override
-    public Optional<PhotoPin> findPinById(String pinId) {
+    // ★★★ メソッド名を findPinById から findById に修正 ★★★
+    public Optional<PhotoPin> findById(String pinId) {
         return photoPins.stream()
                 .filter(pin -> pin.getPinId().equals(pinId))
                 .findFirst();
@@ -72,7 +74,8 @@ public class JsonFilePhotopinRepositoryImpl implements PhotoPinRepository {
             pin.setPinId(UUID.randomUUID().toString());
         }
         
-        Optional<PhotoPin> existingPin = findPinById(pin.getPinId());
+        // findById に修正したメソッドを呼び出す
+        Optional<PhotoPin> existingPin = findById(pin.getPinId());
         
         if (existingPin.isPresent()) {
             int index = photoPins.indexOf(existingPin.get());
@@ -86,7 +89,8 @@ public class JsonFilePhotopinRepositoryImpl implements PhotoPinRepository {
     }
 
     @Override
-    public void deletePin(String pinId) {
+    // ★★★ メソッド名を deletePin から deleteById に修正 ★★★
+    public void deleteById(String pinId) {
         photoPins.removeIf(pin -> pin.getPinId().equals(pinId));
         savePhotoPinsToFile();
     }

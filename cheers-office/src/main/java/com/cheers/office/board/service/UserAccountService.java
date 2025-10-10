@@ -4,144 +4,98 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption; // ★★★ このimport文を追加 ★★★
 import java.util.Optional;
-import java.util.UUID;
 
-import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.cheers.office.board.model.User;
 import com.cheers.office.board.repository.UserRepository;
-import com.cheers.office.util.PasswordUtil;
 
 @Service
 public class UserAccountService {
 
     private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
 
-    // application.properties の設定値を使用
-    @Value("${app.upload-dir}")
-    private String uploadDir; // src/main/resources/static/uploads/
-
-    public UserAccountService(UserRepository userRepository) {
+    public UserAccountService(UserRepository userRepository, PasswordEncoder passwordEncoder) {
         this.userRepository = userRepository;
+        this.passwordEncoder = passwordEncoder;
     }
 
-    // ----------------------------------------------------------------------
-    // アイコン更新ロジック
-    // ----------------------------------------------------------------------
-
-    /**
-     * プロフィールアイコンを保存し、公開URLを返す
-     * @param file アップロードされた画像ファイル
-     * @param userId ユーザーID
-     * @return 公開URL (例: /uploads/ユーザーID_xxxxx.png)
-     */
-    public String saveProfileIcon(MultipartFile file, String userId) throws IOException {
-        // 拡張子を取得
-        String originalName = file.getOriginalFilename();
-        String ext = ".png";
-        if (originalName != null && originalName.contains(".")) {
-            ext = originalName.substring(originalName.lastIndexOf("."));
+    public String saveProfileIcon(MultipartFile file, String userId, String uploadDir) throws IOException {
+        Path uploadPath = Paths.get(uploadDir); 
+        
+        if (!Files.exists(uploadPath)) {
+            Files.createDirectories(uploadPath);
         }
+        
+        String fileExtension = getFileExtension(file.getOriginalFilename());
+        String fileName = userId + "." + fileExtension;
+        
+        Path filePath = uploadPath.resolve(fileName);
 
-        // ファイル名を一意にする（例: u001_8a2b3c.png）
-        String fileName = userId + "_" + UUID.randomUUID() + ext;
-        Path filePath = Paths.get(uploadDir, fileName);
+        // ★★★ ここを修正！ ファイルの上書きを許可するオプションを追加 ★★★
+        Files.copy(file.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
 
-        // ディレクトリ作成（存在しない場合）
-        Files.createDirectories(filePath.getParent());
-
-        // ファイル保存
-        file.transferTo(filePath.toFile());
-
-        // 公開用URL（Spring Bootがstatic配下を公開するため）
-        String publicPath = "/uploads/" + fileName;
-
-        // DB更新
-        updateUserIcon(userId, publicPath);
-
-        return publicPath;
+        return "/images/profile/" + fileName;
     }
 
-    /**
-     * ユーザーDBのアイコンパスを更新し、更新後のUserを返す
-     */
-    public User updateUserIcon(String userId, String iconPath) {
+    private String getFileExtension(String fileName) {
+        if (fileName == null || fileName.lastIndexOf(".") == -1) {
+            return "";
+        }
+        return fileName.substring(fileName.lastIndexOf(".") + 1);
+    }
+    
+    public User updateUserIcon(String userId, String newIconPath) {
         Optional<User> userOpt = userRepository.findById(userId);
-
         if (userOpt.isPresent()) {
             User user = userOpt.get();
-            user.setIcon(iconPath);
-            return userRepository.update(user); // JSON更新
+            user.setIcon(newIconPath);
+            userRepository.save(user);
+            return user;
         }
-        throw new IllegalArgumentException("User not found for icon update: " + userId);
+        throw new RuntimeException("User not found with id: " + userId);
+    }
+    
+    public void updateUserTeamColor(String userId, String color) {
+        Optional<User> userOpt = userRepository.findById(userId);
+        if (userOpt.isPresent()) {
+            User user = userOpt.get();
+            user.setTeamColor(color);
+            userRepository.save(user);
+        }
     }
 
-    // ----------------------------------------------------------------------
-    // パスワード更新ロジック
-    // ----------------------------------------------------------------------
-
-    /**
-     * パスワード更新処理
-     */
-    public Optional<User> updatePassword(String currentMailAddress, String currentPassword, String newPassword) {
-        Optional<User> userOpt = userRepository.findByMailAddress(currentMailAddress);
-
-        if (userOpt.isEmpty()) {
-            return Optional.empty();
+    public boolean updateEmail(String currentEmail, String currentPassword, String newEmail) {
+        Optional<User> userOpt = userRepository.findByMailAddress(currentEmail);
+        if (userRepository.findByMailAddress(newEmail).isPresent()) {
+            return false;
         }
-
-        User user = userOpt.get();
-
-        // 現在のパスワードを照合
-        if (!PasswordUtil.matches(currentPassword, user.getPassword())) {
-            return Optional.empty();
+        if (userOpt.isPresent()) {
+            User user = userOpt.get();
+            if (passwordEncoder.matches(currentPassword, user.getPassword())) {
+                user.setMailAddress(newEmail);
+                userRepository.save(user);
+                return true;
+            }
         }
-
-        // 同一パスワードを防止
-        if (PasswordUtil.isDuplicate(newPassword, user.getPassword())) {
-            return Optional.empty();
-        }
-
-        // 新パスワードをハッシュ化して更新
-        user.setPassword(PasswordUtil.encode(newPassword));
-        User updatedUser = userRepository.update(user);
-
-        return Optional.of(updatedUser);
+        return false;
     }
 
-    // ----------------------------------------------------------------------
-    // メールアドレス更新ロジック
-    // ----------------------------------------------------------------------
-
-    /**
-     * メールアドレス更新処理
-     */
-    public boolean updateEmail(String currentMailAddress, String currentPassword, String newMailAddress) {
-        Optional<User> userOpt = userRepository.findByMailAddress(currentMailAddress);
-
-        if (userOpt.isEmpty()) {
-            return false;
+    public Optional<User> updatePassword(String email, String currentPassword, String newPassword) {
+        Optional<User> userOpt = userRepository.findByMailAddress(email);
+        if (userOpt.isPresent()) {
+            User user = userOpt.get();
+            if (passwordEncoder.matches(currentPassword, user.getPassword()) && !passwordEncoder.matches(newPassword, user.getPassword())) {
+                user.setPassword(passwordEncoder.encode(newPassword));
+                userRepository.save(user);
+                return Optional.of(user);
+            }
         }
-
-        // 新しいメールアドレスが既に使用されていないかチェック
-        if (userRepository.findByMailAddress(newMailAddress).isPresent()) {
-            return false;
-        }
-
-        User user = userOpt.get();
-
-        // 現在のパスワード確認
-        if (!PasswordUtil.matches(currentPassword, user.getPassword())) {
-            return false;
-        }
-
-        // メールアドレス更新
-        user.setMailAddress(newMailAddress);
-        userRepository.update(user);
-
-        return true;
+        return Optional.empty();
     }
 }

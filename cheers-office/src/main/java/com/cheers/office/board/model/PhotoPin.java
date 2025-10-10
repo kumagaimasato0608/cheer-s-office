@@ -18,6 +18,7 @@ public class PhotoPin {
     private String createdBy;     // ピンを作成したユーザーのID
     private String createdDate;   // ピンの作成日時 (ISO 8601形式など)
     private List<Photo> photos = new ArrayList<>();   // ★修正: 必ず初期化
+    private List<Comment> comments = new ArrayList<>();
 
     // Lombokの@Dataがゲッター/セッターを自動生成しますが、
     // 明示的に初期化を保証するコンストラクタも保持

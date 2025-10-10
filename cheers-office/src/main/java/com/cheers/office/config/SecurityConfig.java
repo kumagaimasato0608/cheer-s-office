@@ -8,7 +8,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
-import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
+// import org.springframework.security.web.util.matcher.AntPathRequestMatcher; // ← 古いので不要
 
 @Configuration
 @EnableWebSecurity
@@ -19,10 +19,10 @@ public class SecurityConfig {
         http
             // ------------------ CSRF設定 ------------------
             .csrf(csrf -> csrf
-                // Vue.jsなどからトークン取得できるようCookieに保存
+                // JavaScriptからトークンを取得できるようCookieに保存
                 .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
-                // ✅ ファイルアップロード用APIをCSRF除外（重要！）
-                .ignoringRequestMatchers("/api/**", "/mypage/uploadIcon")
+                // ★★★ APIでのCSRF無効化を削除（より安全な状態） ★★★
+                // .ignoringRequestMatchers("/api/**", "/mypage/uploadIcon") // ← この行を削除またはコメントアウト
             )
 
             // ------------------ 認可設定 ------------------
@@ -30,28 +30,28 @@ public class SecurityConfig {
                 .requestMatchers(
                     "/login", "/register", "/error",
                     "/css/**", "/js/**",
-                    "/images/**",      // 画像（static/images/）
-                    "/uploads/**",     // ✅ プロフィール画像（static/uploads/）
-                    "/favicon.ico"
-                ).permitAll() // 認証不要
-                .anyRequest().authenticated() // それ以外はログイン必須
+                    "/images/**",
+                    "/uploads/**",
+                    "/favicon.ico",
+                    "/ws/**" // ★ WebSocket接続を許可
+                ).permitAll()
+                .anyRequest().authenticated()
             )
 
             // ------------------ ログイン設定 ------------------
             .formLogin(form -> form
                 .loginPage("/login")
                 .loginProcessingUrl("/login")
-                .usernameParameter("username")
-                .passwordParameter("password")
-                .defaultSuccessUrl("/home", false)
-                .failureUrl("/login?error")
+                .defaultSuccessUrl("/home", true) // ログイン成功後の遷移先を固定
+                .failureUrl("/login?error=true")
                 .permitAll()
             )
 
             // ------------------ ログアウト設定 ------------------
             .logout(logout -> logout
-                .logoutRequestMatcher(new AntPathRequestMatcher("/logout"))
-                .logoutSuccessUrl("/login?logout")
+                // .logoutRequestMatcher(new AntPathRequestMatcher("/logout")) // ← 古い書き方
+                .logoutUrl("/logout") // ★ 新しい書き方
+                .logoutSuccessUrl("/login?logout=true")
                 .invalidateHttpSession(true)
                 .deleteCookies("JSESSIONID")
                 .permitAll()

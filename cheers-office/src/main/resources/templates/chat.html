@@ -2,6 +2,9 @@
 <html lang="ja" xmlns:th="http://www.thymeleaf.org">
 <head>
   <meta charset="UTF-8" />
+  <div th:replace="common/header :: header"></div>
+  <th:block th:replace="~{common/header :: header-style}"></th:block>
+  
   <title>Cheers Office - チャット</title>
 
   <script src="https://cdn.jsdelivr.net/npm/vue@3.4.38/dist/vue.global.prod.js"></script>

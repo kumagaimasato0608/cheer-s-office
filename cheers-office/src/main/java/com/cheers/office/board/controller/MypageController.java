@@ -2,6 +2,7 @@ package com.cheers.office.board.controller;
 
 import java.util.Optional;
 
+import org.springframework.beans.factory.annotation.Value; // ★★★ import文を追加 ★★★
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -10,7 +11,6 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.multipart.MultipartFile;
@@ -24,18 +24,22 @@ import com.cheers.office.board.repository.UserRepository;
 import com.cheers.office.board.service.UserAccountService;
 
 @Controller
-@RequestMapping("/mypage")
 public class MypageController {
 
     private final UserRepository userRepository;
     private final UserAccountService userAccountService;
+
+    // ★★★ application.propertiesから設定を読み込むフィールドを追加 ★★★
+    @Value("${app.upload-dir.profile:src/main/resources/static/images/profile}")
+    private String profileUploadDir;
 
     public MypageController(UserRepository userRepository, UserAccountService userAccountService) {
         this.userRepository = userRepository;
         this.userAccountService = userAccountService;
     }
     
-    @GetMapping
+    // ... (mypage, updateProfile, showPasswordChangeForm, updateEmail, updatePassword メソッドは変更なし) ...
+    @GetMapping("/mypage")
     public String mypage(Model model, @AuthenticationPrincipal CustomUserDetails customUserDetails) {
         if (customUserDetails != null) {
             model.addAttribute("user", customUserDetails.getUser());
@@ -45,7 +49,7 @@ public class MypageController {
         return "mypage";
     }
     
-    @PostMapping("/update")
+    @PostMapping("/mypage/update")
     public String updateProfile(@ModelAttribute("user") User formUser, 
                                 @AuthenticationPrincipal CustomUserDetails customUserDetails, 
                                 RedirectAttributes redirectAttributes) {
@@ -76,7 +80,7 @@ public class MypageController {
         return "redirect:/mypage"; 
     }
 
-    @GetMapping("/password")
+    @GetMapping("/mypage/password")
     public String showPasswordChangeForm(Model model, @AuthenticationPrincipal CustomUserDetails customUserDetails) {
         model.addAttribute("user", customUserDetails.getUser());
         model.addAttribute("passwordUpdateForm", new PasswordUpdateForm());
@@ -84,17 +88,11 @@ public class MypageController {
         return "password_change";
     }
 
-    @PostMapping("/password/update/email")
+    @PostMapping("/mypage/password/update/email")
     public String updateEmail(@ModelAttribute EmailUpdateForm form, 
                               @AuthenticationPrincipal CustomUserDetails customUserDetails,
                               RedirectAttributes redirectAttributes) {
-
-        boolean success = userAccountService.updateEmail(
-            customUserDetails.getUsername(),
-            form.getCurrentPasswordForEmail(),
-            form.getNewMailAddress()
-        );
-        
+        boolean success = userAccountService.updateEmail(customUserDetails.getUsername(), form.getCurrentPasswordForEmail(), form.getNewMailAddress());
         if (success) {
             redirectAttributes.addFlashAttribute("successMessage", "メールアドレスが更新されました。新しいメールアドレスで再度ログインしてください。");
             return "redirect:/logout";
@@ -104,78 +102,64 @@ public class MypageController {
         }
     }
 
-    @PostMapping("/password/update/password")
+    @PostMapping("/mypage/password/update/password")
     public String updatePassword(@ModelAttribute PasswordUpdateForm form, 
                                  RedirectAttributes redirectAttributes,
                                  @AuthenticationPrincipal CustomUserDetails customUserDetails) {
-
         if (!form.getNewPassword().equals(form.getConfirmPassword())) {
             redirectAttributes.addFlashAttribute("errorMessage", "新しいパスワードが確認用と一致しません。");
             return "redirect:/mypage/password";
         }
-        
-        Optional<User> updatedUserOpt = userAccountService.updatePassword(
-            customUserDetails.getUsername(),
-            form.getCurrentPassword(),
-            form.getNewPassword()
-        );
-
+        Optional<User> updatedUserOpt = userAccountService.updatePassword(customUserDetails.getUsername(), form.getCurrentPassword(), form.getNewPassword());
         if (updatedUserOpt.isPresent()) {
             customUserDetails.setUser(updatedUserOpt.get());
             redirectAttributes.addFlashAttribute("successMessage", "パスワードが正常に更新されました。");
         } else {
             redirectAttributes.addFlashAttribute("errorMessage", "現在のパスワードが正しくないか、新しいパスワードが現在のものと同じです。");
         }
-        
         return "redirect:/mypage/password";
     }
 
-    @PostMapping("/uploadIcon")
+
+    @PostMapping("/mypage/uploadIcon")
     @ResponseBody 
-    public ResponseEntity<?> uploadIcon(@RequestParam("file") MultipartFile file, 
-                                        @AuthenticationPrincipal CustomUserDetails userDetails) {
-
+    public ResponseEntity<?> uploadIcon(@RequestParam("file") MultipartFile file, @AuthenticationPrincipal CustomUserDetails userDetails) {
         String userId = userDetails.getUser().getUserId();
-
         if (file.isEmpty()) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new ResponseDto(false, "ファイルが空です。"));
         }
-
         try {
-            String newIconPath = userAccountService.saveProfileIcon(file, userId);
+            // ★★★ サービスに保存先パスを渡すように変更 ★★★
+            String newIconPath = userAccountService.saveProfileIcon(file, userId, profileUploadDir);
             
             User updatedUser = userAccountService.updateUserIcon(userId, newIconPath);
             userDetails.setUser(updatedUser); 
-
             return ResponseEntity.ok(new IconResponseDto(true, "アイコンが更新されました。", newIconPath));
-
         } catch (Exception e) {
             System.err.println("Icon Upload Error for user " + userId + ": " + e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new ResponseDto(false, "アイコンの保存中にサーバーエラーが発生しました。"));
         }
     }
     
-    private static class ResponseDto {
-        private boolean success;
-        private String message;
-        
-        public ResponseDto(boolean success, String message) {
-            this.success = success;
-            this.message = message;
+    @PostMapping("/save-color")
+    public String saveUserColor(@RequestParam String color, @AuthenticationPrincipal CustomUserDetails userDetails) {
+        if (userDetails != null) {
+            String userId = userDetails.getUser().getUserId();
+            userAccountService.updateUserTeamColor(userId, color);
+            userDetails.getUser().setTeamColor(color);
         }
+        return "redirect:/photopin";
+    }
 
-        public boolean isSuccess() { return success; }
-        public String getMessage() { return message; }
+    // --- JSONレスポンス用内部クラス ---
+    private static class ResponseDto {
+        public boolean success;
+        public String message;
+        public ResponseDto(boolean success, String message) { this.success = success; this.message = message; }
     }
 
     private static class IconResponseDto extends ResponseDto {
-        private String iconPath;
-        
-        public IconResponseDto(boolean success, String message, String iconPath) {
-            super(success, message);
-            this.iconPath = iconPath;
-        }
-        
-        public String getIconPath() { return iconPath; }
+        public String iconPath;
+        public IconResponseDto(boolean success, String message, String iconPath) { super(success, message); this.iconPath = iconPath; }
     }
 }
