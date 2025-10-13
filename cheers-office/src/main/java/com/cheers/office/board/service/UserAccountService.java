@@ -4,7 +4,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption; // ★★★ このimport文を追加 ★★★
+import java.nio.file.StandardCopyOption;
 import java.util.Optional;
 
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -25,7 +25,19 @@ public class UserAccountService {
         this.passwordEncoder = passwordEncoder;
     }
 
+    /**
+     * ユーザー情報を保存（更新）する
+     */
+    public void updateUser(User user) {
+        userRepository.save(user);
+    }
+
+    /**
+     * プロフィールアイコンを保存し、新しい画像のパスを返す
+     * ★★★ 3番目の引数 String uploadDir を追加 ★★★
+     */
     public String saveProfileIcon(MultipartFile file, String userId, String uploadDir) throws IOException {
+        // ★★★ ファイルパスを直接書く代わりに、引数で受け取った変数を使う ★★★
         Path uploadPath = Paths.get(uploadDir); 
         
         if (!Files.exists(uploadPath)) {
@@ -36,8 +48,6 @@ public class UserAccountService {
         String fileName = userId + "." + fileExtension;
         
         Path filePath = uploadPath.resolve(fileName);
-
-        // ★★★ ここを修正！ ファイルの上書きを許可するオプションを追加 ★★★
         Files.copy(file.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
 
         return "/images/profile/" + fileName;

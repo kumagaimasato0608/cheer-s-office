@@ -1,12 +1,13 @@
 package com.cheers.office.board.model;
 
-import java.io.Serializable; 
+import java.io.Serializable;
+import java.time.LocalDateTime; // ★★★ このimport文を追加 ★★★
 
 public class User implements Serializable { 
     private String userId;
     private String userName;
     private String mailAddress;
-    private String password; // ハッシュ化されたパスワード
+    private String password;
     private String group;
     private String myBoom;
     private String hobby;
@@ -14,7 +15,9 @@ public class User implements Serializable {
     private String statusMessage;
     private String teamColor;
 
-
+    // ★★★ 最後にピンを置いた日時を記録するフィールドを追加 ★★★
+    private LocalDateTime lastPinTimestamp;
+    
     // --- GetterとSetter ---
     public String getUserId() { return userId; }
     public void setUserId(String userId) { this.userId = userId; }
@@ -36,4 +39,8 @@ public class User implements Serializable {
     public void setStatusMessage(String statusMessage) { this.statusMessage = statusMessage; }
     public String getTeamColor() { return teamColor; }
     public void setTeamColor(String teamColor) { this.teamColor = teamColor; }
+
+    // ★★★ lastPinTimestamp用のGetterとSetterを追加 ★★★
+    public LocalDateTime getLastPinTimestamp() { return lastPinTimestamp; }
+    public void setLastPinTimestamp(LocalDateTime lastPinTimestamp) { this.lastPinTimestamp = lastPinTimestamp; }
 }

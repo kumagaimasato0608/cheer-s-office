@@ -1,103 +1,41 @@
 [ {
-  "pinId" : "a384c9dd-37ab-477b-991c-69760c4e47a5",
+  "pinId" : "db4d3970-4844-4cf1-b8d6-542f1de4baa8",
   "location" : {
-    "latitude" : 35.694754734917474,
-    "longitude" : 139.84799623489383
+    "latitude" : 35.680729,
+    "longitude" : 139.478012
   },
-  "title" : "あ",
+  "title" : "テスト",
   "description" : "",
   "createdBy" : "870029bd-68ec-480c-923c-8fc4465a2669",
-  "createdDate" : "2025-10-10T14:50:29.2728413",
+  "createdDate" : "2025-10-14T01:03:09.9343569",
   "photos" : [ {
-    "photoId" : "9cc2afb8-f77d-410b-912e-cebf115b5055",
-    "imageUrl" : "/uploads/b102aacf-0efa-4235-92ec-a22b09b22684_ダウンロード.webp",
-    "comment" : "",
+    "photoId" : "9f6c70e1-d876-4b14-9c0b-00e68437abe5",
+    "imageUrl" : "/images/photopins/db4d3970-4844-4cf1-b8d6-542f1de4baa8_OIP.webp",
+    "comment" : null,
     "uploadedBy" : "870029bd-68ec-480c-923c-8fc4465a2669",
-    "uploadedDate" : "2025-10-10T14:50:29.2728413"
+    "uploadedDate" : "2025-10-14T01:03:09.9343569"
   } ],
-  "comments" : [ {
-    "commentId" : "71b09e9c-1fd7-40f6-b0cb-d64074874080",
-    "pinId" : "a384c9dd-37ab-477b-991c-69760c4e47a5",
-    "userId" : "u001_auto",
-    "content" : "こんにちは",
-    "timestamp" : "2025-10-10T16:23:48.7464432"
-  } ]
+  "comments" : [ ],
+  "bonusPoints" : 0,
+  "season" : "2025-10"
 }, {
-  "pinId" : "af1140fe-b949-4e27-92e7-210c6ea95c7e",
+  "pinId" : "3fa6a515-9181-43a6-88c9-0d09953edda8",
   "location" : {
-    "latitude" : 35.69810492229826,
-    "longitude" : 139.84714865684512
+    "latitude" : 35.680729,
+    "longitude" : 139.478012
   },
-  "title" : "あ",
-  "description" : "こんにちは",
-  "createdBy" : "u001_auto",
-  "createdDate" : "2025-10-10T15:30:59.4596048",
+  "title" : "テスト２",
+  "description" : "",
+  "createdBy" : "4f254c98-1c62-423f-8c94-da8a29299612",
+  "createdDate" : "2025-10-14T01:03:42.7703091",
   "photos" : [ {
-    "photoId" : "15f142b8-f930-4e14-902a-43f23ae60ed5",
-    "imageUrl" : "/uploads/40de2627-cfea-4e1c-9503-18f0e4c95461_ダウンロード.webp",
-    "comment" : "",
-    "uploadedBy" : "u001_auto",
-    "uploadedDate" : "2025-10-10T15:30:59.4596048"
-  } ],
-  "comments" : [ {
-    "commentId" : "e5dd2b99-1e72-4276-bff7-94c58cc78300",
-    "pinId" : "af1140fe-b949-4e27-92e7-210c6ea95c7e",
-    "userId" : "u001_auto",
-    "content" : "こんにちは",
-    "timestamp" : "2025-10-10T16:23:33.9680092"
-  } ]
-}, {
-  "pinId" : "0d0f0059-f54a-4c77-ae06-584b3a13aca6",
-  "location" : {
-    "latitude" : 35.69444105607152,
-    "longitude" : 139.84507799148562
-  },
-  "title" : "さ",
-  "description" : "undefined",
-  "createdBy" : "u001_auto",
-  "createdDate" : "2025-10-10T15:57:09.0760915",
-  "photos" : [ {
-    "photoId" : "295668ce-eca9-4ec8-96a6-58a8a28f5309",
-    "imageUrl" : "/images/photopins/0d0f0059-f54a-4c77-ae06-584b3a13aca6_OIP.jpg",
+    "photoId" : "a6dcac26-87a8-4544-9be6-854073d9f0aa",
+    "imageUrl" : "/images/photopins/3fa6a515-9181-43a6-88c9-0d09953edda8_OIP.webp",
     "comment" : null,
-    "uploadedBy" : "u001_auto",
-    "uploadedDate" : "2025-10-10T15:57:09.0760915"
+    "uploadedBy" : "4f254c98-1c62-423f-8c94-da8a29299612",
+    "uploadedDate" : "2025-10-14T01:03:42.7703091"
   } ],
-  "comments" : [ ]
-}, {
-  "pinId" : "fb37cd2c-ed80-4134-a9c1-dbaca0aca0a2",
-  "location" : {
-    "latitude" : 43.45161041330069,
-    "longitude" : 142.81715869903567
-  },
-  "title" : "北海道",
-  "description" : "undefined",
-  "createdBy" : "u001_auto",
-  "createdDate" : "2025-10-10T15:59:06.3752461",
-  "photos" : [ {
-    "photoId" : "3c3dbf84-7fb5-40e7-b68f-cb457f1c5406",
-    "imageUrl" : "/images/photopins/fb37cd2c-ed80-4134-a9c1-dbaca0aca0a2_429427fb-4c9f-4fe5-885d-e6f01490cfdb.png",
-    "comment" : null,
-    "uploadedBy" : "u001_auto",
-    "uploadedDate" : "2025-10-10T15:59:06.3752461"
-  } ],
-  "comments" : [ ]
-}, {
-  "pinId" : "9a05e7d8-6484-454b-b5e4-92ff13f306e6",
-  "location" : {
-    "latitude" : 43.45206215373092,
-    "longitude" : 142.81474471092227
-  },
-  "title" : "ほっかいどう",
-  "description" : "でっかいどう",
-  "createdBy" : "u001_auto",
-  "createdDate" : "2025-10-10T16:07:42.9699448",
-  "photos" : [ {
-    "photoId" : "332d0928-8b90-4342-97f1-e5432c42493d",
-    "imageUrl" : "/images/photopins/9a05e7d8-6484-454b-b5e4-92ff13f306e6_ダウンロード.webp",
-    "comment" : null,
-    "uploadedBy" : "u001_auto",
-    "uploadedDate" : "2025-10-10T16:07:42.9699448"
-  } ],
-  "comments" : [ ]
+  "comments" : [ ],
+  "bonusPoints" : 0,
+  "season" : "2025-10"
 } ]
