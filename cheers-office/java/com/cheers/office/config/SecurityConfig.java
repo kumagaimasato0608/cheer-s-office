@@ -8,7 +8,6 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
-// import org.springframework.security.web.util.matcher.AntPathRequestMatcher; // ← 古いので不要
 
 @Configuration
 @EnableWebSecurity
@@ -19,10 +18,14 @@ public class SecurityConfig {
         http
             // ------------------ CSRF設定 ------------------
             .csrf(csrf -> csrf
-                // JavaScriptからトークンを取得できるようCookieに保存
+                // CookieにCSRFトークンを保存（JSから取得可能）
                 .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
-                // ★★★ APIでのCSRF無効化を削除（より安全な状態） ★★★
-                // .ignoringRequestMatchers("/api/**", "/mypage/uploadIcon") // ← この行を削除またはコメントアウト
+                // APIでのCSRF検証を除外（fetch通信を通すため）
+                .ignoringRequestMatchers(
+                    "/api/**",          // 掲示板API・チャットAPIなど
+                    "/mypage/uploadIcon",
+                    "/ws/**"            // WebSocket通信
+                )
             )
 
             // ------------------ 認可設定 ------------------
@@ -30,10 +33,9 @@ public class SecurityConfig {
                 .requestMatchers(
                     "/login", "/register", "/error",
                     "/css/**", "/js/**",
-                    "/images/**",
-                    "/uploads/**",
+                    "/images/**", "/uploads/**",
                     "/favicon.ico",
-                    "/ws/**" // ★ WebSocket接続を許可
+                    "/ws/**" // WebSocket許可
                 ).permitAll()
                 .anyRequest().authenticated()
             )
@@ -42,24 +44,27 @@ public class SecurityConfig {
             .formLogin(form -> form
                 .loginPage("/login")
                 .loginProcessingUrl("/login")
-                .defaultSuccessUrl("/home", true) // ログイン成功後の遷移先を固定
+                .defaultSuccessUrl("/home", true)
                 .failureUrl("/login?error=true")
                 .permitAll()
             )
 
             // ------------------ ログアウト設定 ------------------
             .logout(logout -> logout
-                // .logoutRequestMatcher(new AntPathRequestMatcher("/logout")) // ← 古い書き方
-                .logoutUrl("/logout") // ★ 新しい書き方
+                .logoutUrl("/logout")
                 .logoutSuccessUrl("/login?logout=true")
                 .invalidateHttpSession(true)
                 .deleteCookies("JSESSIONID")
                 .permitAll()
             );
 
+        // ✅ 同一オリジン（同一ドメイン内）でのiframe許可
+        http.headers(headers -> headers.frameOptions(frame -> frame.sameOrigin()));
+
         return http.build();
     }
 
+    // ------------------ パスワード暗号化設定 ------------------
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
