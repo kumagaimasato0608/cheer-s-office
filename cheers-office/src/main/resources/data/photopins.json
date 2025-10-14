@@ -38,4 +38,44 @@
   "comments" : [ ],
   "bonusPoints" : 0,
   "season" : "2025-10"
+}, {
+  "pinId" : "fa0b8e80-11e8-4e11-9be7-31d3dac3ced8",
+  "location" : {
+    "latitude" : 35.66298666666667,
+    "longitude" : 139.74636833333335
+  },
+  "title" : "神谷町ビル",
+  "description" : "",
+  "createdBy" : "870029bd-68ec-480c-923c-8fc4465a2669",
+  "createdDate" : "2025-10-14T09:17:31.5446271",
+  "photos" : [ {
+    "photoId" : "95627150-4df7-4d26-a83e-3cec719085b7",
+    "imageUrl" : "/images/photopins/fa0b8e80-11e8-4e11-9be7-31d3dac3ced8_OIP (1).webp",
+    "comment" : null,
+    "uploadedBy" : "870029bd-68ec-480c-923c-8fc4465a2669",
+    "uploadedDate" : "2025-10-14T09:17:31.5446271"
+  } ],
+  "comments" : [ ],
+  "bonusPoints" : 0,
+  "season" : "2025-10"
+}, {
+  "pinId" : "84327d17-1ef0-4d23-b1c6-c528b57c63af",
+  "location" : {
+    "latitude" : 35.663016,
+    "longitude" : 139.74635400000003
+  },
+  "title" : "tesuto",
+  "description" : "",
+  "createdBy" : "4f254c98-1c62-423f-8c94-da8a29299612",
+  "createdDate" : "2025-10-14T10:27:47.1498862",
+  "photos" : [ {
+    "photoId" : "998260bb-7e66-4931-8924-bbcc0b7797c8",
+    "imageUrl" : "/images/photopins/84327d17-1ef0-4d23-b1c6-c528b57c63af_OIP (1).webp",
+    "comment" : null,
+    "uploadedBy" : "4f254c98-1c62-423f-8c94-da8a29299612",
+    "uploadedDate" : "2025-10-14T10:27:47.1498862"
+  } ],
+  "comments" : [ ],
+  "bonusPoints" : 0,
+  "season" : "2025-10"
 } ]

@@ -21,19 +21,19 @@
   "icon" : "/images/profile/870029bd-68ec-480c-923c-8fc4465a2669.png",
   "statusMessage" : "よろしくお願いします！",
   "teamColor" : "blue",
-  "lastPinTimestamp" : "2025-10-14T01:03:09.947135"
+  "lastPinTimestamp" : "2025-10-14T09:17:31.5577442"
 }, {
   "userId" : "4f254c98-1c62-423f-8c94-da8a29299612",
   "userName" : "テスト２",
   "mailAddress" : "A@A",
   "password" : "$2a$10$lWt7lrMQBjkoxtGrdlOFcOIg6w3d3ZAznL0wjmaauWj9ePYC9oUFe",
   "group" : "未設定",
-  "myBoom" : null,
-  "hobby" : null,
-  "icon" : "/images/default_icon.png",
-  "statusMessage" : null,
+  "myBoom" : "",
+  "hobby" : "",
+  "icon" : "/images/profile/4f254c98-1c62-423f-8c94-da8a29299612.png",
+  "statusMessage" : "",
   "teamColor" : "red",
-  "lastPinTimestamp" : "2025-10-14T01:03:42.7776438"
+  "lastPinTimestamp" : "2025-10-14T10:27:47.1605624"
 }, {
   "userId" : "8a93aa56-57ae-427c-85f1-909336eae99b",
   "userName" : "テスト３",
