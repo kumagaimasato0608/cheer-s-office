@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="ja" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <meta name="_csrf" th:content="${_csrf.token}"/>
+    <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
+    <title>PinIt</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+
+    <th:block th:replace="~{common/header :: header-style}"></th:block>
+
+    <style>
+        .page-wrapper { padding-top: 115px; }
+        .main-content { padding: 20px; display: flex; gap: 20px; height: calc(100vh - 115px - 20px); }
+        .user-list-sidebar { width: 280px; flex-shrink: 0; background-color: #ffffff; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); padding: 15px; overflow-y: auto; height: 100%; }
+        .user-list-sidebar h4, .user-list-sidebar h5 { margin-bottom: 15px; color: #0d6efd; border-bottom: 1px solid #eee; padding-bottom: 10px; font-size: 1.1em; }
+        .user-icon { width: 32px; height: 32px; border-radius: 50%; object-fit: cover; }
+        #map-container { position: relative; flex-grow: 1; height: 100%; box-shadow: 0 4px 15px rgba(0,0,0,0.05); border-radius: 8px; display: flex; flex-direction: column; }
+        #mapid { flex-grow: 1; border-radius: 8px; }
+        #map-overlay-controls { position: absolute; top: 10px; left: 50px; z-index: 1000; display: flex; gap: 10px; background-color: rgba(255, 255, 255, 0.8); padding: 8px; border-radius: 5px; box-shadow: 0 1px 5px rgba(0,0,0,0.4); }
+        #map-overlay-controls #location-search { width: 300px; }
+        .ranking-item { display: flex; align-items: center; padding: 8px; margin-bottom: 5px; border-radius: 5px; border: 2px solid; }
+        .rank-1 { border-color: #FFD700; background-color: #FFFACD; } .rank-2 { border-color: #C0C0C0; background-color: #F5F5F5; } .rank-3 { border-color: #CD7F32; background-color: #FFE4B5; }
+        .rank-badge { font-weight: bold; margin-right: 10px; }
+        .pin-popup-content { text-align: center; width: 200px; }
+        .pin-popup-content h5 { margin: 5px 0; font-size: 1.1em; }
+        .pin-popup-content img { max-width: 100%; height: auto; border-radius: 5px; margin-top: 5px; }
+        .color-option { width: 100px; height: 100px; border-radius: 50%; margin: 20px; cursor: pointer; border: 5px solid transparent; transition: border-color 0.2s; }
+        .color-option.selected { border-color: #0d6efd; }
+
+		.leaflet-control.custom-button-control { box-shadow: 0 1px 5px rgba(0,0,0,0.2); border-radius: 20px; }
+		.leaflet-control.custom-button-control a { background-color: #fff; padding: 8px 15px; text-decoration: none; color: #333; font-size: 0.9em; font-weight: bold; display: flex; align-items: center; justify-content: center; white-space: nowrap; }
+		.leaflet-control.custom-button-control a:hover { background-color: #f4f4f4; border-radius: 20px; }
+		
+        .comment-item { display: flex; align-items: flex-start; padding: 8px; border-bottom: 1px solid #eee; }
+		.comment-item img { width: 32px; height: 32px; border-radius: 50%; margin-right: 10px; }
+		.comment-item-content { flex-grow: 1; }
+		.comment-item-user { font-weight: bold; font-size: 0.9em; }
+		.comment-item-text { font-size: 0.95em; color: #555; }
+    </style>
+</head>
+<body>
+  <header th:replace="~{common/header :: topHeader}"></header>
+  
+  <div class="page-wrapper">
+    <main class="main-content">
+      <aside class="user-list-sidebar">
+        
+        <div class="mb-3">
+          <label for="seasonSelector" class="form-label small">シーズン選択</label>
+          <select class="form-select form-select-sm" id="seasonSelector"></select>
+        </div>
+
+        <div class="mb-4">
+          <h5>チームスコア</h5>
+          <div id="teamScores">
+            <div class="d-flex justify-content-between p-2 border-bottom"><strong style="color: red;">Red Team</strong><span id="score-red">0 ポイント</span></div>
+            <div class="d-flex justify-content-between p-2 border-bottom"><strong style="color: blue;">Blue Team</strong><span id="score-blue">0 ポイント</span></div>
+            <div class="d-flex justify-content-between p-2"><strong style="color: yellow;">Yellow Team</strong><span id="score-yellow">0 ポイント</span></div>
+          </div>
+        </div>
+
+        <div class="mb-4">
+          <h5>今月のBest3</h5>
+          <div id="pinRankingList"></div>
+        </div>
+        
+        <h4>ユーザー一覧</h4>
+        <div class="accordion" id="userPinAccordion"></div>
+      </aside>
+      <section id="map-container">
+        <div id="map-overlay-controls">
+            <input type="text" placeholder="場所検索" id="location-search" class="form-control">
+            <button class="btn btn-primary btn-sm" id="search-button">検索</button>
+            <button class="btn btn-success btn-sm" id="place-pin-button">ピンを配置</button>
+        </div>
+        <div id="mapid"></div>
+      </section>
+    </main>
+  </div>
+
+  <div class="modal fade" id="pinDetailModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="pinDetailTitle"></h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p id="pinDetailDescription"></p>
+                <hr>
+                <div id="pinDetailPhotos"></div>
+                <hr>
+                <h5>コメント</h5>
+                <div id="pinDetailComments" class="mb-3" style="max-height: 200px; overflow-y: auto;"></div>
+                <div class="input-group">
+                    <input type="text" id="newCommentInput" class="form-control" placeholder="コメントを追加...">
+                    <button class="btn btn-outline-secondary" type="button" id="submitCommentButton">送信</button>
+                </div>
+            </div>
+            <div class="modal-footer" id="pinDetailFooter"></div>
+        </div>
+    </div>
+  </div>
+
+  <div class="modal fade" id="createPinModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">新しいピンを作成</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label for="pinTitle" class="form-label">タイトル</label>
+                    <input type="text" class="form-control" id="pinTitle">
+                </div>
+                <div class="mb-3">
+                    <label for="pinDescription" class="form-label">説明</label>
+                    <textarea class="form-control" id="pinDescription" rows="3"></textarea>
+                </div>
+                <div class="mb-3">
+                    <label for="pinFile" class="form-label">写真 (必須)</label>
+                    <input type="file" class="form-control" id="pinFile" accept="image/*">
+                </div>
+                <p id="newPinLocationText"></p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">キャンセル</button>
+                <button type="button" class="btn btn-primary" id="saveNewPinButton">作成</button>
+            </div>
+        </div>
+    </div>
+  </div>
+
+  <div class="modal fade" id="colorSelectionModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1">
+      <div class="modal-dialog modal-dialog-centered">
+          <div class="modal-content">
+              <div class="modal-header"><h5 class="modal-title">ようこそ！チームカラーを選択してください</h5></div>
+              <div class="modal-body">
+                  <p>あなたが配置するピンは、ここで選択した色で表示されます。</p>
+                  <form th:action="@{/save-color}" method="post" id="colorForm">
+                      <input type="hidden" name="color" id="selectedColorInput">
+                      <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+                      <div class="d-flex justify-content-center">
+                          <div class="color-option" style="background-color: red;"></div>
+                          <div class="color-option" style="background-color: blue;"></div>
+                          <div class="color-option" style="background-color: yellow;"></div>
+                      </div>
+                  </form>
+              </div>
+              <div class="modal-footer"><button type="button" class="btn btn-primary" id="submitColorButton">決定</button></div>
+          </div>
+      </div>
+  </div>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script th:src="@{/js/common.js}"></script>
+  
+  <script th:if="${showColorModal}" th:inline="javascript">
+    var showColorModal = true;
+  </script>
+
+  <script th:src="@{/js/photopin.js}"></script>
+</body>
+</html>

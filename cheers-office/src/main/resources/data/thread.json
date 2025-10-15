@@ -24,5 +24,43 @@
     "anonymous" : false,
     "timestamp" : "2025/10/14 15:13",
     "replyId" : "c0910fdc-2e93-45f7-a8f6-182537cdbfc6"
+  }, {
+    "message" : "うける",
+    "userId" : "anonymous",
+    "userName" : "匿名",
+    "icon" : "/images/default_icon.png",
+    "anonymous" : true,
+    "timestamp" : "2025/10/14 16:20",
+    "replyId" : "216a937f-e7a9-4c5d-9407-8ec661fa5a84"
   } ]
+}, {
+  "message" : "お昼ご飯のおススメ教えてください",
+  "userId" : "u001_auto",
+  "userName" : "自動登録ユーザー",
+  "icon" : "/images/profile/u001_auto.png",
+  "anonymous" : false,
+  "timestamp" : "2025/10/15 13:39",
+  "threadId" : "1bd20bc0-1b56-4a10-9174-03b97cb41ef6",
+  "title" : "お昼ご飯のおススメ教えて",
+  "imageBase64" : "",
+  "replies" : [ {
+    "message" : "マックが安くておすすめ",
+    "userId" : "870029bd-68ec-480c-923c-8fc4465a2669",
+    "userName" : "まさと",
+    "icon" : "/images/profile/870029bd-68ec-480c-923c-8fc4465a2669.png",
+    "anonymous" : false,
+    "timestamp" : "2025/10/15 13:40",
+    "replyId" : "f929f4c6-5752-4d25-b30f-a6c8651f438e"
+  } ]
+}, {
+  "message" : "テスト",
+  "userId" : "870029bd-68ec-480c-923c-8fc4465a2669",
+  "userName" : "まさと",
+  "icon" : "/images/profile/870029bd-68ec-480c-923c-8fc4465a2669.png",
+  "anonymous" : false,
+  "timestamp" : "2025/10/15 15:04",
+  "threadId" : "e68bf7a0-0886-478a-b9e8-3c3214cc2490",
+  "title" : "テスト",
+  "imageBase64" : "",
+  "replies" : [ ]
 } ]

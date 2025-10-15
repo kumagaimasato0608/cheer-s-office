@@ -1,1 +1,26 @@
-[]
+[ {
+  "roomId" : "r1",
+  "roomName" : null,
+  "members" : [ "", "870029bd-68ec-480c-923c-8fc4465a2669" ],
+  "createdAt" : "2025-10-15T13:40:29.549641300"
+}, {
+  "roomId" : "r2",
+  "roomName" : null,
+  "members" : [ "", "u001_auto" ],
+  "createdAt" : "2025-10-15T13:40:39.754630900"
+}, {
+  "roomId" : "r3",
+  "roomName" : null,
+  "members" : [ "", "8a93aa56-57ae-427c-85f1-909336eae99b" ],
+  "createdAt" : "2025-10-15T13:41:47.233442100"
+}, {
+  "roomId" : "r4",
+  "roomName" : null,
+  "members" : [ "", "4f254c98-1c62-423f-8c94-da8a29299612" ],
+  "createdAt" : "2025-10-15T14:28:42.352919"
+}, {
+  "roomId" : "r5",
+  "roomName" : null,
+  "members" : [ "", "c2227a52-b7a0-463b-bbba-7a483368d3fc" ],
+  "createdAt" : "2025-10-15T15:06:58.002364200"
+} ]

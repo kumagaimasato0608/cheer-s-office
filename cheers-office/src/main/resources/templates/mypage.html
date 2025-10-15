@@ -9,7 +9,7 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/jquery-jcrop/0.9.12/css/jquery.Jcrop.min.css" rel="stylesheet">
 
-    <th:block th:replace="~{common/header :: header-style}"></th:block>
+    <link rel="stylesheet" href="/css/style.css"> 
 
     <style>
         /* このページ独自のレイアウトスタイル */
@@ -59,7 +59,7 @@
 </head>
 <body>
 
-    <header th:replace="~{common/header :: topHeader}"></header>
+    <div th:replace="common/header :: header"></div>
 
     <div class="mypage-container">
         <h1>プロフィール編集</h1>

@@ -39,26 +39,6 @@
   "bonusPoints" : 0,
   "season" : "2025-10"
 }, {
-  "pinId" : "fa0b8e80-11e8-4e11-9be7-31d3dac3ced8",
-  "location" : {
-    "latitude" : 35.66298666666667,
-    "longitude" : 139.74636833333335
-  },
-  "title" : "神谷町ビル",
-  "description" : "",
-  "createdBy" : "870029bd-68ec-480c-923c-8fc4465a2669",
-  "createdDate" : "2025-10-14T09:17:31.5446271",
-  "photos" : [ {
-    "photoId" : "95627150-4df7-4d26-a83e-3cec719085b7",
-    "imageUrl" : "/images/photopins/fa0b8e80-11e8-4e11-9be7-31d3dac3ced8_OIP (1).webp",
-    "comment" : null,
-    "uploadedBy" : "870029bd-68ec-480c-923c-8fc4465a2669",
-    "uploadedDate" : "2025-10-14T09:17:31.5446271"
-  } ],
-  "comments" : [ ],
-  "bonusPoints" : 0,
-  "season" : "2025-10"
-}, {
   "pinId" : "84327d17-1ef0-4d23-b1c6-c528b57c63af",
   "location" : {
     "latitude" : 35.663016,
@@ -74,6 +54,46 @@
     "comment" : null,
     "uploadedBy" : "4f254c98-1c62-423f-8c94-da8a29299612",
     "uploadedDate" : "2025-10-14T10:27:47.1498862"
+  } ],
+  "comments" : [ ],
+  "bonusPoints" : 0,
+  "season" : "2025-10"
+}, {
+  "pinId" : "7d376d87-7a97-4c04-ba46-4506564dd88d",
+  "location" : {
+    "latitude" : 35.66365797670739,
+    "longitude" : 139.7464121506726
+  },
+  "title" : "テスト",
+  "description" : "",
+  "createdBy" : "u001_auto",
+  "createdDate" : "2025-10-15T10:15:51.3577108",
+  "photos" : [ {
+    "photoId" : "fe90253b-d13c-4661-9057-8a2138b0dde5",
+    "imageUrl" : "/images/photopins/7d376d87-7a97-4c04-ba46-4506564dd88d_OIP.webp",
+    "comment" : null,
+    "uploadedBy" : "u001_auto",
+    "uploadedDate" : "2025-10-15T10:15:51.3577108"
+  } ],
+  "comments" : [ ],
+  "bonusPoints" : 0,
+  "season" : "2025-10"
+}, {
+  "pinId" : "fc04c6de-a230-43f6-abab-5f5d99e4138a",
+  "location" : {
+    "latitude" : 35.66363081304044,
+    "longitude" : 139.7463924739503
+  },
+  "title" : "テスト",
+  "description" : "",
+  "createdBy" : "870029bd-68ec-480c-923c-8fc4465a2669",
+  "createdDate" : "2025-10-15T15:27:04.5676494",
+  "photos" : [ {
+    "photoId" : "ddf216b9-94d2-43d8-bb51-e18de923fd6a",
+    "imageUrl" : "/images/photopins/fc04c6de-a230-43f6-abab-5f5d99e4138a_Gemini_Generated_Image_nskpa3nskpa3nskp.png",
+    "comment" : null,
+    "uploadedBy" : "870029bd-68ec-480c-923c-8fc4465a2669",
+    "uploadedDate" : "2025-10-15T15:27:04.5676494"
   } ],
   "comments" : [ ],
   "bonusPoints" : 0,

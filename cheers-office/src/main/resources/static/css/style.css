@@ -1,0 +1,81 @@
+/* ========================================================= */
+/* === 共通ヘッダーとナビゲーションのスタイル（全ページ共通） === */
+/* ========================================================= */
+
+/* === ページ全体の基本設定 === */
+body {
+    position: relative;
+    background-color: #e6f0ff; 
+    font-family: "Segoe UI", "Noto Sans JP", sans-serif;
+    margin: 0;
+}
+
+/* === ヘッダー === */
+.app-header {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    z-index: 1000;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    background-color: #ffffff;
+}
+.header-top-tier {
+    background-color: #f8f9fa;
+    padding: 10px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #dee2e6;
+}
+
+/* ログイン中ユーザー名 */
+.logged-in-user {
+    font-size: 0.95em;
+    font-weight: bold;
+    color: #333;
+}
+
+.app-title { font-size: 1.5em; font-weight: bold; color: #007bff; }
+.header-nav { padding: 5px 20px; }
+.nav-list { list-style: none; margin: 0; padding: 0; display: flex; align-items: center; }
+.nav-item { padding: 5px 25px; /* メニュー幅 */ } 
+.nav-link { 
+    display: flex; 
+    flex-direction: column; 
+    align-items: center; 
+    text-decoration: none; 
+    color: #333; 
+    font-size: 0.9em; 
+    font-weight: bold; 
+    padding: 8px 15px; 
+}
+.nav-link:hover { color: #007bff; }
+
+.logout-item { margin-left: auto; }
+.logout-button { background-color: #007bff; color: white; border: none; padding: 8px 20px; border-radius: 20px; font-weight: bold; cursor: pointer; font-size: 0.9em; }
+.logout-button:hover { background-color: #0056b3; }
+
+.header-toggle-button {
+    background-color: #6c757d;
+    color: white;
+    border: none;
+    padding: 8px 18px; 
+    font-size: 0.9em;  
+    border-radius: 5px;
+    font-weight: bold;
+    display: none;
+}
+
+/* === コンテンツコンテナの基本 === */
+.page-container {
+    max-width: 1200px;
+    margin: 20px auto;
+    padding: 30px 40px;
+    background-color: #ffffff;
+    border-radius: 10px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+.page-wrapper {
+    padding: 20px;
+}

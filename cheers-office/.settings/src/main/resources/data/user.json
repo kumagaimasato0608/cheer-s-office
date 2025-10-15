@@ -1,0 +1,61 @@
+[ {
+  "userId" : "u001_auto",
+  "userName" : "自動登録ユーザー",
+  "mailAddress" : "test@cheers.com",
+  "password" : "$2a$10$Pl4ZCislUCrGsgzGy8UhgeFB9nJcOiNr/zWNLllW4p.dPFGQK2jcu",
+  "group" : "開発部",
+  "myBoom" : "Java開発",
+  "hobby" : "読書",
+  "icon" : "/images/profile/u001_auto.png",
+  "statusMessage" : "よろしくお願いします！",
+  "teamColor" : "yellow",
+  "lastPinTimestamp" : "2025-10-14T00:59:39.8073726"
+}, {
+  "userId" : "870029bd-68ec-480c-923c-8fc4465a2669",
+  "userName" : "まさと",
+  "mailAddress" : "09.kumagaimasato@gmail.com",
+  "password" : "$2a$10$k7jzk6FNraQN6WqEaeKGi.Gh.cRSqDwTtXNkUBgAr/QDDqZYcRdZu",
+  "group" : "未設定",
+  "myBoom" : "[ALEXANDROS]",
+  "hobby" : "ライブ観戦、サッカー",
+  "icon" : "/images/profile/870029bd-68ec-480c-923c-8fc4465a2669.png",
+  "statusMessage" : "よろしくお願いします！",
+  "teamColor" : "blue",
+  "lastPinTimestamp" : "2025-10-14T09:17:31.5577442"
+}, {
+  "userId" : "4f254c98-1c62-423f-8c94-da8a29299612",
+  "userName" : "テスト２",
+  "mailAddress" : "A@A",
+  "password" : "$2a$10$lWt7lrMQBjkoxtGrdlOFcOIg6w3d3ZAznL0wjmaauWj9ePYC9oUFe",
+  "group" : "未設定",
+  "myBoom" : "",
+  "hobby" : "",
+  "icon" : "/images/profile/4f254c98-1c62-423f-8c94-da8a29299612.png",
+  "statusMessage" : "",
+  "teamColor" : "red",
+  "lastPinTimestamp" : "2025-10-14T10:27:47.1605624"
+}, {
+  "userId" : "8a93aa56-57ae-427c-85f1-909336eae99b",
+  "userName" : "テスト３",
+  "mailAddress" : "b@b",
+  "password" : "$2a$10$qvkffzb4XMnV37OaIg9TjORpd33koPg3Tg7GpOGg5zi3AVLUfjNce",
+  "group" : "未設定",
+  "myBoom" : "",
+  "hobby" : "",
+  "icon" : "/images/profile/8a93aa56-57ae-427c-85f1-909336eae99b.png",
+  "statusMessage" : "",
+  "teamColor" : "blue",
+  "lastPinTimestamp" : "2025-10-13T19:59:23.5095363"
+}, {
+  "userId" : "c2227a52-b7a0-463b-bbba-7a483368d3fc",
+  "userName" : "izumi",
+  "mailAddress" : "231010izumi@tid.ac.jp",
+  "password" : "$2a$10$YVsC5x5hYiRhthyPHqkCbun32F7DN7ijsn2A8lTObnt7OQjMgosvG",
+  "group" : "未設定",
+  "myBoom" : "",
+  "hobby" : "",
+  "icon" : "/images/profile/c2227a52-b7a0-463b-bbba-7a483368d3fc.png",
+  "statusMessage" : "",
+  "teamColor" : null,
+  "lastPinTimestamp" : null
+} ]

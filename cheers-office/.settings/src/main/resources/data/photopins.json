@@ -1,0 +1,81 @@
+[ {
+  "pinId" : "db4d3970-4844-4cf1-b8d6-542f1de4baa8",
+  "location" : {
+    "latitude" : 35.680729,
+    "longitude" : 139.478012
+  },
+  "title" : "テスト",
+  "description" : "",
+  "createdBy" : "870029bd-68ec-480c-923c-8fc4465a2669",
+  "createdDate" : "2025-10-14T01:03:09.9343569",
+  "photos" : [ {
+    "photoId" : "9f6c70e1-d876-4b14-9c0b-00e68437abe5",
+    "imageUrl" : "/images/photopins/db4d3970-4844-4cf1-b8d6-542f1de4baa8_OIP.webp",
+    "comment" : null,
+    "uploadedBy" : "870029bd-68ec-480c-923c-8fc4465a2669",
+    "uploadedDate" : "2025-10-14T01:03:09.9343569"
+  } ],
+  "comments" : [ ],
+  "bonusPoints" : 0,
+  "season" : "2025-10"
+}, {
+  "pinId" : "3fa6a515-9181-43a6-88c9-0d09953edda8",
+  "location" : {
+    "latitude" : 35.680729,
+    "longitude" : 139.478012
+  },
+  "title" : "テスト２",
+  "description" : "",
+  "createdBy" : "4f254c98-1c62-423f-8c94-da8a29299612",
+  "createdDate" : "2025-10-14T01:03:42.7703091",
+  "photos" : [ {
+    "photoId" : "a6dcac26-87a8-4544-9be6-854073d9f0aa",
+    "imageUrl" : "/images/photopins/3fa6a515-9181-43a6-88c9-0d09953edda8_OIP.webp",
+    "comment" : null,
+    "uploadedBy" : "4f254c98-1c62-423f-8c94-da8a29299612",
+    "uploadedDate" : "2025-10-14T01:03:42.7703091"
+  } ],
+  "comments" : [ ],
+  "bonusPoints" : 0,
+  "season" : "2025-10"
+}, {
+  "pinId" : "fa0b8e80-11e8-4e11-9be7-31d3dac3ced8",
+  "location" : {
+    "latitude" : 35.66298666666667,
+    "longitude" : 139.74636833333335
+  },
+  "title" : "神谷町ビル",
+  "description" : "",
+  "createdBy" : "870029bd-68ec-480c-923c-8fc4465a2669",
+  "createdDate" : "2025-10-14T09:17:31.5446271",
+  "photos" : [ {
+    "photoId" : "95627150-4df7-4d26-a83e-3cec719085b7",
+    "imageUrl" : "/images/photopins/fa0b8e80-11e8-4e11-9be7-31d3dac3ced8_OIP (1).webp",
+    "comment" : null,
+    "uploadedBy" : "870029bd-68ec-480c-923c-8fc4465a2669",
+    "uploadedDate" : "2025-10-14T09:17:31.5446271"
+  } ],
+  "comments" : [ ],
+  "bonusPoints" : 0,
+  "season" : "2025-10"
+}, {
+  "pinId" : "84327d17-1ef0-4d23-b1c6-c528b57c63af",
+  "location" : {
+    "latitude" : 35.663016,
+    "longitude" : 139.74635400000003
+  },
+  "title" : "tesuto",
+  "description" : "",
+  "createdBy" : "4f254c98-1c62-423f-8c94-da8a29299612",
+  "createdDate" : "2025-10-14T10:27:47.1498862",
+  "photos" : [ {
+    "photoId" : "998260bb-7e66-4931-8924-bbcc0b7797c8",
+    "imageUrl" : "/images/photopins/84327d17-1ef0-4d23-b1c6-c528b57c63af_OIP (1).webp",
+    "comment" : null,
+    "uploadedBy" : "4f254c98-1c62-423f-8c94-da8a29299612",
+    "uploadedDate" : "2025-10-14T10:27:47.1498862"
+  } ],
+  "comments" : [ ],
+  "bonusPoints" : 0,
+  "season" : "2025-10"
+} ]

@@ -1,70 +1,847 @@
 <!DOCTYPE html>
-<html lang="ja" xmlns:th="http://www.thymeleaf.org">
+<html xmlns:th="http://www.thymeleaf.org" lang="ja">
 <head>
     <meta charset="UTF-8">
-    <title>ホーム | Cheers Office</title>
-    <th:block th:replace="~{common/header :: header-style}"></th:block>
-    <link href='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.9/main.min.css' rel='stylesheet' />
+    <meta name="_csrf" th:content="${_csrf.token}"/>
+    <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
+    <title>Cheers Office - ホーム</title>
+    
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <link href='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/main.min.css' rel='stylesheet' />
+    <script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.js'></script>
+    <script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/locales-all.global.min.js'></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios@1.7.7/dist/axios.min.js"></script>
+    
     <style>
-        #calendar { margin-top: 20px; }
-        .participant-list { max-height: 200px; overflow-y: auto; border: 1px solid #dee2e6; padding: 10px; border-radius: 5px; }
-    </style>
+	    /* === ページ全体の基本設定 === */
+	    body {
+			position: relative;
+			background-color: #e6f0ff; 
+			font-family: "Segoe UI", "Noto Sans JP", sans-serif;
+			margin: 0;
+	    }
+
+	    /* === ヘッダー === */
+	    .app-header {
+	        position: fixed;
+	        top: 0;
+	        left: 0;
+	        width: 100%;
+	        z-index: 1000;
+	        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+	        background-color: #ffffff;
+	    }
+	    .header-top-tier {
+	        background-color: #f8f9fa;
+	        padding: 10px 20px;
+	        display: flex;
+	        justify-content: space-between;
+	        align-items: center;
+	        border-bottom: 1px solid #dee2e6;
+	    }
+	    .app-title { font-size: 1.5em; font-weight: bold; color: #007bff; }
+	    .header-nav { padding: 5px 20px; }
+	    .nav-list { list-style: none; margin: 0; padding: 0; display: flex; align-items: center; }
+	    .nav-item { padding: 5px 15px; }
+	    .nav-link { 
+	        /* ★ 修正: アイコンを削除し、テキストのみにする */
+	        display: flex; 
+	        flex-direction: column; /* 縦並びを維持しつつ、アイコン要素を削除 */
+	        align-items: center; 
+	        text-decoration: none; 
+	        color: #333; 
+	        font-size: 0.9em; /* 文字を少し大きく */
+	        font-weight: bold; 
+	        padding: 8px 15px; /* パディングを調整 */
+	    }
+	    .nav-link:hover { color: #007bff; }
+	    /* .nav-icon { width: 24px; height: 24px; margin-bottom: 3px; }  ★ 削除 */
+	    
+	    /* ★ 追加: ログインユーザー名とログアウトボタンのコンテナ */
+	    .user-info-container {
+	        display: flex;
+	        align-items: center;
+	        gap: 15px;
+	    }
+	    .logged-in-user {
+	        font-weight: bold;
+	        color: #333;
+	        font-size: 0.95em;
+	    }
+	    
+	    .logout-item { margin-left: auto; }
+	    .logout-button { background-color: #007bff; color: white; border: none; padding: 8px 20px; border-radius: 20px; font-weight: bold; cursor: pointer; font-size: 0.9em; }
+	    .logout-button:hover { background-color: #0056b3; }
+	    
+	    .header-toggle-button {
+	        background-color: #6c757d;
+	        color: white;
+	        border: none;
+	        padding: 8px 18px; 
+	        font-size: 0.9em;  
+	        border-radius: 5px;
+	        font-weight: bold;
+	        display: none;
+	    }
+
+	    /* === 共通コンテンツコンテナ === */
+	    .page-container {
+	        max-width: 1200px;
+	        margin: 20px auto; 
+	        padding: 30px 40px;
+	        background-color: #ffffff;
+	        border-radius: 10px;
+	        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+	    }
+	    .page-wrapper {
+	        padding: 20px;
+	    }
+	    
+	    /* === カレンダー調整 === */
+        #calendar-section {
+            padding: 0 15px;
+            position: relative; 
+            max-height: 700px; 
+        }
+        .fc-toolbar-title { font-size: 1.5em; }
+        .fc-daygrid-event { 
+            white-space: normal; 
+            overflow: hidden; 
+            text-overflow: ellipsis;
+        }
+        .fc-toolbar-chunk:nth-child(1) .fc-today-button,
+        .fc-toolbar-chunk:nth-child(3) { 
+            display: none !important;
+        }
+        .fc-day-selected {
+            background-color: #e0f7fa !important;
+            border: 2px solid #00bcd4 !important;
+        }
+        
+        /* ★ モーダル内のスクロール修正 */
+		#eventModal .modal-body {
+	        max-height: 70vh; 
+	        overflow-y: auto; 
+	    }
+		input[type="datetime-local"] {
+		    padding-right: 5px; 
+	    }
+
+        /* === 本日の予定リスト === */
+        #today-schedule-section {
+            padding: 15px 0;
+        }
+        .today-event-item {
+            padding: 8px 15px;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            align-items: center;
+        }
+        .today-event-item:last-child {
+            border-bottom: none;
+        }
+        .event-time {
+            font-weight: bold;
+            color: #007bff;
+            margin-right: 15px;
+            width: 80px;
+            flex-shrink: 0;
+        }
+        .event-title {
+            flex-grow: 1;
+        }
+		
+	</style>
+    
+    <link rel="stylesheet" href="/css/style.css"> 
 </head>
 <body>
-    <header th:replace="~{common/header :: topHeader}"></header>
 
-    <div class="page-container">
-        <div class="d-flex justify-content-between align-items-center">
-            <h1>ホーム</h1>
-            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#eventModal">予定を作成</button>
+    <header class="app-header">
+        <div class="header-top-tier">
+            <div class="app-title">Cheers Office</div>
+            <div class="user-info-container">
+                <span id="loggedInUserName" class="logged-in-user">読み込み中...</span>
+                <button class="header-toggle-button" type="button" data-bs-toggle="collapse" data-bs-target="#headerNavCollapse" aria-expanded="false" aria-controls="headerNavCollapse">
+                    メニュー
+                </button>
+            </div>
         </div>
-        <p>カレンダーの日付をクリックしても、予定を作成できます。</p>
-        <div id="calendar"></div>
-    </div>
-    
-    <div class="modal fade" id="eventModal" tabindex="-1">
+        <div class="collapse" id="headerNavCollapse">
+            <nav class="header-nav">
+                <ul class="nav-list">
+                    <li class="nav-item">
+                        <a th:href="@{/home}" class="nav-link">
+                            <span>ホーム</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a th:href="@{/mypage}" class="nav-link">
+                            <span>マイページ</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a th:href="@{/chat/rooms}" class="nav-link">
+                            <span>チャット</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a th:href="@{/thread}" class="nav-link">
+                            <span>掲示板</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a th:href="@{/photopin}" class="nav-link">
+                            <span>ピニット</span>
+                        </a>
+                    </li>
+                    <li class="nav-item logout-item">
+                        <form th:action="@{/logout}" method="post">
+                            <button type="submit" class="logout-button">ログアウト</button>
+                        </form>
+                    </li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+    <main class="container mt-5" style="padding-top: 100px;"> 
+        <h1 class="mb-4">ようこそ、Cheers Officeへ！</h1>
+
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card shadow-sm">
+                    <div class="card-header bg-success text-white">
+                        <h5 class="mb-0">✨ 本日の予定 (<span id="todayDate"></span>)</h5>
+                    </div>
+                    <div class="card-body p-0" id="today-schedule-section">
+                        <div id="today-event-list">
+                            <p class="text-center text-muted small mt-3">予定を読み込み中...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+
+        <div class="main-content-area row">
+
+            <div class="col-lg-8">
+                
+                <div class="card shadow-sm mb-4">
+                    <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">🗓️ 全体カレンダー</h5>
+                        <button type="button" class="btn btn-sm btn-light" id="openNewEventButton">
+                            + 予定追加
+                        </button>
+                    </div>
+                    <div class="card-body" id="calendar-section">
+                        <div id='home-calendar'></div>
+                    </div>
+                </div>
+
+                <div class="card shadow-sm mb-4">
+                    <div class="card-header bg-danger text-white">
+                        <h5 class="mb-0">🎮 pinIt リアルタイムスコア</h5>
+                    </div>
+                    <div class="card-body">
+                        <ul id="realtime-score-list" class="list-group list-group-flush">
+                            <li class="list-group-item d-flex justify-content-between align-items-center" style="color: red;">
+                                <span>🔴 RED チーム</span>
+                                <strong id="score-red">0</strong>
+                            </li>
+                            <li class="list-group-item d-flex justify-content-between align-items-center" style="color: blue;">
+                                <span>🔵 BLUE チーム</span>
+                                <strong id="score-blue">0</strong>
+                            </li>
+                            <li class="list-group-item d-flex justify-content-between align-items-center" style="color: gold;">
+                                <span>🟡 YELLOW チーム</span>
+                                <strong id="score-yellow">0</strong>
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="card-footer text-center">
+                        <a href="/photopin" class="btn btn-sm btn-outline-danger">pinIt マップへ (詳細)</a>
+                    </div>
+                </div>
+
+                <div class="card shadow-sm mb-4">
+                    <div class="card-header bg-success text-white">
+                        <h5 class="mb-0">📰 新着情報 (最新スレッド)</h5>
+                    </div>
+                    <ul id="latest-threads-list" class="list-group list-group-flush">
+                        <li class="list-group-item text-center text-muted" id="loading-threads">
+                            スレッドを読み込み中...
+                        </li>
+                    </ul>
+                    <div class="card-footer text-center">
+                        <a href="/thread" class="btn btn-sm btn-outline-success">掲示板全体を見る</a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-4">
+                
+                <div class="card shadow-sm mb-4">
+                    <div class="card-body">
+                        <h3>メンバーの状況</h3>
+                        <p class="text-muted">（ここにメンバーのステータス更新や活動ログが表示されます）</p>
+                    </div>
+                </div>
+
+                <div class="card shadow-sm">
+                    <div class="card-body">
+                        <h5 class="card-title">💬 チャット</h5>
+                        <p class="card-text small text-muted">アクティブなチャットルームや未読情報がここに表示されます。</p>
+                        <a href="/chat" class="btn btn-sm btn-outline-secondary">チャットルームへ</a>
+                    </div>
+                </div>
+            </div>
+        </div> 
+    </main>
+        
+    <div class="modal fade" id="eventModal" tabindex="-1" aria-labelledby="eventModalLabel" aria-hidden="true">
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">予定の作成</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    <h5 class="modal-title" id="eventModalLabel">イベントの登録・編集</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
-                    <div class="mb-3">
-                        <label for="eventTitle" class="form-label">タイトル <span class="text-danger">※必須</span></label>
-                        <input type="text" class="form-control" id="eventTitle">
-                    </div>
-                    <div class="mb-3">
-                        <label for="eventStartDate" class="form-label">開始日時 <span class="text-danger">※必須</span></label>
-                        <input type="datetime-local" class="form-control" id="eventStartDate">
-                    </div>
-                    <div class="mb-3">
-                        <label for="eventEndDate" class="form-label">終了日時 <span class="text-danger">※必須</span></label>
-                        <input type="datetime-local" class="form-control" id="eventEndDate">
-                    </div>
-                    <div class="mb-3">
-                        <label for="eventDescription" class="form-label">備考</label>
-                        <textarea class="form-control" id="eventDescription" rows="3"></textarea>
-                    </div>
-                    <div class="form-check">
-                      <input class="form-check-input" type="checkbox" id="allUsersCheckbox">
-                      <label class="form-check-label" for="allUsersCheckbox">
-                        全ユーザーに共有する
-                      </label>
-                    </div>
+                    <form id="eventForm">
+                        <input type="hidden" id="eventId">
+                        <div class="mb-3">
+                            <label for="eventTitle" class="form-label">タイトル *</label>
+                            <input type="text" class="form-control" id="eventTitle" required>
+                        </div>
+                        <div class="mb-3 row">
+                            <div class="col-6">
+                                <label for="eventStart" class="form-label">開始日時 *</label>
+                                <input type="datetime-local" class="form-control" id="eventStart" required>
+                            </div>
+                            <div class="col-6">
+                                <label for="eventEnd" class="form-label">終了日時</label>
+                                <input type="datetime-local" class="form-control" id="eventEnd">
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="eventDescription" class="form-label">説明/備考</label>
+                            <textarea class="form-control" id="eventDescription" rows="2"></textarea>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">🗓 共有メンバー (任意)</label>
+                            <div id="sharedUsersContainer" style="max-height: 150px; overflow-y: auto; border: 1px solid #ccc; padding: 10px; border-radius: 5px;">
+                                <p class="text-muted small">ユーザー情報を読み込み中...</p>
+                            </div>
+                        </div>
+
+                        <div class="mb-3 form-check">
+                            <input type="checkbox" class="form-check-input" id="eventAllDay">
+                            <label class="form-check-label" for="eventAllDay">終日イベント</label>
+                        </div>
+                    </form>
                 </div>
                 <div class="modal-footer">
+                    <button type="button" class="btn btn-danger me-auto" id="deleteEventButton" style="display: none;">削除</button>
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">キャンセル</button>
                     <button type="button" class="btn btn-primary" id="saveEventButton">登録</button>
                 </div>
             </div>
         </div>
     </div>
-
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    
+    <div class="modal fade" id="dayEventsModal" tabindex="-1" aria-labelledby="dayEventsModalTitle" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="dayEventsModalTitle">日付の予定</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body" id="dayEventsModalBody">
+                    </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">閉じる</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script th:src="@{/js/common.js}"></script>
-    <script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.9/main.min.js'></script>
-    <script th:src="@{/js/home.js}"></script>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/sockjs-client/1.6.1/sockjs.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
+    
+    <script src="/js/common.js"></script>
+    <script src="/js/home.js"></script>
+    
+    <script>
+        // CSRFトークンをaxiosのデフォルトヘッダーに設定
+        const token = document.querySelector('meta[name="_csrf"]').getAttribute('content');
+        const header = document.querySelector('meta[name="_csrf_header"]').getAttribute('content');
+        axios.defaults.headers.common[header] = token;
+        
+        // ユーティリティ関数
+        const formatDate = (date) => {
+             // dateオブジェクトまたはISO文字列を受け取り、"YYYY-MM-DD"形式の文字列を返す
+            if (!date) return '';
+            const d = (date instanceof Date) ? date : new Date(date);
+            const year = d.getFullYear();
+            const month = String(d.getMonth() + 1).padStart(2, '0');
+            const day = String(d.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        };
+        const formatTime = (isoString) => {
+            if (!isoString || isoString.length < 16) return '';
+            return isoString.substring(11, 16); // "HH:MM" 部分を抽出
+        };
+        const todayDateStr = formatDate(new Date());
+
+
+        document.addEventListener('DOMContentLoaded', async function() {
+            const calendarEl = document.getElementById('home-calendar');
+            const eventModal = new bootstrap.Modal(document.getElementById('eventModal'));
+            const dayEventsModal = new bootstrap.Modal(document.getElementById('dayEventsModal'));
+            const userNameEl = document.getElementById('loggedInUserName'); // ユーザー名表示要素
+            let currentUserId = null;
+            let allUsers = [];
+
+            // 1. ユーザー情報と全ユーザーリストを事前に取得
+            try {
+                const meRes = await axios.get('/api/users/me');
+                currentUserId = meRes.data.userId;
+                
+                // ★ ユーザー名を表示
+                userNameEl.textContent = meRes.data.userName;
+
+                const usersRes = await axios.get('/api/users');
+                allUsers = usersRes.data || [];
+                renderSharedUsersSelection(); 
+            } catch (error) {
+                console.error("ユーザー情報の取得に失敗しました", error);
+                userNameEl.textContent = 'ゲスト';
+            }
+
+            // ユーザー選択チェックボックスをレンダリングする関数 (変更なし)
+            function renderSharedUsersSelection(selectedIds = []) {
+                const container = document.getElementById('sharedUsersContainer');
+                container.innerHTML = '';
+                
+                if (!allUsers || allUsers.length <= 1) {
+                     container.innerHTML = '<p class="text-muted small">共有できる他のユーザーはいません。</p>';
+                     return;
+                }
+                
+                allUsers.forEach(user => {
+                    if (user.userId !== currentUserId) {
+                        const isChecked = selectedIds.includes(user.userId) ? 'checked' : '';
+                        const div = document.createElement('div');
+                        div.className = 'form-check';
+                        div.innerHTML = `
+                            <input class="form-check-input shared-user-checkbox" type="checkbox" value="${user.userId}" id="share_${user.userId}" ${isChecked}>
+                            <label class="form-check-label small" for="share_${user.userId}">
+                                ${user.userName}
+                            </label>
+                        `;
+                        container.appendChild(div);
+                    }
+                });
+            }
+
+            // モーダルを開き、フォームをリセット/イベントデータで初期化する関数 (変更なし)
+            function openEventModal(info) {
+                const isNew = info.event === undefined;
+                const modalTitle = document.getElementById('eventModalLabel');
+                const deleteButton = document.getElementById('deleteEventButton');
+                const saveButton = document.getElementById('saveEventButton');
+                const form = document.getElementById('eventForm');
+
+                form.reset();
+                deleteButton.style.display = 'none';
+                document.getElementById('eventId').value = '';
+                
+                // 新規作成
+                if (isNew) {
+                    modalTitle.textContent = '新しいイベントを登録';
+                    saveButton.textContent = '登録';
+                    saveButton.disabled = false;
+                    form.querySelectorAll('input, textarea').forEach(el => el.disabled = false);
+                    
+                    const now = new Date();
+                    const year = now.getFullYear();
+                    const month = String(now.getMonth() + 1).padStart(2, '0');
+                    const day = String(now.getDate()).padStart(2, '0');
+                    const startDefault = `${year}-${month}-${day}T09:00`;
+
+                    document.getElementById('eventStart').value = startDefault; 
+                    document.getElementById('eventEnd').value = '';
+                    document.getElementById('eventAllDay').checked = false; 
+
+                    renderSharedUsersSelection([]); 
+                } 
+                // 編集/閲覧
+                else {
+                    // 日付タップモーダルが開いている場合は閉じる
+                    dayEventsModal.hide(); 
+                    
+                    const event = info.event;
+                    const eventProps = event.extendedProps; 
+                    const canEdit = eventProps.createdByUserId === currentUserId;
+                    
+                    modalTitle.textContent = canEdit ? 'イベントを編集' : 'イベントの詳細 (閲覧のみ)';
+                    saveButton.textContent = canEdit ? '更新' : 'OK';
+                    saveButton.disabled = !canEdit;
+                    
+                    document.getElementById('eventId').value = event.id;
+                    document.getElementById('eventTitle').value = event.title;
+                    document.getElementById('eventDescription').value = eventProps.description || '';
+                    document.getElementById('eventStart').value = event.startStr ? event.startStr.substring(0, 16) : '';
+                    document.getElementById('eventEnd').value = event.endStr ? event.endStr.substring(0, 16) : '';
+                    document.getElementById('eventAllDay').checked = event.allDay;
+                    
+                    deleteButton.style.display = canEdit ? 'block' : 'none';
+                    form.querySelectorAll('input, textarea').forEach(el => el.disabled = !canEdit);
+                    
+                    const sharedIds = eventProps.sharedWithUserIds || [];
+                    renderSharedUsersSelection(sharedIds);
+                    form.querySelectorAll('.shared-user-checkbox').forEach(el => el.disabled = !canEdit);
+                }
+
+                eventModal.show();
+            }
+            
+            // 新規イベント登録ボタンのクリックハンドラ (変更なし)
+            document.getElementById('openNewEventButton').addEventListener('click', function() {
+                openEventModal({ event: undefined });
+            });
+
+            // イベントを保存/更新する関数 (変更なし)
+            document.getElementById('saveEventButton').onclick = async function() {
+                const id = document.getElementById('eventId').value;
+                const title = document.getElementById('eventTitle').value;
+                const start = document.getElementById('eventStart').value;
+                const end = document.getElementById('eventEnd').value;
+                const description = document.getElementById('eventDescription').value;
+                const allDay = document.getElementById('eventAllDay').checked;
+                
+                if (!title || !start) {
+                    alert('タイトルと開始日時は必須です。');
+                    return;
+                }
+
+                const sharedWithUserIds = Array.from(document.querySelectorAll('.shared-user-checkbox:checked'))
+                                             .map(cb => cb.value);
+
+                const eventData = {
+                    id: id || null,
+                    title: title,
+                    start: start,
+                    end: end || null,
+                    description: description,
+                    allDay: allDay,
+                    sharedWithUserIds: sharedWithUserIds
+                };
+
+                try {
+                    await axios.post('/api/events', eventData); 
+                    eventModal.hide();
+                    calendar.refetchEvents(); 
+                    alert(`イベントを${id ? '更新' : '登録'}しました。`);
+                } catch (error) {
+                    console.error('イベントの保存に失敗しました:', error);
+                    alert(`イベントの保存に失敗しました。エラー: ${error.response ? (error.response.data || error.response.statusText) : 'ネットワークエラー'}`);
+                }
+            };
+            
+            // イベントを削除する関数 (変更なし)
+            document.getElementById('deleteEventButton').onclick = async function() {
+                if (!confirm('本当にこのイベントを削除しますか？')) return;
+                const id = document.getElementById('eventId').value;
+                if (!id) return;
+                
+                try {
+                    await axios.delete(`/api/events/${id}`);
+                    eventModal.hide();
+                    calendar.refetchEvents();
+                    alert('イベントを削除しました。');
+                } catch (error) {
+                    console.error('イベントの削除に失敗しました:', error);
+                    alert(`イベントの削除に失敗しました。自分のイベントであるか確認してください。エラー: ${error.response ? (error.response.data || error.response.statusText) : 'ネットワークエラー'}`);
+                }
+            };
+
+            // カレンダープレースホルダーを更新する関数 (変更なし)
+            function updateCalendarPlaceholder(eventCount) {
+                const calendarContainer = document.getElementById('calendar-section');
+                const placeholderId = 'calendar-placeholder';
+                let placeholder = document.getElementById(placeholderId);
+                
+                if (eventCount === 0) {
+                    if (!placeholder) {
+                        placeholder = document.createElement('div');
+                        placeholder.id = placeholderId;
+                        placeholder.className = 'text-center p-5 text-muted h4 fw-bold'; 
+                        placeholder.style.position = 'absolute';
+                        placeholder.style.width = '100%';
+                        placeholder.style.top = '50%';
+                        placeholder.style.left = '0';
+                        placeholder.style.transform = 'translateY(-50%)';
+                        placeholder.style.pointerEvents = 'none'; 
+                        calendarContainer.appendChild(placeholder);
+                    }
+                    if(calendarEl.classList.contains('fc')) {
+                         placeholder.textContent = '現在、予定が登録されていません。'; 
+                         calendarEl.style.opacity = '0.3'; 
+                    }
+                } else {
+                    if (placeholder) {
+                        placeholder.remove();
+                    }
+                    calendarEl.style.opacity = '1';
+                }
+            }
+            
+            // 本日の予定リストを更新する関数
+            function updateTodayScheduleList(allEvents) {
+                const listContainer = document.getElementById('today-event-list');
+                const todayDateEl = document.getElementById('todayDate');
+                
+                const now = new Date();
+                const todayStr = formatDate(now);
+                
+                todayDateEl.textContent = new Intl.DateTimeFormat('ja-JP', {
+                    year: 'numeric', month: 'numeric', day: 'numeric', weekday: 'short'
+                }).format(now);
+                
+                const todayEvents = allEvents.filter(event => {
+                    const start = new Date(event.start);
+                    const end = event.end ? new Date(event.end) : null;
+                    const eventDateStr = formatDate(start);
+                    
+                    if (event.allDay) {
+                         const endDateStr = end ? formatDate(end) : eventDateStr; 
+                         return todayStr >= eventDateStr && todayStr < endDateStr;
+                    } 
+                    
+                    return eventDateStr === todayStr;
+                    
+                }).sort((a, b) => new Date(a.start) - new Date(b.start)); 
+
+                listContainer.innerHTML = '';
+                
+                if (todayEvents.length === 0) {
+                    listContainer.innerHTML = '<p class="text-center text-muted small mt-3">本日の予定はありません。</p>';
+                    return;
+                }
+
+                todayEvents.forEach(event => {
+                    const startTime = new Date(event.start);
+                    const endTime = event.end ? new Date(event.end) : null;
+                    
+                    const timeOptions = { hour: '2-digit', minute: '2-digit' };
+                    let timeText;
+                    
+                    if (event.allDay) {
+                        timeText = "終日";
+                    } else if (endTime) {
+                        timeText = `${startTime.toLocaleTimeString('ja-JP', timeOptions)} ~ ${endTime.toLocaleTimeString('ja-JP', timeOptions)}`;
+                    } else {
+                        timeText = startTime.toLocaleTimeString('ja-JP', timeOptions);
+                    }
+                    
+                    const item = document.createElement('div');
+                    item.className = 'today-event-item';
+                    item.style.borderLeft = `5px solid ${event.color || '#007bff'}`;
+                    item.style.cursor = 'pointer';
+                    item.onclick = () => openEventModal({ event: event }); // クリックで編集モーダル
+                    
+                    item.innerHTML = `
+                        <span class="event-time">${timeText}</span>
+                        <span class="event-title">${event.title}</span>
+                    `;
+                    listContainer.appendChild(item);
+                });
+            }
+            
+            // 日付タップ時の処理 (新しいモーダルで表示)
+            const showEventsForDay = async (dateStr, allEvents) => {
+                const selectedDate = new Date(dateStr);
+                const listContainer = document.getElementById('dayEventsModalBody');
+                
+                const dateDisplay = new Intl.DateTimeFormat('ja-JP', {
+                    month: 'numeric', day: 'numeric', weekday: 'short'
+                }).format(selectedDate);
+                
+                // 既に取得済みの全イベントからフィルタリング (リアルタイム性を確保)
+                const dailyEvents = allEvents.filter(event => {
+                    const eventDate = dateStr;
+                    const start = new Date(event.start);
+                    const eventStartDateStr = formatDate(start);
+                    
+                    if (event.allDay) {
+                        const end = event.end ? new Date(event.end) : start;
+                        const endDateStr = formatDate(end);
+                        return eventDate >= eventStartDateStr && eventDate < endDateStr;
+                    } 
+                    
+                    return eventStartDateStr === eventDate;
+                    
+                }).sort((a, b) => new Date(a.start) - new Date(b.start)); 
+
+                document.getElementById('dayEventsModalTitle').textContent = `${dateDisplay} の予定`;
+                listContainer.innerHTML = ''; 
+
+                if (dailyEvents.length === 0) {
+                    listContainer.innerHTML = `<p class="text-center text-muted small mt-2">この日は予定がありません。</p>`;
+                } else {
+                    dailyEvents.forEach(event => {
+                        let timeText;
+                        if (event.allDay) {
+                            timeText = "終日";
+                        } else {
+                            const startTime = new Date(event.start);
+                            const endTime = event.end ? new Date(event.end) : null;
+                            const timeOptions = { hour: '2-digit', minute: '2-digit' };
+                            timeText = endTime ? `${startTime.toLocaleTimeString('ja-JP', timeOptions)} ~ ${endTime.toLocaleTimeString('ja-JP', timeOptions)}` : startTime.toLocaleTimeString('ja-JP', timeOptions);
+                        }
+                        
+                        const item = document.createElement('div');
+                        item.className = 'p-2 mb-2 rounded';
+                        item.style.borderLeft = `5px solid ${event.color || '#007bff'}`;
+                        item.style.backgroundColor = event.color + '1A';
+                        item.style.cursor = 'pointer';
+                        
+                        item.onclick = () => openEventModal({ event: event }); 
+
+                        item.innerHTML = `
+                            <div>
+                                <strong class="me-2">${timeText}</strong>
+                                <span>${event.title}</span>
+                            </div>
+                            <div class="text-muted small mt-1 ps-3">
+                                ${event.extendedProps.description || '詳細なし'}
+                            </div>
+                        `;
+                        listContainer.appendChild(item);
+                    });
+                }
+                
+                dayEventsModal.show();
+            };
+
+
+            // 2. FullCalendarの初期設定
+            const calendar = new FullCalendar.Calendar(calendarEl, {
+                locale: 'ja',
+                headerToolbar: {
+                    left: 'prev,next',
+                    center: 'title',
+                    right: '' // 月表示ボタンを削除
+                },
+                initialView: 'dayGridMonth',
+                height: '500px', // 高さを明示的に設定
+                editable: true,
+                dayMaxEvents: true,
+                
+                // 日付タップ機能の実装: dateClickでモーダル表示
+                dateClick: function(info) {
+                    // FullCalendarが持つイベントキャッシュから全イベントを取得
+                    const allEvents = calendar.getEvents();
+                    showEventsForDay(info.dateStr, allEvents);
+                    
+                    // 選択された日付の背景色を強調（CSSクラスをトグル）
+                    document.querySelectorAll('.fc-day-selected').forEach(el => el.classList.remove('fc-day-selected'));
+                    info.dayEl.classList.add('fc-day-selected'); 
+                },
+                
+                events: {
+                    url: '/api/events',
+                    failure: function() {
+                        alert('イベントの読み込みに失敗しました');
+                        updateCalendarPlaceholder(0); 
+                    },
+                    success: function(rawEvents) {
+                        updateCalendarPlaceholder(rawEvents.length); 
+                        
+                        const mappedEvents = rawEvents.map(event => ({
+                            id: event.id,
+                            title: event.title,
+                            start: event.start,
+                            end: event.end,
+                            allDay: event.allDay,
+                            color: event.color || '#007bff',
+                            extendedProps: {
+                                description: event.description,
+                                createdByUserId: event.createdByUserId,
+                                sharedWithUserIds: event.sharedWithUserIds
+                            }
+                        }));
+                        
+                        updateTodayScheduleList(mappedEvents); // 本日の予定を更新
+
+                        // 初回起動時の日付ハイライト（今日）
+                        const todayEl = document.querySelector(`.fc-day[data-date="${todayDateStr}"]`);
+                        if(todayEl) {
+                           todayEl.classList.add('fc-day-selected');
+                        }
+
+                        return mappedEvents;
+                    }
+                },
+                
+                // イベントの変更時に本日の予定リストを更新するためにフック
+                eventChange: function() {
+                    calendar.refetchEvents(); 
+                },
+                eventAdd: function() {
+                    calendar.refetchEvents();
+                },
+                eventRemove: function() {
+                    calendar.refetchEvents();
+                },
+
+                // eventDrop/eventResize ロジックは変更なし (中略)
+                eventDrop: async function(info) {
+                    const event = info.event;
+                    const canEdit = event.extendedProps.createdByUserId === currentUserId;
+                    if (!canEdit) { alert('自分の作成したイベントしか移動できません。'); info.revert(); return; }
+                    if (!confirm(`${event.title} の日付を ${event.startStr.substring(0, 10)} に変更しますか？`)) { info.revert(); return; }
+                    const eventData = {
+                        id: event.id, title: event.title, start: event.startStr, end: event.endStr || null, description: event.extendedProps.description, allDay: event.allDay, color: event.backgroundColor, sharedWithUserIds: event.extendedProps.sharedWithUserIds
+                    };
+                    try { await axios.post('/api/events', eventData); alert('イベント日付を更新しました。'); } catch (error) { alert('更新に失敗しました。'); info.revert(); }
+                },
+                
+                eventResize: async function(info) {
+                    const event = info.event;
+                    const canEdit = event.extendedProps.createdByUserId === currentUserId;
+                    if (!canEdit) { alert('自分の作成したイベントしか期間を変更できません。'); info.revert(); return; }
+                    if (!confirm(`${event.title} の期間を ${event.startStr.substring(0, 10)} から ${event.endStr.substring(0, 10)} に変更しますか？`)) { info.revert(); return; }
+                    const eventData = {
+                        id: event.id, title: event.title, start: event.startStr, end: event.endStr || null, description: event.extendedProps.description, allDay: event.allDay, color: event.backgroundColor, sharedWithUserIds: event.extendedProps.sharedWithUserIds
+                    };
+                    try { await axios.post('/api/events', eventData); alert('イベント期間を更新しました。'); } catch (error) { alert('更新に失敗しました。'); info.revert(); }
+                }
+            });
+
+            calendar.render();
+            
+            // ページロード時に手動でプレースホルダーを初期化
+            updateCalendarPlaceholder(-1); 
+            
+            // WebSocket接続によるリアルタイム更新
+            const sock = new SockJS('/ws'); 
+            const stompClient = Stomp.over(sock);
+            stompClient.connect({}, function(frame) {
+                console.log('Connected: ' + frame);
+
+                stompClient.subscribe('/topic/calendar', function(eventMessage) {
+                    console.log('リアルタイムイベント通知を受信。カレンダーを更新します。');
+                    calendar.refetchEvents();
+                });
+            });
+        });
+    </script>
 </body>
 </html>

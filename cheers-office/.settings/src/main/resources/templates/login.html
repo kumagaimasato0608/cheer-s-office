@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="ja" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+	
+	
+    <title>ログイン</title>
+    
+    <style>
+        /* 新規登録画面と同じ背景のスタイル */
+        body { 
+            font-family: Arial, sans-serif; 
+            background-color: #e6f0ff; /* 全体の薄い青背景 */
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            min-height: 100vh; 
+            margin: 0;
+        }
+        
+        /* 新規登録画面と同じ中央フォームのスタイル */
+        .auth-container { 
+            background-color: #fff; /* 白いフォーム背景 */
+            padding: 40px 60px;
+            border-radius: 20px; /* 角の丸み */
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1); 
+            width: 100%; 
+            max-width: 450px; 
+            text-align: center;
+            border: 1px solid #c0d8f0;
+        }
+        
+        h1 { 
+            text-align: center; 
+            margin-bottom: 25px; 
+            color: #007bff; /* 青色 */
+            font-size: 2em; 
+        }
+        
+        /* エラーメッセージのスタイル */
+        .error-message {
+            color: #dc3545; /* 赤 */
+            margin-bottom: 15px;
+            font-weight: bold;
+        }
+        
+        .form-group { 
+            margin-bottom: 15px; 
+            text-align: left;
+        }
+        
+        label { 
+            display: block; 
+            margin-bottom: 5px; 
+            font-weight: bold; 
+            color: #555;
+            font-size: 0.9em;
+        }
+        
+        input[type="text"], 
+        input[type="password"] { 
+            width: 100%; 
+            padding: 10px; 
+            border: 1px solid #ccc; 
+            border-radius: 5px; 
+            box-sizing: border-box;
+            font-size: 1em;
+        }
+        
+        button { 
+            width: 100%; 
+            padding: 12px; 
+            border: none; 
+            border-radius: 5px; 
+            background-color: #007bff; /* ログインボタンは青 */
+            color: white; 
+            font-size: 1.1em; 
+            font-weight: bold; 
+            cursor: pointer; 
+            margin-top: 20px;
+        }
+        
+        .register-link { 
+            text-align: center; 
+            margin-top: 20px;
+        }
+        
+        .register-link a { 
+            color: #007bff; 
+            text-decoration: none; 
+            font-size: 0.9em;
+        }
+    </style>
+</head>
+<body>
+    <div class="auth-container">
+        <h1>ログイン</h1>
+        
+        <p th:if="${param.error}" class="error-message">
+            ※メールアドレスまたはパスワードが間違っています。
+        </p>
+        
+        <p th:if="${param.logout}" class="error-message" style="color: #28a745;">
+            ログアウトしました。
+        </p>
+
+        <form th:action="@{/login}" method="post">
+            
+            <div class="form-group">
+                <label for="username">メールアドレス:</label>
+                <input type="text" id="username" name="username" required>
+            </div>
+
+            <div class="form-group">
+                <label for="password">パスワード:</label>
+                <input type="password" id="password" name="password" required>
+            </div>
+            
+            <button type="submit">ログイン</button>
+        </form>
+        
+        <div class="register-link">
+            <a th:href="@{/register}">新しくアカウントを登録する方はこちら</a>
+        </div>
+    </div>
+</body>
+</html>
