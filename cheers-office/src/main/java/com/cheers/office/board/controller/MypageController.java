@@ -1,4 +1,4 @@
-package com.cheers.office.board.controller;
+package com.cheers.office.board.controller; 
 
 import java.util.Optional;
 
@@ -82,7 +82,6 @@ public class MypageController {
 
     @GetMapping("/mypage/password")
     public String showPasswordChangeForm(Model model, @AuthenticationPrincipal CustomUserDetails customUserDetails) {
-        // ★ 変更画面に必要なモデル属性を追加
         model.addAttribute("user", customUserDetails.getUser());
         model.addAttribute("passwordUpdateForm", new PasswordUpdateForm());
         model.addAttribute("emailUpdateForm", new EmailUpdateForm());
