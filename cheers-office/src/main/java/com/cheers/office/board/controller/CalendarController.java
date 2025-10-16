@@ -1,11 +1,13 @@
 package com.cheers.office.board.controller;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
-import org.springframework.http.HttpStatus; // ResponseEntityのステータスコード用
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.messaging.simp.SimpMessagingTemplate; // ★ WebSocket用に追加
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -22,21 +24,29 @@ import com.cheers.office.board.repository.CalendarEventRepository;
 public class CalendarController {
 
     private final CalendarEventRepository eventRepository;
-    private final SimpMessagingTemplate messagingTemplate; // ★ 追加
+    private final SimpMessagingTemplate messagingTemplate;
 
-    // ★ コンストラクタ修正
     public CalendarController(CalendarEventRepository eventRepository, SimpMessagingTemplate messagingTemplate) {
         this.eventRepository = eventRepository;
         this.messagingTemplate = messagingTemplate;
     }
 
-    // カレンダーに表示する全てのイベントを取得する (★ 修正: 認証チェックは不要、全件返す)
+    /** * ① カレンダーイベントを取得: 自身が作成したイベント、または共有されたイベントのみを返す
+     */
     @GetMapping("/api/events")
-    public List<CalendarEvent> getEvents() {
-        // FullCalendarは認証情報を渡さないので、一旦全件返す仕様に戻す。
-        // フロント側でフィルタリングするか、セキュリティ設定を修正する必要があるが、
-        // 今回はJSONベースのシンプル実装を優先。
-        return eventRepository.findAll();
+    public List<CalendarEvent> getEvents(@AuthenticationPrincipal CustomUserDetails userDetails) {
+        if (userDetails == null) {
+            return Collections.emptyList();
+        }
+        
+        String currentUserId = userDetails.getUser().getUserId();
+
+        return eventRepository.findAll().stream()
+            .filter(event -> 
+                currentUserId.equals(event.getCreatedByUserId()) || // 自身が作成者
+                (event.getSharedWithUserIds() != null && event.getSharedWithUserIds().contains(currentUserId)) // 共有されている
+            )
+            .collect(Collectors.toList());
     }
 
     /**
@@ -51,14 +61,14 @@ public class CalendarController {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build(); 
         }
         
-        // 新規作成時のみ作成者IDを設定
+        // 新規作成時（IDがnullまたは空の場合）のみ、作成者IDを設定する
         if (event.getId() == null || event.getId().isEmpty()) {
              event.setCreatedByUserId(userDetails.getUser().getUserId());
         }
 
         CalendarEvent savedEvent = eventRepository.save(event);
         
-        // ★ WebSocket通知: イベントが更新されたことをクライアントに通知
+        // WebSocket通知: イベントが更新されたことをクライアントに通知
         messagingTemplate.convertAndSend("/topic/calendar", savedEvent);
 
         return ResponseEntity.ok(savedEvent);
@@ -92,7 +102,7 @@ public class CalendarController {
 
         eventRepository.delete(event);
         
-        // ★ WebSocket通知: 削除されたことをクライアントに通知
+        // WebSocket通知: 削除されたことをクライアントに通知
         messagingTemplate.convertAndSend("/topic/calendar", event);
 
         return ResponseEntity.noContent().build();

@@ -21,7 +21,7 @@ import java.util.stream.Collectors;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.messaging.simp.SimpMessagingTemplate; // ★ WebSocket送信用
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -35,16 +35,16 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.multipart.MultipartFile;
 
-import com.cheers.office.board.dto.ScoreUpdateDto; // ★ DTOをインポート
+import com.cheers.office.board.dto.ScoreUpdateDto;
 import com.cheers.office.board.model.BonusZone;
 import com.cheers.office.board.model.Comment;
 import com.cheers.office.board.model.CustomUserDetails;
 import com.cheers.office.board.model.Location;
 import com.cheers.office.board.model.Photo;
 import com.cheers.office.board.model.PhotoPin;
-import com.cheers.office.board.model.User; // ★ Userモデルをインポート
+import com.cheers.office.board.model.User;
 import com.cheers.office.board.repository.PhotoPinRepository;
-import com.cheers.office.board.repository.UserRepository; // ★ UserRepositoryをインポート
+import com.cheers.office.board.repository.UserRepository;
 import com.cheers.office.board.service.UserAccountService;
 
 @Controller
@@ -79,7 +79,12 @@ public class PhotoPinController {
     }
     
     @GetMapping("/photopin")
-    public String showPhotoPinPage(Model model, @AuthenticationPrincipal CustomUserDetails userDetails) { if (userDetails != null && (userDetails.getUser().getTeamColor() == null || userDetails.getUser().getTeamColor().isEmpty())) { model.addAttribute("showColorModal", true); } return "photopin"; }
+    public String showPhotoPinPage(Model model, @AuthenticationPrincipal CustomUserDetails userDetails) { 
+        if (userDetails != null && (userDetails.getUser().getTeamColor() == null || userDetails.getUser().getTeamColor().isEmpty())) { 
+            model.addAttribute("showColorModal", true); 
+        } 
+        return "photopin"; 
+    }
     
     @GetMapping("/api/photopins")
     @ResponseBody
@@ -105,6 +110,12 @@ public class PhotoPinController {
     @ResponseBody
     public ResponseEntity<?> createPhotoPin(@RequestParam("title") String title, @RequestParam(value = "description", required = false) String description, @RequestParam("latitude") double latitude, @RequestParam("longitude") double longitude, @RequestParam("file") MultipartFile file, @AuthenticationPrincipal CustomUserDetails customUserDetails) {
         if (customUserDetails == null || file.isEmpty()) { return ResponseEntity.status(HttpStatus.BAD_REQUEST).build(); }
+        
+        // チームカラーチェック
+        if (customUserDetails.getUser().getTeamColor() == null || customUserDetails.getUser().getTeamColor().isEmpty()) {
+             return ResponseEntity.status(HttpStatus.FORBIDDEN).body("ピンを置く前に、チームカラーを選択してください。");
+        }
+
         String currentUserId = customUserDetails.getUser().getUserId();
         String currentSeason = getCurrentSeason();
 
@@ -188,12 +199,39 @@ public class PhotoPinController {
         return ResponseEntity.ok(pin);
     }
 
+    // ★★★ 修正: ファイル削除ロジックを追加 ★★★
     @DeleteMapping("/api/photopins/{pinId}")
     @ResponseBody
     public ResponseEntity<Void> deletePin(@PathVariable String pinId, @AuthenticationPrincipal CustomUserDetails userDetails) {
         Optional<PhotoPin> pinOpt = findPinByIdForCurrentSeason(pinId);
         if (pinOpt.isEmpty()) { return ResponseEntity.notFound().build(); }
-        if (!pinOpt.get().getCreatedBy().equals(userDetails.getUser().getUserId())) { return ResponseEntity.status(HttpStatus.FORBIDDEN).build(); }
+        
+        PhotoPin pinToDelete = pinOpt.get();
+
+        // 権限チェック
+        if (!pinToDelete.getCreatedBy().equals(userDetails.getUser().getUserId())) { return ResponseEntity.status(HttpStatus.FORBIDDEN).build(); }
+        
+        // ファイルシステムの画像削除処理
+        if (pinToDelete.getPhotos() != null) {
+            for (Photo photo : pinToDelete.getPhotos()) {
+                try {
+                    // /images/photopins/ のプレフィックスを削除し、ファイル名のみを取得
+                    String imageUrl = photo.getImageUrl();
+                    String fileName = imageUrl.substring(imageUrl.lastIndexOf("/") + 1);
+                    
+                    // パスを構築: photopinUploadDir + fileName
+                    Path filePath = Paths.get(photopinUploadDir, fileName);
+
+                    // ファイルが存在する場合のみ削除 (エラーをスローしないよう Files.deleteIfExists を使用)
+                    Files.deleteIfExists(filePath);
+                    System.out.println("✅ Pin Photo Deleted: " + fileName);
+                    
+                } catch (IOException | StringIndexOutOfBoundsException e) {
+                    System.err.println("Failed to delete photo file: " + e.getMessage());
+                }
+            }
+        }
+        
         photoPinRepository.deleteById(pinId);
         
         calculateAndBroadcastScores();
@@ -224,35 +262,51 @@ public class PhotoPinController {
         return ResponseEntity.status(HttpStatus.CREATED).body(newComment);
     }
 
-    private void calculateAndBroadcastScores() {
+    private ScoreUpdateDto calculateScoresInternal() {
+        // calculateScoresInternal() は、初期スコア取得APIとブロードキャストロジックの両方から使用されます。
+        
         String currentSeason = getCurrentSeason();
+        
         Map<String, String> userTeamColorMap = userRepository.findAll().stream()
-            .collect(Collectors.toMap(User::getUserId, User::getTeamColor, (c1, c2) -> c1)); // 重複キーの場合、最初のエントリを保持
+            .filter(user -> user.getTeamColor() != null) 
+            .collect(Collectors.toMap(User::getUserId, User::getTeamColor, (c1, c2) -> c1));
+
         List<PhotoPin> pins = photoPinRepository.findAll().stream()
             .filter(pin -> currentSeason.equals(pin.getSeason()))
             .sorted(Comparator.comparing(PhotoPin::getCreatedDate))
             .collect(Collectors.toList());
         Map<String, String> gridState = new HashMap<>();
-        final double CELL_SIZE_METERS = 10.0;
+        
+        // スコア計算の定数 (home.htmlのJSと一致)
+        final double CELL_SIZE_METERS = 5.0; 
+        final double INFLUENCE_RANGE_METERS = 50.0;
+        final int MAX_TILE_STEPS = (int) Math.ceil(INFLUENCE_RANGE_METERS / CELL_SIZE_METERS); // 10
 
+        final double METERS_PER_DEGREE_LAT = 111320.0; 
+        
         for (PhotoPin pin : pins) {
             String teamColor = userTeamColorMap.get(pin.getCreatedBy());
-            if (teamColor == null) continue;
+            if (teamColor == null) continue; 
+            
             Location loc = pin.getLocation();
-            double radius = 100.0;
-            double metersPerLat = 111320.0;
-            double metersPerLng = 40075000.0 * Math.cos(Math.toRadians(loc.getLatitude())) / 360.0;
-            double latStep = CELL_SIZE_METERS / metersPerLat;
-            double lngStep = CELL_SIZE_METERS / metersPerLng;
-            int steps = (int) Math.ceil(radius / CELL_SIZE_METERS);
-            for (int i = -steps; i <= steps; i++) {
-                for (int j = -steps; j <= steps; j++) {
-                    double cellCenterLat = loc.getLatitude() + (i * latStep);
-                    double cellCenterLng = loc.getLongitude() + (j * lngStep);
-                    if (distance(loc.getLatitude(), loc.getLongitude(), cellCenterLat, cellCenterLng) <= radius) {
-                        String cellId = String.format("%.6f_%.6f", cellCenterLat, cellCenterLng);
-                        gridState.put(cellId, teamColor);
-                    }
+            
+            double initialMetersPerLng = 40075000.0 * Math.cos(Math.toRadians(loc.getLatitude())) / 360.0;
+            
+            // 原点からの距離をマス数（整数）に変換
+            long latStepCenter = Math.round(loc.getLatitude() * METERS_PER_DEGREE_LAT / CELL_SIZE_METERS);
+            long lngStepCenter = Math.round(loc.getLongitude() * initialMetersPerLng / CELL_SIZE_METERS);
+            
+            int maxSteps = MAX_TILE_STEPS; // 10
+
+            for (int i = -maxSteps; i <= maxSteps; i++) {
+                for (int j = -maxSteps; j <= maxSteps; j++) {
+                    
+                    long tileLatStep = latStepCenter + i;
+                    long tileLngStep = lngStepCenter + j;
+
+                    String cellId = tileLatStep + "_" + tileLngStep;
+                    
+                    gridState.put(cellId, teamColor);
                 }
             }
         }
@@ -272,7 +326,13 @@ public class PhotoPinController {
                 }
             }
         });
-        ScoreUpdateDto scoreUpdate = new ScoreUpdateDto(scores.get("red"), scores.get("blue"), scores.get("yellow"));
+        
+        return new ScoreUpdateDto(scores.get("red"), scores.get("blue"), scores.get("yellow"));
+    }
+
+    private void calculateAndBroadcastScores() {
+        // calculateAndBroadcastScoresはブロードキャスト専用とし、スコア計算はcalculateScoresInternal()を使う
+        ScoreUpdateDto scoreUpdate = calculateScoresInternal();
         messagingTemplate.convertAndSend("/topic/scores", scoreUpdate);
         System.out.println("スコア更新を送信: " + scoreUpdate);
     }

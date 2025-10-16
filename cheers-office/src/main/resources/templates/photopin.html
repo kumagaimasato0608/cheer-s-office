@@ -167,6 +167,46 @@
     var showColorModal = true;
   </script>
 
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/sockjs-client/1.6.1/sockjs.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
+
   <script th:src="@{/js/photopin.js}"></script>
+  
+  <script>
+    // WebSocket接続とスコア更新のロジック
+    document.addEventListener('DOMContentLoaded', function() {
+        const scoreRedEl = document.getElementById('score-red');
+        const scoreBlueEl = document.getElementById('score-blue');
+        const scoreYellowEl = document.getElementById('score-yellow');
+
+        // WebSocket接続の確立
+        const sock = new SockJS('/ws');
+        const stompClient = Stomp.over(sock);
+
+        stompClient.connect({}, function(frame) {
+            console.log('PinIt WebSocket Connected: ' + frame);
+
+            // スコア更新メッセージの購読
+            stompClient.subscribe('/topic/scores', function(scoreMessage) {
+                const scores = JSON.parse(scoreMessage.body);
+                console.log('スコア更新を受信:', scores);
+                
+                // 画面上のスコアを更新
+                if (scores.red !== undefined) {
+                    scoreRedEl.textContent = scores.red + ' ポイント';
+                }
+                if (scores.blue !== undefined) {
+                    scoreBlueEl.textContent = scores.blue + ' ポイント';
+                }
+                if (scores.yellow !== undefined) {
+                    scoreYellowEl.textContent = scores.yellow + ' ポイント';
+                }
+
+                // マップのピンも更新したい場合は、ここでマップ再描画やピン再取得処理を呼び出す必要があります
+                // 例: window.reloadPins(); 
+            });
+        });
+    });
+  </script>
 </body>
 </html>

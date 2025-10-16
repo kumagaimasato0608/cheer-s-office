@@ -18,7 +18,10 @@ $(document).ready(function() {
 
     let gridState = {}; // 陣地の状態を保持するオブジェクト
     const gridCellLayers = {}; // 描画したマス目を保持するオブジェクト
-    const CELL_SIZE_METERS = 10; // 1マスのサイズ (10m)
+    // ★★★ 修正: 5m x 5m タイルを使用 ★★★
+    const CELL_SIZE_METERS = 5.0; 
+    const METERS_PER_DEGREE_LAT = 111320.0; // Javaと共通の定数
+    const MAX_TILE_STEPS = 10; // 50m / 5m = 10
     let stompClient = null;
 
     const csrfToken = $("meta[name='_csrf']").attr("content");
@@ -45,10 +48,11 @@ $(document).ready(function() {
     function onLocationFound(e) { userLocation = e.latlng; if (currentLocationMarker) { currentLocationMarker.setLatLng(userLocation); } else { currentLocationMarker = L.circleMarker(userLocation, { radius: 8, fillColor: "black", color: "#fff", weight: 2, opacity: 1, fillOpacity: 0.8 }).addTo(map); } currentLocationMarker.bindPopup("あなたの現在地").openPopup(); setTimeout(() => currentLocationMarker.closePopup(), 3000); }
     function onLocationError() { console.log("現在地の取得に失敗しました。"); }
 
-    // --- データ取得・描画関連 ---
+    // ★★★ メインデータ取得・描画統合関数 ★★★
     function fetchAllData(season = "") {
         currentSeason = season;
-        const isPastSeason = season !== "" && season !== (new Date().getFullYear() + '-' + ('0' + (new Date().getMonth() + 1)).slice(-2));
+        const thisMonth = new Date().getFullYear() + '-' + ('0' + (new Date().getMonth() + 1)).slice(-2);
+        const isPastSeason = season !== "" && season !== thisMonth;
         $('#place-pin-button').prop('disabled', isPastSeason).text(isPastSeason ? '閲覧のみ' : 'ピンを配置');
         $('#submitCommentButton').prop('disabled', isPastSeason);
 
@@ -63,12 +67,18 @@ $(document).ready(function() {
             allPinsData.forEach(pin => { allPins[pin.pinId] = pin; });
             allUsersData.forEach(user => { allUsers[user.userId] = user; });
 
+            // 1. 陣地計算
             buildInitialGridState(allPinsData, allUsers);
+            
+            // 2. 描画
             drawGrid();
             renderPins(allPinsData, allUsers);
             renderRanking(allPinsData, allUsers);
             renderUserList(allPinsData, allUsers);
-            calculateAndShowScores();
+            
+            // 3. スコア表示（WebSocketとは独立してローカルで計算）
+            calculateAndShowScores(); 
+
         }).catch(error => {
             console.error("データの取得に失敗しました:", error);
             $('#userPinAccordion').html('<p class="text-danger small">ユーザーデータの取得に失敗しました。</p>');
@@ -96,7 +106,7 @@ $(document).ready(function() {
         pins.forEach(pin => {
             const user = usersById[pin.createdBy];
             if (!user) return;
-            const icon = createCustomIcon(user.teamColor || 'grey');
+            const icon = createCustomIcon(user.teamColor || 'grey'); 
             const marker = L.marker([pin.location.latitude, pin.location.longitude], { icon: icon }).addTo(map);
             const popupContent = `<div class="pin-popup-content"><h5>${escapeHTML(pin.title)}</h5>${pin.photos && pin.photos.length > 0 ? `<img src="${pin.photos[0].imageUrl}" alt="${escapeHTML(pin.title)}">` : ''}</div>`;
             marker.bindPopup(popupContent, { offset: [0, -30] });
@@ -117,7 +127,7 @@ $(document).ready(function() {
         if (sortedUsers.length === 0) { $rankingList.html('<p class="text-muted small">まだ投稿がありません。</p>'); return; }
         sortedUsers.forEach((userId, index) => {
             const user = usersById[userId];
-            if (!user) return;
+            if (!user || !user.teamColor) return; 
             const rank = index + 1, rankClass = `rank-${rank}`, userColor = user.teamColor || 'grey';
             const crowns = '👑'.repeat(user.victoryCrowns || 0);
             const username = user.userName || '不明なユーザー';
@@ -170,53 +180,55 @@ $(document).ready(function() {
             $('#createPinModal').modal('show');
         });
 
-        $('#saveNewPinButton').on('click', handleSaveNewPin);
-        $('.color-option').on('click', function() { $('.color-option').removeClass('selected'); $(this).addClass('selected'); const color = $(this).css('background-color'); if (color.includes('255, 0, 0')) $('#selectedColorInput').val('red'); else if (color.includes('0, 0, 255')) $('#selectedColorInput').val('blue'); else if (color.includes('255, 255, 0')) $('#selectedColorInput').val('yellow'); });
-        $('#submitColorButton').on('click', function() { if (!$('#selectedColorInput').val()) { alert('チームカラーを選択してください。'); return; } $('#colorForm').submit(); });
+        $('#saveNewPinButton').on('click', function() {
+            const title = $('#pinTitle').val();
+            const description = $('#pinDescription').val();
+            const fileInput = $('#pinFile')[0];
+            if (!title || fileInput.files.length === 0) { alert("タイトルと写真は必須です。"); return; }
+            const formData = new FormData();
+            formData.append('title', title);
+            formData.append('description', description);
+            formData.append('latitude', newPinLocation.lat);
+            formData.append('longitude', newPinLocation.lng);
+            formData.append('file', fileInput.files[0]);
+
+            $.ajax({
+                url: '/api/photopins',
+                type: 'POST',
+                data: formData,
+                processData: false,
+                contentType: false,
+            }).done(function() { 
+                $('#createPinModal').modal('hide');
+                alert('新しいピンを作成しました！');
+                fetchAllData(currentSeason); 
+            }).fail(function(response) {
+                alert("ピンの作成に失敗しました。\n" + (response.responseText || ""));
+            });
+        });
+        
         $('#submitCommentButton').on('click', handleSubmitComment);
         $('#pinDetailFooter').on('click', '#editPinButton', handleEditPin);
         $('#pinDetailFooter').on('click', '#savePinButton', handleSavePin);
-        $('#pinDetailFooter').on('click', '#deletePinButton', handleDeletePin);
+        
+        $('#pinDetailFooter').on('click', '#deletePinButton', function() {
+             if (!confirm("本当にこのピンを削除しますか？")) return;
+             $.ajax({
+                 url: `/api/photopins/${currentOpenPinId}`,
+                 type: 'DELETE'
+             }).done(function() {
+                 $('#pinDetailModal').modal('hide');
+                 alert('ピンを削除しました。');
+                 fetchAllData(currentSeason); 
+             }).fail(function(response) {
+                 alert('ピンの削除に失敗しました。');
+             });
+        });
+        
         $('#seasonSelector').on('change', function() { fetchAllData($(this).val()); });
     }
 
-    function handleSaveNewPin() {
-        const title = $('#pinTitle').val();
-        const description = $('#pinDescription').val();
-        const fileInput = $('#pinFile')[0];
-        if (!title || fileInput.files.length === 0) { alert("タイトルと写真は必須です。"); return; }
-        const formData = new FormData();
-        formData.append('title', title);
-        formData.append('description', description);
-        formData.append('latitude', newPinLocation.lat);
-        formData.append('longitude', newPinLocation.lng);
-        formData.append('file', fileInput.files[0]);
-
-        $.ajax({
-            url: '/api/photopins',
-            type: 'POST',
-            data: formData,
-            processData: false,
-            contentType: false,
-        }).done(function(savedPin) {
-            $('#createPinModal').modal('hide');
-            alert('新しいピンを作成しました！');
-            allPins[savedPin.pinId] = savedPin;
-            // 新しいピンの陣地だけを更新
-            updateGridForPin(savedPin, allUsers);
-            // 地図とスコアを再描画
-            drawGrid();
-            calculateAndShowScores();
-            // 新しいマーカーを追加
-            renderPins(Object.values(allPins), allUsers);
-            // サーバーからのエラーでなければ、サイドバーも更新
-            renderRanking(Object.values(allPins), allUsers);
-            renderUserList(Object.values(allPins), allUsers);
-
-        }).fail(function(response) {
-            alert("ピンの作成に失敗しました。\n" + (response.responseText || ""));
-        });
-    }
+    function handleSaveNewPin() { /* この関数はインラインロジックに置き換えられたため、未使用 */ }
     
     // --- 補助機能 ---
     function showPinDetailModal(pinId) {
@@ -252,22 +264,31 @@ $(document).ready(function() {
         $('#pinDetailModal').modal('show');
     }
 
-    function handleSubmitComment() { const commentText = $('#newCommentInput').val(); if (!commentText.trim() || !currentOpenPinId) return; const commentData = { content: commentText }; $.ajax({ url: `/api/photopins/${currentOpenPinId}/comments`, type: 'POST', contentType: 'application/json', data: JSON.stringify(commentData) }).done(function(newComment) { $('#newCommentInput').val(''); if (!allPins[currentOpenPinId].comments) { allPins[currentOpenPinId].comments = []; } allPins[currentOpenPinId].comments.push(newComment); showPinDetailModal(currentOpenPinId); }).fail(function() { alert('コメントの投稿に失敗しました。'); }); }
+    function handleSubmitComment() { 
+        const commentText = $('#newCommentInput').val(); 
+        if (!commentText.trim() || !currentOpenPinId) return; 
+        const commentData = { content: commentText }; 
+        $.ajax({ 
+            url: `/api/photopins/${currentOpenPinId}/comments`, 
+            type: 'POST', 
+            contentType: 'application/json', 
+            data: JSON.stringify(commentData) 
+        }).done(function(newComment) { 
+            $('#newCommentInput').val(''); 
+            if (!allPins[currentOpenPinId].comments) { allPins[currentOpenPinId].comments = []; } 
+            allPins[currentOpenPinId].comments.push(newComment); 
+            showPinDetailModal(currentOpenPinId); 
+            // コメント後、ユーザーリストを再描画してピン数を更新
+            renderUserList(Object.values(allPins), allUsers); 
+        }).fail(function() { 
+            alert('コメントの投稿に失敗しました。'); 
+        }); 
+    }
+    
     function handleEditPin() { const pin = allPins[currentOpenPinId]; $('#pinDetailTitle').html(`<input type="text" class="form-control" id="editTitleInput" value="${escapeHTML(pin.title)}">`); $('#pinDetailDescription').html(`<textarea class="form-control" id="editDescriptionInput" rows="3">${escapeHTML(pin.description)}</textarea>`); $('#pinDetailFooter').html('<button type="button" class="btn btn-success" id="savePinButton">保存</button>'); }
     function handleSavePin() { const newTitle = $('#editTitleInput').val(); const newDescription = $('#editDescriptionInput').val(); const updatedData = { title: newTitle, description: newDescription }; $.ajax({ url: `/api/photopins/${currentOpenPinId}`, type: 'PUT', contentType: 'application/json', data: JSON.stringify(updatedData) }).done(function(updatedPin) { allPins[currentOpenPinId] = updatedPin; showPinDetailModal(currentOpenPinId); }).fail(function() { alert('ピンの更新に失敗しました。'); }); }
-    function handleDeletePin() {
-        if (!confirm("本当にこのピンを削除しますか？")) return;
-        $.ajax({
-            url: `/api/photopins/${currentOpenPinId}`,
-            type: 'DELETE'
-        }).done(function() {
-            $('#pinDetailModal').modal('hide');
-            alert('ピンを削除しました。');
-            fetchAllData(currentSeason);
-        }).fail(function() {
-            alert('ピンの削除に失敗しました。');
-        });
-    }
+    
+    // handleDeletePin 関数はインラインロジックに置き換えられた
 
     function addCurrentLocationControl() { L.Control.GoToCurrentLocation = L.Control.extend({ onAdd: function(map) { const btn = L.DomUtil.create('div', 'leaflet-bar leaflet-control custom-button-control'); const link = L.DomUtil.create('a', '', btn); link.href = '#'; link.innerHTML = '現在地'; link.role = 'button'; L.DomEvent.on(link, 'click', function(e) { e.preventDefault(); if (userLocation) { map.flyTo(userLocation, 16); } else { map.locate({ setView: true, maxZoom: 16 }); } }); return btn; } }); new L.Control.GoToCurrentLocation({ position: 'bottomright' }).addTo(map); }
     function escapeHTML(str) { if (typeof str !== 'string') { return ''; } return str.replace(/[&<>"']/g, match => ({'&': '&amp;','<': '&lt;','>': '&gt;','"': '&quot;',"'": '&#39;'})[match]); }
@@ -282,39 +303,66 @@ $(document).ready(function() {
     }
 
     function updateGridForPin(pin, users) {
+        // ★ 修正: teamColor が存在しない場合は処理をスキップ
         const teamColor = users[pin.createdBy]?.teamColor;
         if (!teamColor) return;
+        
         const center = L.latLng(pin.location.latitude, pin.location.longitude);
-        const radius = 100;
-        const metersPerLat = 111320; 
-        const metersPerLng = 40075000 * Math.cos(center.lat * Math.PI / 180) / 360;
-        const latStep = (CELL_SIZE_METERS / metersPerLat);
-        const lngStep = (CELL_SIZE_METERS / metersPerLng);
-        const steps = Math.ceil(radius / CELL_SIZE_METERS);
+        const CELL_SIZE_METERS = 5.0; // 5m
+        const METERS_PER_DEGREE_LAT = 111320.0;
+        
+        // ピンの緯度での経度メートルを計算
+        const initialMetersPerLng = 40075000 * Math.cos(center.lat * Math.PI / 180) / 360;
+        
+        // ★ 修正: Math.round でタイルインデックスを決定 (Javaと一致)
+        const latStepCenter = Math.round(center.lat * METERS_PER_DEGREE_LAT / CELL_SIZE_METERS);
+        const lngStepCenter = Math.round(center.lng * initialMetersPerLng / CELL_SIZE_METERS);
+        
+        // ★ 修正: 最大ステップを50マス (50m / 1m) に固定
+        const maxSteps = 10; 
 
-        for (let i = -steps; i <= steps; i++) {
-            for (let j = -steps; j <= steps; j++) {
-                const cellCenterLat = center.lat + (i * latStep);
-                const cellCenterLng = center.lng + (j * lngStep);
-                const distance = center.distanceTo(L.latLng(cellCenterLat, cellCenterLng));
-                if (distance <= radius) {
-                    const cellId = `${cellCenterLat.toFixed(6)}_${cellCenterLng.toFixed(6)}`;
-                    gridState[cellId] = teamColor;
-                }
+
+        for (let i = -maxSteps; i <= maxSteps; i++) {
+            for (let j = -maxSteps; j <= maxSteps; j++) {
+                
+                // マスの中心座標（ステップ数）
+                const tileLatStep = latStepCenter + i;
+                const tileLngStep = lngStepCenter + j;
+
+                // ★★★ 修正: 円形判定を完全に排除 (正方形判定) ★★★
+                const cellId = `${tileLatStep}_${tileLngStep}`;
+                gridState[cellId] = teamColor;
             }
         }
     }
 
     function drawGrid() {
         for (const cellId in gridCellLayers) { map.removeLayer(gridCellLayers[cellId]); delete gridCellLayers[cellId]; }
-        const metersPerLat = 111320;
+        const METERS_PER_DEGREE_LAT = 111320.0;
+        const CELL_SIZE_METERS = 5.0; // 5m
+        
         for (const cellId in gridState) {
-            const [lat, lng] = cellId.split('_').map(Number);
+            const [latStep, lngStep] = cellId.split('_').map(Number);
             const color = gridState[cellId];
-            const metersPerLng = 40075000 * Math.cos(lat * Math.PI / 180) / 360;
-            const latStep = (CELL_SIZE_METERS / metersPerLat);
-            const lngStep = (CELL_SIZE_METERS / metersPerLng);
-            const bounds = [ [lat - latStep / 2, lng - lngStep / 2], [lat + latStep / 2, lng + lngStep / 2] ];
+            
+            // 1. タイルの中心緯度をステップ数から計算
+            const centerLat = latStep * CELL_SIZE_METERS / METERS_PER_DEGREE_LAT;
+            
+            // 2. タイル中心の緯度に基づいて、正確な metersPerLng を計算
+            const tileMetersPerLng = 40075000.0 * Math.cos(centerLat * Math.PI / 180) / 360.0;
+            
+            // 3. タイルの中心経度を計算
+            const centerLng = lngStep * CELL_SIZE_METERS / tileMetersPerLng;
+            
+            // 4. タイルの緯度・経度方向の幅 (度単位)
+            const latStepDegree = (CELL_SIZE_METERS / METERS_PER_DEGREE_LAT);
+            const lngStepDegree = (CELL_SIZE_METERS / tileMetersPerLng);
+
+            // 5. 描画用の境界線を計算 (中心から半分の幅を引く/足す)
+            const bounds = [ 
+                [centerLat - latStepDegree / 2, centerLng - lngStepDegree / 2], 
+                [centerLat + latStepDegree / 2, centerLng + lngStepDegree / 2] 
+            ];
             const cellLayer = L.rectangle(bounds, { color: color, weight: 0, fillOpacity: 0.3 }).addTo(map);
             gridCellLayers[cellId] = cellLayer;
         }
@@ -333,6 +381,7 @@ $(document).ready(function() {
                 if (scores.hasOwnProperty(teamColor)) { scores[teamColor] += pin.bonusPoints; }
             }
         }
+        // サーバーが更新したスコアをWebSocketで受信するまでは、ローカルで計算したスコアを表示
         $('#score-red').text(scores.red + ' ポイント');
         $('#score-blue').text(scores.blue + ' ポイント');
         $('#score-yellow').text(scores.yellow + ' ポイント');
@@ -345,11 +394,18 @@ $(document).ready(function() {
         stompClient.debug = null;
         stompClient.connect({}, function (frame) {
             console.log('✅ WebSocket接続成功: ' + frame);
+            // スコア更新メッセージの購読
             stompClient.subscribe('/topic/scores', function (message) {
                 const newScores = JSON.parse(message.body);
+                console.log('スコア更新を受信:', newScores);
+                
+                // 画面上のスコアを更新
                 $('#score-red').text(newScores.red + ' ポイント');
                 $('#score-blue').text(newScores.blue + ' ポイント');
                 $('#score-yellow').text(newScores.yellow + ' ポイント');
+                
+                // ★ 修正: スコア更新通知が来たら、全て再描画する関数を呼び出す
+                fetchAllData(currentSeason); 
             });
         });
     }
@@ -360,7 +416,5 @@ $(document).ready(function() {
     setupEventHandlers();
     connectWebSocket();
     
-    if (typeof showColorModal !== 'undefined' && showColorModal) {
-         $('#colorSelectionModal').modal('show');
-    }
+    // スコアモーダルの表示ロジックは photopin.html のインラインスクリプトに依存します
 });

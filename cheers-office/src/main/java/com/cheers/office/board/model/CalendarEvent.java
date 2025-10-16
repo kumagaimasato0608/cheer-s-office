@@ -1,6 +1,6 @@
 package com.cheers.office.board.model;
 
-import java.util.List; // ★ List のインポートを追加
+import java.util.List; // ★ Listのインポートが必要
 
 import lombok.Data;
 
@@ -14,9 +14,7 @@ public class CalendarEvent {
     private String color;       // イベントの色
     private boolean allDay = false; // 終日イベントかどうか
     
-    // ★★★ 追加: 作成者ID (必須) ★★★
+    // ★★★ 必須: 認証と権限チェックのため追加 ★★★
     private String createdByUserId; 
-
-    // ★★★ 追加: 共有メンバーIDリスト (任意) ★★★
-    private List<String> sharedWithUserIds; 
+    private List<String> sharedWithUserIds; // 共有メンバーのIDリスト
 }

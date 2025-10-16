@@ -45,18 +45,16 @@
 	    .nav-list { list-style: none; margin: 0; padding: 0; display: flex; align-items: center; }
 	    .nav-item { padding: 5px 15px; }
 	    .nav-link { 
-	        /* ★ 修正: アイコンを削除し、テキストのみにする */
 	        display: flex; 
-	        flex-direction: column; /* 縦並びを維持しつつ、アイコン要素を削除 */
+	        flex-direction: column; 
 	        align-items: center; 
 	        text-decoration: none; 
 	        color: #333; 
-	        font-size: 0.9em; /* 文字を少し大きく */
+	        font-size: 0.9em; 
 	        font-weight: bold; 
-	        padding: 8px 15px; /* パディングを調整 */
+	        padding: 8px 15px; 
 	    }
 	    .nav-link:hover { color: #007bff; }
-	    /* .nav-icon { width: 24px; height: 24px; margin-bottom: 3px; }  ★ 削除 */
 	    
 	    /* ★ 追加: ログインユーザー名とログアウトボタンのコンテナ */
 	    .user-info-container {
@@ -158,56 +156,9 @@
 </head>
 <body>
 
-    <header class="app-header">
-        <div class="header-top-tier">
-            <div class="app-title">Cheers Office</div>
-            <div class="user-info-container">
-                <span id="loggedInUserName" class="logged-in-user">読み込み中...</span>
-                <button class="header-toggle-button" type="button" data-bs-toggle="collapse" data-bs-target="#headerNavCollapse" aria-expanded="false" aria-controls="headerNavCollapse">
-                    メニュー
-                </button>
-            </div>
-        </div>
-        <div class="collapse" id="headerNavCollapse">
-            <nav class="header-nav">
-                <ul class="nav-list">
-                    <li class="nav-item">
-                        <a th:href="@{/home}" class="nav-link">
-                            <span>ホーム</span>
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a th:href="@{/mypage}" class="nav-link">
-                            <span>マイページ</span>
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a th:href="@{/chat/rooms}" class="nav-link">
-                            <span>チャット</span>
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a th:href="@{/thread}" class="nav-link">
-                            <span>掲示板</span>
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a th:href="@{/photopin}" class="nav-link">
-                            <span>ピニット</span>
-                        </a>
-                    </li>
-                    <li class="nav-item logout-item">
-                        <form th:action="@{/logout}" method="post">
-                            <button type="submit" class="logout-button">ログアウト</button>
-                        </form>
-                    </li>
-                </ul>
-            </nav>
-        </div>
-    </header>
-    <main class="container mt-5" style="padding-top: 100px;"> 
-        <h1 class="mb-4">ようこそ、Cheers Officeへ！</h1>
+    <div th:replace="common/header :: header"></div>
 
+    <main class="container mt-5" style="padding-top: 100px;"> 
         <div class="row mb-4">
             <div class="col-12">
                 <div class="card shadow-sm">
@@ -242,21 +193,21 @@
 
                 <div class="card shadow-sm mb-4">
                     <div class="card-header bg-danger text-white">
-                        <h5 class="mb-0">🎮 pinIt リアルタイムスコア</h5>
+                        <h5 class="mb-0">🎮 pinIt リアルタイムスコア (今シーズン残り: <span id="seasonRemainingDays">計算中...</span>)</h5>
                     </div>
                     <div class="card-body">
                         <ul id="realtime-score-list" class="list-group list-group-flush">
                             <li class="list-group-item d-flex justify-content-between align-items-center" style="color: red;">
                                 <span>🔴 RED チーム</span>
-                                <strong id="score-red">0</strong>
+                                <strong id="score-red">0 ポイント</strong>
                             </li>
                             <li class="list-group-item d-flex justify-content-between align-items-center" style="color: blue;">
                                 <span>🔵 BLUE チーム</span>
-                                <strong id="score-blue">0</strong>
+                                <strong id="score-blue">0 ポイント</strong>
                             </li>
                             <li class="list-group-item d-flex justify-content-between align-items-center" style="color: gold;">
                                 <span>🟡 YELLOW チーム</span>
-                                <strong id="score-yellow">0</strong>
+                                <strong id="score-yellow">0 ポイント</strong>
                             </li>
                         </ul>
                     </div>
@@ -404,23 +355,56 @@
             const eventModal = new bootstrap.Modal(document.getElementById('eventModal'));
             const dayEventsModal = new bootstrap.Modal(document.getElementById('dayEventsModal'));
             const userNameEl = document.getElementById('loggedInUserName'); // ユーザー名表示要素
+            const seasonRemainingDaysEl = document.getElementById('seasonRemainingDays'); // シーズン残り日数要素
             let currentUserId = null;
             let allUsers = [];
+            let calendar = null; // FullCalendarインスタンスをグローバルで保持
+
+            // ★★★ PinItの残り日数を計算する関数 (③) ★★★
+            const calculateSeasonRemaining = () => {
+                const now = new Date();
+                const year = now.getFullYear();
+                const month = now.getMonth();
+                
+                // 今月の最終日を計算
+                const lastDayOfMonth = new Date(year, month + 1, 0);
+                
+                const diffTime = Math.abs(lastDayOfMonth - now);
+                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) - 1; // 最終日は含めないため-1
+                
+                if (diffDays >= 0) {
+                    seasonRemainingDaysEl.textContent = `${diffDays}日`;
+                } else {
+                    seasonRemainingDaysEl.textContent = `終了`;
+                }
+            };
+            calculateSeasonRemaining();
+
 
             // 1. ユーザー情報と全ユーザーリストを事前に取得
             try {
                 const meRes = await axios.get('/api/users/me');
                 currentUserId = meRes.data.userId;
                 
-                // ★ ユーザー名を表示
-                userNameEl.textContent = meRes.data.userName;
+                // ★ ユーザー名を表示 (nullチェックは不要だが、コードの堅牢性のため)
+                const userNameElement = document.getElementById('loggedInUserName');
+                if (userNameElement) userNameElement.textContent = meRes.data.userName;
+
+                // ★★★ PinIt初期スコアの取得 (③) ★★★
+                const scoreRes = await axios.get('/api/scores'); // 新しいAPIを呼び出す
+                const initialScores = scoreRes.data;
+                document.getElementById('score-red').textContent = initialScores.red + ' ポイント';
+                document.getElementById('score-blue').textContent = initialScores.blue + ' ポイント';
+                document.getElementById('score-yellow').textContent = initialScores.yellow + ' ポイント';
+                // ★★★ ここまで PinIt 初期スコア ★★★
 
                 const usersRes = await axios.get('/api/users');
                 allUsers = usersRes.data || [];
                 renderSharedUsersSelection(); 
             } catch (error) {
-                console.error("ユーザー情報の取得に失敗しました", error);
-                userNameEl.textContent = 'ゲスト';
+                console.error("データの初期ロードに失敗しました", error);
+                const userNameElement = document.getElementById('loggedInUserName');
+                if (userNameElement) userNameElement.textContent = 'エラー';
             }
 
             // ユーザー選択チェックボックスをレンダリングする関数 (変更なし)
@@ -731,8 +715,8 @@
             };
 
 
-            // 2. FullCalendarの初期設定
-            const calendar = new FullCalendar.Calendar(calendarEl, {
+            // 2. FullCalendarの初期化
+            calendar = new FullCalendar.Calendar(calendarEl, {
                 locale: 'ja',
                 headerToolbar: {
                     left: 'prev,next',
@@ -764,6 +748,7 @@
                     success: function(rawEvents) {
                         updateCalendarPlaceholder(rawEvents.length); 
                         
+                        // ★★★ 修正: sharedWithUserIdsがない場合のフォールバックを追加 (②) ★★★
                         const mappedEvents = rawEvents.map(event => ({
                             id: event.id,
                             title: event.title,
@@ -774,7 +759,7 @@
                             extendedProps: {
                                 description: event.description,
                                 createdByUserId: event.createdByUserId,
-                                sharedWithUserIds: event.sharedWithUserIds
+                                sharedWithUserIds: event.sharedWithUserIds || [] // デフォルトで空リストを設定
                             }
                         }));
                         
@@ -833,15 +818,24 @@
             // WebSocket接続によるリアルタイム更新
             const sock = new SockJS('/ws'); 
             const stompClient = Stomp.over(sock);
-            stompClient.connect({}, function(frame) {
+            stompClient.connect({}, function (frame) {
                 console.log('Connected: ' + frame);
 
+                // ★ カレンダーイベント通知を購読
                 stompClient.subscribe('/topic/calendar', function(eventMessage) {
-                    console.log('リアルタイムイベント通知を受信。カレンダーを更新します。');
+                    console.log('カレンダー通知を受信。更新します。');
                     calendar.refetchEvents();
+                });
+                
+                // ★ PinItスコア通知を購読 (スコア表示更新用) (③)
+                stompClient.subscribe('/topic/scores', function(scoreMessage) {
+                    const newScores = JSON.parse(scoreMessage.body);
+                    
+                    // スコアの更新
+                    document.getElementById('score-red').textContent = newScores.red + ' ポイント';
+                    document.getElementById('score-blue').textContent = newScores.blue + ' ポイント';
+                    document.getElementById('score-yellow').textContent = newScores.yellow + ' ポイント';
                 });
             });
         });
     </script>
-</body>
-</html>

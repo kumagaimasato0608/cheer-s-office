@@ -1,99 +1,19 @@
 [ {
-  "pinId" : "db4d3970-4844-4cf1-b8d6-542f1de4baa8",
+  "pinId" : "e4edb52a-6c05-43c0-bdc1-9aa1265bab06",
   "location" : {
-    "latitude" : 35.680729,
-    "longitude" : 139.478012
-  },
-  "title" : "テスト",
-  "description" : "",
-  "createdBy" : "870029bd-68ec-480c-923c-8fc4465a2669",
-  "createdDate" : "2025-10-14T01:03:09.9343569",
-  "photos" : [ {
-    "photoId" : "9f6c70e1-d876-4b14-9c0b-00e68437abe5",
-    "imageUrl" : "/images/photopins/db4d3970-4844-4cf1-b8d6-542f1de4baa8_OIP.webp",
-    "comment" : null,
-    "uploadedBy" : "870029bd-68ec-480c-923c-8fc4465a2669",
-    "uploadedDate" : "2025-10-14T01:03:09.9343569"
-  } ],
-  "comments" : [ ],
-  "bonusPoints" : 0,
-  "season" : "2025-10"
-}, {
-  "pinId" : "3fa6a515-9181-43a6-88c9-0d09953edda8",
-  "location" : {
-    "latitude" : 35.680729,
-    "longitude" : 139.478012
-  },
-  "title" : "テスト２",
-  "description" : "",
-  "createdBy" : "4f254c98-1c62-423f-8c94-da8a29299612",
-  "createdDate" : "2025-10-14T01:03:42.7703091",
-  "photos" : [ {
-    "photoId" : "a6dcac26-87a8-4544-9be6-854073d9f0aa",
-    "imageUrl" : "/images/photopins/3fa6a515-9181-43a6-88c9-0d09953edda8_OIP.webp",
-    "comment" : null,
-    "uploadedBy" : "4f254c98-1c62-423f-8c94-da8a29299612",
-    "uploadedDate" : "2025-10-14T01:03:42.7703091"
-  } ],
-  "comments" : [ ],
-  "bonusPoints" : 0,
-  "season" : "2025-10"
-}, {
-  "pinId" : "84327d17-1ef0-4d23-b1c6-c528b57c63af",
-  "location" : {
-    "latitude" : 35.663016,
-    "longitude" : 139.74635400000003
-  },
-  "title" : "tesuto",
-  "description" : "",
-  "createdBy" : "4f254c98-1c62-423f-8c94-da8a29299612",
-  "createdDate" : "2025-10-14T10:27:47.1498862",
-  "photos" : [ {
-    "photoId" : "998260bb-7e66-4931-8924-bbcc0b7797c8",
-    "imageUrl" : "/images/photopins/84327d17-1ef0-4d23-b1c6-c528b57c63af_OIP (1).webp",
-    "comment" : null,
-    "uploadedBy" : "4f254c98-1c62-423f-8c94-da8a29299612",
-    "uploadedDate" : "2025-10-14T10:27:47.1498862"
-  } ],
-  "comments" : [ ],
-  "bonusPoints" : 0,
-  "season" : "2025-10"
-}, {
-  "pinId" : "7d376d87-7a97-4c04-ba46-4506564dd88d",
-  "location" : {
-    "latitude" : 35.66365797670739,
-    "longitude" : 139.7464121506726
+    "latitude" : 35.66367484428291,
+    "longitude" : 139.746399108674
   },
   "title" : "テスト",
   "description" : "",
   "createdBy" : "u001_auto",
-  "createdDate" : "2025-10-15T10:15:51.3577108",
+  "createdDate" : "2025-10-16T10:37:54.6522231",
   "photos" : [ {
-    "photoId" : "fe90253b-d13c-4661-9057-8a2138b0dde5",
-    "imageUrl" : "/images/photopins/7d376d87-7a97-4c04-ba46-4506564dd88d_OIP.webp",
+    "photoId" : "29333cc8-125c-4beb-ba1f-eba15a84cb06",
+    "imageUrl" : "/images/photopins/e4edb52a-6c05-43c0-bdc1-9aa1265bab06_Gemini_Generated_Image_nskpa3nskpa3nskp.png",
     "comment" : null,
     "uploadedBy" : "u001_auto",
-    "uploadedDate" : "2025-10-15T10:15:51.3577108"
-  } ],
-  "comments" : [ ],
-  "bonusPoints" : 0,
-  "season" : "2025-10"
-}, {
-  "pinId" : "fc04c6de-a230-43f6-abab-5f5d99e4138a",
-  "location" : {
-    "latitude" : 35.66363081304044,
-    "longitude" : 139.7463924739503
-  },
-  "title" : "テスト",
-  "description" : "",
-  "createdBy" : "870029bd-68ec-480c-923c-8fc4465a2669",
-  "createdDate" : "2025-10-15T15:27:04.5676494",
-  "photos" : [ {
-    "photoId" : "ddf216b9-94d2-43d8-bb51-e18de923fd6a",
-    "imageUrl" : "/images/photopins/fc04c6de-a230-43f6-abab-5f5d99e4138a_Gemini_Generated_Image_nskpa3nskpa3nskp.png",
-    "comment" : null,
-    "uploadedBy" : "870029bd-68ec-480c-923c-8fc4465a2669",
-    "uploadedDate" : "2025-10-15T15:27:04.5676494"
+    "uploadedDate" : "2025-10-16T10:37:54.6522231"
   } ],
   "comments" : [ ],
   "bonusPoints" : 0,

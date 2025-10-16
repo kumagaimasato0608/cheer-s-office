@@ -1,0 +1,13 @@
+[ {
+  "userId" : "u001_auto",
+  "userName" : "自動登録ユーザー",
+  "mailAddress" : "test@cheers.com",
+  "password" : "$2a$10$lyUFQiJWowMr0LqFc6ResOe2NAPjnXJg8P.VO87Y8FU6594.PRIlS",
+  "group" : "開発部",
+  "myBoom" : "Java開発",
+  "hobby" : "読書",
+  "icon" : "/images/default_icon.png",
+  "statusMessage" : "よろしくお願いします！",
+  "teamColor" : null,
+  "lastPinTimestamp" : null
+} ]

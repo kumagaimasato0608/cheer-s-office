@@ -9,7 +9,7 @@
   "icon" : "/images/profile/u001_auto.png",
   "statusMessage" : "よろしくお願いします！",
   "teamColor" : "yellow",
-  "lastPinTimestamp" : "2025-10-15T10:15:51.3816308"
+  "lastPinTimestamp" : "2025-10-16T10:37:54.6711159"
 }, {
   "userId" : "870029bd-68ec-480c-923c-8fc4465a2669",
   "userName" : "まさと",
@@ -21,7 +21,7 @@
   "icon" : "/images/profile/870029bd-68ec-480c-923c-8fc4465a2669.png",
   "statusMessage" : "よろしくお願いします！",
   "teamColor" : "blue",
-  "lastPinTimestamp" : "2025-10-15T15:27:04.5843016"
+  "lastPinTimestamp" : "2025-10-16T13:14:20.7437297"
 }, {
   "userId" : "4f254c98-1c62-423f-8c94-da8a29299612",
   "userName" : "テスト２",
@@ -33,7 +33,7 @@
   "icon" : "/images/profile/4f254c98-1c62-423f-8c94-da8a29299612.png",
   "statusMessage" : "",
   "teamColor" : "red",
-  "lastPinTimestamp" : "2025-10-14T10:27:47.1605624"
+  "lastPinTimestamp" : "2025-10-16T11:25:15.065731"
 }, {
   "userId" : "8a93aa56-57ae-427c-85f1-909336eae99b",
   "userName" : "テスト３",
@@ -56,6 +56,18 @@
   "hobby" : "",
   "icon" : "/images/profile/c2227a52-b7a0-463b-bbba-7a483368d3fc.png",
   "statusMessage" : "",
+  "teamColor" : null,
+  "lastPinTimestamp" : null
+}, {
+  "userId" : "84cb48e5-da12-48e3-a4ac-af3425396a6d",
+  "userName" : "くまがい",
+  "mailAddress" : "kumagai@test",
+  "password" : "$2a$10$VSVigyPBYizvBZxyP80yQu.e5C4mGxOf2Xn0QtfQGspEEwvxR78.W",
+  "group" : "未設定",
+  "myBoom" : "ゲーム",
+  "hobby" : "野球",
+  "icon" : "/images/profile/84cb48e5-da12-48e3-a4ac-af3425396a6d.png",
+  "statusMessage" : "こんにちは",
   "teamColor" : null,
   "lastPinTimestamp" : null
 } ]
