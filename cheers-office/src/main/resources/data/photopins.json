@@ -1,19 +1,19 @@
 [ {
-  "pinId" : "e4edb52a-6c05-43c0-bdc1-9aa1265bab06",
+  "pinId" : "6c416631-2816-41db-a8b6-7ae7f6d0a752",
   "location" : {
-    "latitude" : 35.66367484428291,
-    "longitude" : 139.746399108674
+    "latitude" : 35.66365243921985,
+    "longitude" : 139.74643063073876
   },
-  "title" : "テスト",
+  "title" : "ぴん",
   "description" : "",
-  "createdBy" : "u001_auto",
-  "createdDate" : "2025-10-16T10:37:54.6522231",
+  "createdBy" : "870029bd-68ec-480c-923c-8fc4465a2669",
+  "createdDate" : "2025-10-16T16:18:47.414631",
   "photos" : [ {
-    "photoId" : "29333cc8-125c-4beb-ba1f-eba15a84cb06",
-    "imageUrl" : "/images/photopins/e4edb52a-6c05-43c0-bdc1-9aa1265bab06_Gemini_Generated_Image_nskpa3nskpa3nskp.png",
+    "photoId" : "3ef19cba-9a36-4f93-a07b-d0aabbc379fe",
+    "imageUrl" : "/images/photopins/6c416631-2816-41db-a8b6-7ae7f6d0a752_OIP (1).webp",
     "comment" : null,
-    "uploadedBy" : "u001_auto",
-    "uploadedDate" : "2025-10-16T10:37:54.6522231"
+    "uploadedBy" : "870029bd-68ec-480c-923c-8fc4465a2669",
+    "uploadedDate" : "2025-10-16T16:18:47.414631"
   } ],
   "comments" : [ ],
   "bonusPoints" : 0,
