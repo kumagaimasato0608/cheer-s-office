@@ -8,4 +8,14 @@
   "allDay" : false,
   "createdByUserId" : null,
   "sharedWithUserIds" : [ "u001_auto" ]
+}, {
+  "id" : "3f924260-5a03-49b4-8695-96113beae4cc",
+  "title" : "ライブ",
+  "start" : "2025-10-18T09:00",
+  "end" : "2025-10-18T16:33",
+  "description" : "",
+  "color" : null,
+  "allDay" : false,
+  "createdByUserId" : "870029bd-68ec-480c-923c-8fc4465a2669",
+  "sharedWithUserIds" : [ ]
 } ]

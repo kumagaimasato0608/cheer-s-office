@@ -18,4 +18,24 @@
   "comments" : [ ],
   "bonusPoints" : 0,
   "season" : "2025-10"
+}, {
+  "pinId" : "aee15a48-27fc-4489-b5d0-3bc3ec70ccc8",
+  "location" : {
+    "latitude" : 35.66366945947436,
+    "longitude" : 139.74640005088312
+  },
+  "title" : "追加",
+  "description" : "",
+  "createdBy" : "u001_auto",
+  "createdDate" : "2025-10-16T16:47:14.6354541",
+  "photos" : [ {
+    "photoId" : "95e1a230-643d-4119-9ecb-99ac8d1e7228",
+    "imageUrl" : "/images/photopins/aee15a48-27fc-4489-b5d0-3bc3ec70ccc8_Gemini_Generated_Image_nskpa3nskpa3nskp.png",
+    "comment" : null,
+    "uploadedBy" : "u001_auto",
+    "uploadedDate" : "2025-10-16T16:47:14.6354541"
+  } ],
+  "comments" : [ ],
+  "bonusPoints" : 0,
+  "season" : "2025-10"
 } ]

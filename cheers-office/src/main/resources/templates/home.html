@@ -360,51 +360,51 @@
             let allUsers = [];
             let calendar = null; // FullCalendarインスタンスをグローバルで保持
 
-            // ★★★ PinItの残り日数を計算する関数 (③) ★★★
+            // PinItの残り日数を計算する関数 (③)
             const calculateSeasonRemaining = () => {
                 const now = new Date();
                 const year = now.getFullYear();
                 const month = now.getMonth();
                 
-                // 今月の最終日を計算
                 const lastDayOfMonth = new Date(year, month + 1, 0);
                 
                 const diffTime = Math.abs(lastDayOfMonth - now);
-                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) - 1; // 最終日は含めないため-1
+                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) - 1;
                 
-                if (diffDays >= 0) {
+                if (diffDays >= 0 && seasonRemainingDaysEl) {
                     seasonRemainingDaysEl.textContent = `${diffDays}日`;
-                } else {
+                } else if (seasonRemainingDaysEl) {
                     seasonRemainingDaysEl.textContent = `終了`;
                 }
             };
             calculateSeasonRemaining();
 
 
-            // 1. ユーザー情報と全ユーザーリストを事前に取得
+            // 1. ユーザー情報とPinIt初期スコアの取得
             try {
-                const meRes = await axios.get('/api/users/me');
+                // PinItスコア初期ロードとユーザー情報取得を統合
+                const [meRes, scoreRes] = await Promise.all([
+                    axios.get('/api/users/me'),
+                    axios.get('/api/scores')
+                ]);
+                
                 currentUserId = meRes.data.userId;
                 
-                // ★ ユーザー名を表示 (nullチェックは不要だが、コードの堅牢性のため)
-                const userNameElement = document.getElementById('loggedInUserName');
-                if (userNameElement) userNameElement.textContent = meRes.data.userName;
+                // ★ ユーザー名を表示 (DOMが存在することを確認)
+                if (userNameEl) userNameEl.textContent = meRes.data.userName;
 
-                // ★★★ PinIt初期スコアの取得 (③) ★★★
-                const scoreRes = await axios.get('/api/scores'); // 新しいAPIを呼び出す
+                // PinIt初期スコアを更新
                 const initialScores = scoreRes.data;
                 document.getElementById('score-red').textContent = initialScores.red + ' ポイント';
                 document.getElementById('score-blue').textContent = initialScores.blue + ' ポイント';
                 document.getElementById('score-yellow').textContent = initialScores.yellow + ' ポイント';
-                // ★★★ ここまで PinIt 初期スコア ★★★
 
                 const usersRes = await axios.get('/api/users');
                 allUsers = usersRes.data || [];
                 renderSharedUsersSelection(); 
             } catch (error) {
                 console.error("データの初期ロードに失敗しました", error);
-                const userNameElement = document.getElementById('loggedInUserName');
-                if (userNameElement) userNameElement.textContent = 'エラー';
+                if (userNameEl) userNameEl.textContent = 'ゲスト';
             }
 
             // ユーザー選択チェックボックスをレンダリングする関数 (変更なし)
@@ -640,6 +640,7 @@
                     item.style.cursor = 'pointer';
                     item.onclick = () => openEventModal({ event: event }); // クリックで編集モーダル
                     
+                    // ★ 修正: 予定の表示形式を統一 (画像内の「9時 テスト2」に合わせる)
                     item.innerHTML = `
                         <span class="event-time">${timeText}</span>
                         <span class="event-title">${event.title}</span>
@@ -715,7 +716,7 @@
             };
 
 
-            // 2. FullCalendarの初期化
+            // 2. FullCalendarの初期設定
             calendar = new FullCalendar.Calendar(calendarEl, {
                 locale: 'ja',
                 headerToolbar: {
@@ -839,3 +840,5 @@
             });
         });
     </script>
+</body>
+</html>

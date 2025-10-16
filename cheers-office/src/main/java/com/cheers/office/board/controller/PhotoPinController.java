@@ -106,6 +106,13 @@ public class PhotoPinController {
         return ResponseEntity.ok(seasons);
     }
 
+    // ★★★ PinItの初期スコア取得API (home.htmlが使用) ★★★
+    @GetMapping("/api/scores")
+    @ResponseBody
+    public ScoreUpdateDto getPinItScores() {
+        return calculateScoresInternal();
+    }
+
     @PostMapping("/api/photopins")
     @ResponseBody
     public ResponseEntity<?> createPhotoPin(@RequestParam("title") String title, @RequestParam(value = "description", required = false) String description, @RequestParam("latitude") double latitude, @RequestParam("longitude") double longitude, @RequestParam("file") MultipartFile file, @AuthenticationPrincipal CustomUserDetails customUserDetails) {
@@ -199,7 +206,6 @@ public class PhotoPinController {
         return ResponseEntity.ok(pin);
     }
 
-    // ★★★ 修正: ファイル削除ロジックを追加 ★★★
     @DeleteMapping("/api/photopins/{pinId}")
     @ResponseBody
     public ResponseEntity<Void> deletePin(@PathVariable String pinId, @AuthenticationPrincipal CustomUserDetails userDetails) {
@@ -219,7 +225,6 @@ public class PhotoPinController {
                     String imageUrl = photo.getImageUrl();
                     String fileName = imageUrl.substring(imageUrl.lastIndexOf("/") + 1);
                     
-                    // パスを構築: photopinUploadDir + fileName
                     Path filePath = Paths.get(photopinUploadDir, fileName);
 
                     // ファイルが存在する場合のみ削除 (エラーをスローしないよう Files.deleteIfExists を使用)
