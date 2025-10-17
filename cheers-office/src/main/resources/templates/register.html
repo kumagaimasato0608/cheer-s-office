@@ -4,7 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-	
+    <link rel="icon" type="image/png" href="/images/PinIt_logo.png">
+
     <title>新規ユーザー登録</title>
     
     <style>
@@ -32,40 +33,41 @@
             text-align: center; 
             margin-bottom: 25px; 
             color: #007bff; 
-            font-size: 2em; 
+            font-size: 2em;
         }
-        .form-group { 
-            margin-bottom: 15px; 
+        .form-group {
+            margin-bottom: 15px;
             text-align: left;
         }
-        label { 
-            display: block; 
-            margin-bottom: 5px; 
-            font-weight: bold; 
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
             color: #555;
-            font-size: 0.9em;
         }
-        input[type="text"], 
-        input[type="password"],
-        input[type="email"] { 
-            width: 100%; 
-            padding: 10px; 
-            border: 1px solid #ccc; 
-            border-radius: 5px; 
+        .form-group input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
             box-sizing: border-box;
             font-size: 1em;
         }
-        button { 
-            width: 100%; 
-            padding: 12px; 
-            border: none; 
-            border-radius: 5px; 
-            background-color: #28a745; 
+        button[type="submit"] {
+            width: 100%;
+            padding: 10px;
+            border: none;
+            border-radius: 8px;
+            background-color: #007bff;
             color: white; 
             font-size: 1.1em; 
             font-weight: bold; 
             cursor: pointer; 
             margin-top: 20px;
+            transition: background-color 0.2s;
+        }
+        button[type="submit"]:hover {
+            background-color: #0056b3;
         }
         .login-link { 
             text-align: center; 
@@ -80,6 +82,11 @@
             color: #dc3545; /* 赤 */
             margin-bottom: 15px;
             font-weight: bold;
+        }
+        .password-info {
+            font-size: 0.85em;
+            color: #777;
+            margin-top: 5px;
         }
     </style>
 </head>
@@ -103,19 +110,20 @@
 
             <div class="form-group">
                 <label for="password">パスワード:</label>
-                <input type="password" id="password" name="password" required>
+                <input type="password" id="password" name="password" required minlength="8">
+                <p class="password-info">8文字以上で入力してください。</p>
             </div>
             
             <div class="form-group">
                 <label for="confirmPassword">パスワード (確認):</label>
-                <input type="password" id="confirmPassword" name="confirmPassword" required>
+                <input type="password" id="confirmPassword" name="confirmPassword" required minlength="8">
             </div>
             
             <button type="submit">アカウント登録</button>
         </form>
         
         <div class="login-link">
-            <a th:href="@{/login}">既にアカウントをお持ちの方はこちら</a>
+            <a th:href="@{/login}">すでにアカウントをお持ちの方はこちら</a>
         </div>
     </div>
 </body>

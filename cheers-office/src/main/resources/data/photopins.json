@@ -18,4 +18,24 @@
   "comments" : [ ],
   "bonusPoints" : 0,
   "season" : "2025-10"
+}, {
+  "pinId" : "eb4d0d55-c314-41f4-90fa-3b78cbb8230b",
+  "location" : {
+    "latitude" : 35.66366948184297,
+    "longitude" : 139.74638891954504
+  },
+  "title" : "ぴん",
+  "description" : "",
+  "createdBy" : "u001_auto",
+  "createdDate" : "2025-10-17T15:52:54.4147521",
+  "photos" : [ {
+    "photoId" : "ea97d3d4-476e-4fa0-b8cc-29328e54acd3",
+    "imageUrl" : "/images/photopins/eb4d0d55-c314-41f4-90fa-3b78cbb8230b_OIP (1).webp",
+    "comment" : null,
+    "uploadedBy" : "u001_auto",
+    "uploadedDate" : "2025-10-17T15:52:54.4147521"
+  } ],
+  "comments" : [ ],
+  "bonusPoints" : 0,
+  "season" : "2025-10"
 } ]

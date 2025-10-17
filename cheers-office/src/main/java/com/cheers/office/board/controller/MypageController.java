@@ -2,7 +2,7 @@ package com.cheers.office.board.controller;
 
 import java.util.Optional;
 
-import org.springframework.beans.factory.annotation.Value; // ★★★ import文を追加 ★★★
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -29,16 +29,18 @@ public class MypageController {
     private final UserRepository userRepository;
     private final UserAccountService userAccountService;
 
-    // ★★★ application.propertiesから設定を読み込むフィールドを追加 ★★★
     @Value("${app.upload-dir.profile:src/main/resources/static/images/profile}")
     private String profileUploadDir;
+    
+    // ★★★ パスワードの最小文字数定義を追加 ★★★
+    private static final int MIN_PASSWORD_LENGTH = 8; 
 
     public MypageController(UserRepository userRepository, UserAccountService userAccountService) {
         this.userRepository = userRepository;
         this.userAccountService = userAccountService;
     }
     
-    // ... (mypage, updateProfile, showPasswordChangeForm, updateEmail, updatePassword メソッドは変更なし) ...
+    // ... (mypage, updateProfile, showPasswordChangeForm, updateEmail メソッドは省略) ...
     @GetMapping("/mypage")
     public String mypage(Model model, @AuthenticationPrincipal CustomUserDetails customUserDetails) {
         if (customUserDetails != null) {
@@ -106,10 +108,19 @@ public class MypageController {
     public String updatePassword(@ModelAttribute PasswordUpdateForm form, 
                                  RedirectAttributes redirectAttributes,
                                  @AuthenticationPrincipal CustomUserDetails customUserDetails) {
+        
+        // ★★★ 1. 新しいパスワードの文字数チェックを追加 ★★★
+        if (form.getNewPassword().length() < MIN_PASSWORD_LENGTH) {
+            redirectAttributes.addFlashAttribute("errorMessage", "新しいパスワードは" + MIN_PASSWORD_LENGTH + "文字以上で入力してください。");
+            return "redirect:/mypage/password";
+        }
+        
+        // 2. パスワード一致チェック
         if (!form.getNewPassword().equals(form.getConfirmPassword())) {
             redirectAttributes.addFlashAttribute("errorMessage", "新しいパスワードが確認用と一致しません。");
             return "redirect:/mypage/password";
         }
+        
         Optional<User> updatedUserOpt = userAccountService.updatePassword(customUserDetails.getUsername(), form.getCurrentPassword(), form.getNewPassword());
         if (updatedUserOpt.isPresent()) {
             customUserDetails.setUser(updatedUserOpt.get());

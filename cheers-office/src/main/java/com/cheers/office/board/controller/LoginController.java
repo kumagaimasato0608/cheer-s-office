@@ -20,6 +20,9 @@ public class LoginController {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
 
+    // パスワードの最小文字数定義
+    private static final int MIN_PASSWORD_LENGTH = 8; 
+
     public LoginController(UserRepository userRepository, PasswordEncoder passwordEncoder) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
@@ -40,15 +43,22 @@ public class LoginController {
     public String registerUser(@RequestParam("userName") String userName,
                                @RequestParam("mailAddress") String mailAddress,
                                @RequestParam("password") String password,
-                               @RequestParam("confirmPassword") String confirmPassword, // 確認用パスワードを取得
+                               @RequestParam("confirmPassword") String confirmPassword,
                                RedirectAttributes redirectAttributes) {
         
+        // 1. パスワードの文字数チェック
+        if (password.length() < MIN_PASSWORD_LENGTH) {
+            redirectAttributes.addFlashAttribute("errorMessage", "パスワードは" + MIN_PASSWORD_LENGTH + "文字以上で入力してください。");
+            return "redirect:/register";
+        }
+
+        // 2. メールアドレス重複チェック
         if (userRepository.findByMailAddress(mailAddress).isPresent()) {
             redirectAttributes.addFlashAttribute("errorMessage", "このメールアドレスは既に登録されています。");
             return "redirect:/register";
         }
         
-        // ★ パスワード確認チェックを追加
+        // 3. パスワード一致チェック
         if (!password.equals(confirmPassword)) {
             redirectAttributes.addFlashAttribute("errorMessage", "パスワードと確認用パスワードが一致しません。");
             return "redirect:/register";
@@ -67,7 +77,6 @@ public class LoginController {
         
         userRepository.save(newUser);
 
-        // ★★★ 修正: アラート表示用のフラッシュ属性を設定 ★★★
         redirectAttributes.addFlashAttribute("registrationSuccessAlert", "登録されました。"); 
         
         return "redirect:/login";

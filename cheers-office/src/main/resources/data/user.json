@@ -9,7 +9,7 @@
   "icon" : "/images/profile/u001_auto.png",
   "statusMessage" : "よろしくお願いします！",
   "teamColor" : "yellow",
-  "lastPinTimestamp" : "2025-10-16T16:47:14.6454552"
+  "lastPinTimestamp" : "2025-10-17T15:52:54.4283076"
 }, {
   "userId" : "870029bd-68ec-480c-923c-8fc4465a2669",
   "userName" : "まさと",
@@ -26,7 +26,7 @@
   "userId" : "4f254c98-1c62-423f-8c94-da8a29299612",
   "userName" : "テスト２",
   "mailAddress" : "A@A",
-  "password" : "$2a$10$lWt7lrMQBjkoxtGrdlOFcOIg6w3d3ZAznL0wjmaauWj9ePYC9oUFe",
+  "password" : "$2a$10$C5iWcEbnbh2C0fhO.qbWCumWG2XWQ/Jhf0ADs9LnbdqmNRejhWK06",
   "group" : "未設定",
   "myBoom" : "",
   "hobby" : "",
@@ -70,4 +70,16 @@
   "statusMessage" : "こんにちは",
   "teamColor" : "blue",
   "lastPinTimestamp" : "2025-10-17T11:55:08.8783673"
+}, {
+  "userId" : "37bb8198-da25-476f-9ed5-6cb02797536a",
+  "userName" : "e",
+  "mailAddress" : "e@e",
+  "password" : "$2a$10$ewRktRnDE9pn4yBRX8CzsO2SCs.IlE0yu.ngZzHV8BoMWPaG8zBjy",
+  "group" : "未設定",
+  "myBoom" : null,
+  "hobby" : null,
+  "icon" : "/images/default_icon.png",
+  "statusMessage" : null,
+  "teamColor" : "red",
+  "lastPinTimestamp" : null
 } ]

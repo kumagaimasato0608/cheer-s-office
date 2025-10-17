@@ -68,4 +68,14 @@
   "allDay" : false,
   "createdByUserId" : "870029bd-68ec-480c-923c-8fc4465a2669",
   "sharedWithUserIds" : [ "u001_auto" ]
+}, {
+  "id" : "b858fc17-c2c0-40b6-8767-2aca1b73b22d",
+  "title" : "テスト",
+  "start" : "2025-10-17T09:00",
+  "end" : "2025-10-17T16:11",
+  "description" : "",
+  "color" : null,
+  "allDay" : false,
+  "createdByUserId" : "4f254c98-1c62-423f-8c94-da8a29299612",
+  "sharedWithUserIds" : [ ]
 } ]
