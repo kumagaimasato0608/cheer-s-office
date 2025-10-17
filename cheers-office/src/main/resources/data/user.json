@@ -51,11 +51,11 @@
   "userName" : "izumi",
   "mailAddress" : "231010izumi@tid.ac.jp",
   "password" : "$2a$10$YVsC5x5hYiRhthyPHqkCbun32F7DN7ijsn2A8lTObnt7OQjMgosvG",
-  "group" : "未設定",
-  "myBoom" : "",
-  "hobby" : "",
+  "group" : "インターン",
+  "myBoom" : "ドラゴン桜",
+  "hobby" : "ゲーム",
   "icon" : "/images/profile/c2227a52-b7a0-463b-bbba-7a483368d3fc.png",
-  "statusMessage" : "",
+  "statusMessage" : "よろしくです",
   "teamColor" : null,
   "lastPinTimestamp" : null
 }, {
