@@ -10,4 +10,10 @@
   "members" : [ "u001_auto", "c2227a52-b7a0-463b-bbba-7a483368d3fc" ],
   "createdAt" : "2025-10-17T13:43:58.504385900",
   "icon" : null
+}, {
+  "roomId" : "g_90f3af10",
+  "roomName" : "ああああ",
+  "members" : [ "u001_auto", "c2227a52-b7a0-463b-bbba-7a483368d3fc", "84cb48e5-da12-48e3-a4ac-af3425396a6d", "37bb8198-da25-476f-9ed5-6cb02797536a" ],
+  "createdAt" : "2025-10-17T17:27:19.698281",
+  "icon" : "/images/groups/befec660-cdeb-40b6-8af0-e526dae7c438.png"
 } ]

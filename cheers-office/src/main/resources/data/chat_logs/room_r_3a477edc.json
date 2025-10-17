@@ -2,27 +2,33 @@
   "roomId" : "r_3a477edc",
   "userId" : "u001_auto",
   "userName" : "自動登録ユーザー",
+  "type" : "TEXT",
   "content" : "こんにちは",
+  "caption" : null,
   "timestamp" : "2025-10-17T11:19:11.893079300",
   "icon" : "/images/default-avatar.png",
-  "type" : "TEXT",
-  "caption" : null
+  "messageId" : null,
+  "readBy" : [ ]
 }, {
   "roomId" : "r_3a477edc",
   "userId" : "u001_auto",
   "userName" : "自動登録ユーザー",
+  "type" : "TEXT",
   "content" : "こんにちは",
+  "caption" : null,
   "timestamp" : "2025-10-17T13:45:00.089322400",
   "icon" : "/images/default-avatar.png",
-  "type" : "TEXT",
-  "caption" : null
+  "messageId" : null,
+  "readBy" : [ ]
 }, {
   "roomId" : "r_3a477edc",
   "userId" : "870029bd-68ec-480c-923c-8fc4465a2669",
   "userName" : "まさと",
+  "type" : "TEXT",
   "content" : "konnnitiha",
+  "caption" : null,
   "timestamp" : "2025-10-17T13:46:04.317020700",
   "icon" : "/images/default-avatar.png",
-  "type" : "TEXT",
-  "caption" : null
+  "messageId" : null,
+  "readBy" : [ ]
 } ]

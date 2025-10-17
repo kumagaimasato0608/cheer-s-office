@@ -8,6 +8,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Value;
@@ -16,7 +17,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.messaging.handler.annotation.DestinationVariable;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.Payload;
-import org.springframework.messaging.handler.annotation.SendTo;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -51,24 +52,23 @@ public class ChatController {
     private final ObjectMapper mapper;
     private final UserRepository userRepo;
     private final ChatService chatService;
+    private final SimpMessagingTemplate simpMessagingTemplate;
 
-    public ChatController(UserRepository userRepo, ObjectMapper mapper, ChatService chatService) {
+    public ChatController(UserRepository userRepo, ObjectMapper mapper, ChatService chatService, SimpMessagingTemplate simpMessagingTemplate) {
         this.userRepo = userRepo;
         this.mapper = mapper;
         this.chatService = chatService;
+        this.simpMessagingTemplate = simpMessagingTemplate;
     }
 
     // ==============================
     //  WebSocket: メッセージ送信
     // ==============================
     @MessageMapping("/chat/{roomId}")
-    @SendTo("/topic/chat/{roomId}")
-    public ChatMessage sendMessage(@DestinationVariable String roomId, @Payload ChatMessage msg) throws IOException {
-        // メッセージIDとタイムスタンプをセット
+    public void sendMessage(@DestinationVariable String roomId, @Payload ChatMessage msg) throws IOException {
         msg.setMessageId(UUID.randomUUID().toString());
         msg.setTimestamp(LocalDateTime.now().toString());
 
-        // 送信者自身は「既読」扱いにする
         if (msg.getReadBy() == null) {
             msg.setReadBy(new ArrayList<>());
         }
@@ -84,51 +84,58 @@ public class ChatController {
                 : new ArrayList<>();
         logs.add(msg);
         mapper.writerWithDefaultPrettyPrinter().writeValue(logFile, logs);
-        return msg;
+        
+        simpMessagingTemplate.convertAndSend("/topic/chat/" + roomId, msg);
     }
 
     // ==============================
     //  WebSocket: 既読通知
     // ==============================
     @MessageMapping("/chat/{roomId}/read")
-    @SendTo("/topic/chat/{roomId}")
-    public Map<String, Object> markAsRead(@DestinationVariable String roomId, @Payload Map<String, String> payload) throws IOException {
+    public void markAsRead(@DestinationVariable String roomId, @Payload Map<String, String> payload) throws IOException {
         String userId = payload.get("userId");
         String messageId = payload.get("messageId");
 
+        if (userId == null || messageId == null) {
+            return; // 必要な情報がなければ何もしない
+        }
+
         File logFile = new File(CHAT_DIR + "room_" + roomId + ".json");
         if (!logFile.exists()) {
-            // ログファイルがない場合は何もしない
-            return Collections.emptyMap();
+            return;
         }
 
         List<ChatMessage> logs = mapper.readValue(logFile, new TypeReference<>() {});
         
-        List<String> updatedReadByList = new ArrayList<>();
+        Optional<ChatMessage> targetMessageOpt = logs.stream()
+                .filter(log -> messageId.equals(log.getMessageId()))
+                .findFirst();
 
-        for (ChatMessage log : logs) {
-            if (log.getMessageId() != null && log.getMessageId().equals(messageId)) {
-                if (!log.getReadBy().contains(userId)) {
-                    log.getReadBy().add(userId);
-                }
-                updatedReadByList = log.getReadBy();
-                break;
+        if (targetMessageOpt.isPresent()) {
+            ChatMessage targetMessage = targetMessageOpt.get();
+
+            if (targetMessage.getReadBy() == null) {
+                targetMessage.setReadBy(new ArrayList<>());
             }
-        }
-        
-        mapper.writerWithDefaultPrettyPrinter().writeValue(logFile, logs);
-        
-        // フロントエンドに「既読情報が更新された」ことを通知
-        return Map.of(
-            "type", "READ_UPDATE",
-            "messageId", messageId,
-            "readBy", updatedReadByList // 更新後の既読者リストを返す
-        );
-    }
 
-    // (以降のHTTP APIメソッドは変更ありません)
-    // ... uploadChatImage, uploadGroupIcon, createRoom, etc. ...
+            if (!targetMessage.getReadBy().contains(userId)) {
+                targetMessage.getReadBy().add(userId);
+                mapper.writerWithDefaultPrettyPrinter().writeValue(logFile, logs);
+            }
+
+            simpMessagingTemplate.convertAndSend("/topic/chat/" + roomId,
+                Map.of(
+                    "type", "READ_UPDATE",
+                    "messageId", targetMessage.getMessageId(),
+                    "readBy", targetMessage.getReadBy()
+                )
+            );
+        }
+    }
     
+    // ==============================
+    //  HTTP API
+    // ==============================
     @PostMapping("/chat/upload")
     public ResponseEntity<Map<String, String>> uploadChatImage(@RequestParam("file") MultipartFile file) {
         if (file.isEmpty()) return ResponseEntity.badRequest().body(Map.of("error", "ファイルが空です"));
@@ -140,6 +147,7 @@ public class ChatController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of("error", "ファイルのアップロード中にエラーが発生しました"));
         }
     }
+
     @PostMapping("/rooms/uploadIcon")
     public ResponseEntity<Map<String, String>> uploadGroupIcon(@RequestParam("file") MultipartFile file) {
         if (file.isEmpty()) return ResponseEntity.badRequest().body(Map.of("error", "ファイルが空です"));
@@ -151,6 +159,7 @@ public class ChatController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of("error", "アイコンのアップロード中にエラーが発生しました"));
         }
     }
+
     @PostMapping("/rooms")
     public ChatRoom createRoom(@RequestBody ChatRoom requestData) throws IOException {
         File file = new File(ROOM_FILE);
@@ -182,18 +191,21 @@ public class ChatController {
         }
         throw new IOException("Invalid room creation request");
     }
+
     @GetMapping("/chat/{roomId}")
     public List<ChatMessage> getChatLogs(@PathVariable String roomId) throws IOException {
         File file = new File(CHAT_DIR + "room_" + roomId + ".json");
         if (!file.exists()) return new ArrayList<>();
         return mapper.readValue(file, new TypeReference<>() {});
     }
+
     @GetMapping("/rooms")
     public List<ChatRoom> getRooms() throws IOException {
         File file = new File(ROOM_FILE);
         if (!file.exists()) return new ArrayList<>();
         return mapper.readValue(file, new TypeReference<>() {});
     }
+
     @DeleteMapping("/rooms/{roomId}")
     public boolean deleteRoom(@PathVariable String roomId) throws IOException {
         File file = new File(ROOM_FILE);
@@ -205,9 +217,11 @@ public class ChatController {
         if (logFile.exists()) logFile.delete();
         return true;
     }
+
     private String getUserIconById(String userId) {
         return userRepo.findById(userId).map(User::getIcon).filter(Objects::nonNull).orElse("/images/default-avatar.png");
     }
+
     private String getUserNameById(String userId) {
         return userRepo.findById(userId).map(User::getUserName).orElse("ユーザー");
     }

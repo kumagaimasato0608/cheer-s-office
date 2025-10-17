@@ -1,0 +1,78 @@
+[ {
+  "roomId" : "g_967fc32a",
+  "userId" : "u001_auto",
+  "userName" : "自動登録ユーザー",
+  "type" : "TEXT",
+  "content" : "よろしくです",
+  "caption" : null,
+  "timestamp" : "2025-10-17T15:09:18.344761",
+  "icon" : "/images/default-avatar.png",
+  "messageId" : "55e1dcd4-725a-453d-acec-aef800f61e20",
+  "readBy" : [ "u001_auto", "c2227a52-b7a0-463b-bbba-7a483368d3fc" ]
+}, {
+  "roomId" : "g_967fc32a",
+  "userId" : "u001_auto",
+  "userName" : "自動登録ユーザー",
+  "type" : "TEXT",
+  "content" : "おはよう",
+  "caption" : null,
+  "timestamp" : "2025-10-17T15:12:59.104814800",
+  "icon" : "/images/default-avatar.png",
+  "messageId" : "356c5e00-8892-4341-b3f3-69f04218a936",
+  "readBy" : [ "u001_auto", "c2227a52-b7a0-463b-bbba-7a483368d3fc" ]
+}, {
+  "roomId" : "g_967fc32a",
+  "userId" : "c2227a52-b7a0-463b-bbba-7a483368d3fc",
+  "userName" : "izumi",
+  "type" : "TEXT",
+  "content" : "a",
+  "caption" : null,
+  "timestamp" : "2025-10-17T15:16:00.867387600",
+  "icon" : "/images/default-avatar.png",
+  "messageId" : "22cffca6-72e3-4ad7-afa0-d8406a4d6d7f",
+  "readBy" : [ "c2227a52-b7a0-463b-bbba-7a483368d3fc", "u001_auto" ]
+}, {
+  "roomId" : "g_967fc32a",
+  "userId" : "u001_auto",
+  "userName" : "自動登録ユーザー",
+  "type" : "IMAGE",
+  "content" : "/images/chat/e636c5cd-1d7c-4567-b4e0-4f0a8ce3c24e.png",
+  "caption" : "ぎょぴです\n\n可愛いです",
+  "timestamp" : "2025-10-17T15:24:01.632415900",
+  "icon" : "/images/default-avatar.png",
+  "messageId" : "609410b7-8ed6-4902-b744-5d1d56c63bd3",
+  "readBy" : [ "u001_auto" ]
+}, {
+  "roomId" : "g_967fc32a",
+  "userId" : "u001_auto",
+  "userName" : "自動登録ユーザー",
+  "type" : "TEXT",
+  "content" : "ぎょぴです",
+  "caption" : null,
+  "timestamp" : "2025-10-17T15:24:33.929591",
+  "icon" : "/images/default-avatar.png",
+  "messageId" : "7d9a7b5f-ba16-40de-93eb-33e4d0255a2b",
+  "readBy" : [ "u001_auto", "c2227a52-b7a0-463b-bbba-7a483368d3fc" ]
+}, {
+  "roomId" : "g_967fc32a",
+  "userId" : "u001_auto",
+  "userName" : "自動登録ユーザー",
+  "type" : "TEXT",
+  "content" : "お",
+  "caption" : null,
+  "timestamp" : "2025-10-17T15:24:41.454654500",
+  "icon" : "/images/default-avatar.png",
+  "messageId" : "70491215-a0ef-4d24-9cdd-a8df99776ade",
+  "readBy" : [ "u001_auto", "c2227a52-b7a0-463b-bbba-7a483368d3fc" ]
+}, {
+  "roomId" : "g_967fc32a",
+  "userId" : "u001_auto",
+  "userName" : "自動登録ユーザー",
+  "type" : "TEXT",
+  "content" : "ああああああああああああああああああああああああああああああああああああああああああああああああああああああああ",
+  "caption" : null,
+  "timestamp" : "2025-10-17T15:39:11.885621500",
+  "icon" : "/images/default-avatar.png",
+  "messageId" : "225de15b-efc1-4776-aafe-6150c549b5a1",
+  "readBy" : [ "u001_auto" ]
+} ]
