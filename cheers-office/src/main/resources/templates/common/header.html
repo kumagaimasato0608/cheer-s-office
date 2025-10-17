@@ -2,59 +2,50 @@
 <html lang="ja" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
 <head>
     <meta charset="UTF-8">
-    
-    </head>
+</head>
+
 <body>
+<header class="app-header" th:fragment="header">
+    <div class="header-top-tier">
+        <div class="app-title">Cheers Office</div>
 
-    <header class="app-header" th:fragment="header" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
-        <div class="header-top-tier">
-            <div class="app-title">Cheers Office</div>
-            
-            <div class="logged-in-user" sec:authorize="isAuthenticated()">
-                ログイン中のユーザー名：<span th:text="${#authentication.principal.user.userName}">ユーザー名</span>
-            </div>
-            
-            <button class="header-toggle-button" type="button" data-bs-toggle="collapse" data-bs-target="#headerNavCollapse" aria-expanded="false" aria-controls="headerNavCollapse">
-                メニュー
-            </button>
+        <div class="logged-in-user" sec:authorize="isAuthenticated()">
+            ログイン中のユーザー名：
+            <span th:text="${#authentication.principal.user.userName}">ユーザー名</span>
         </div>
-        <div class="collapse" id="headerNavCollapse">
-            <nav class="header-nav">
-                <ul class="nav-list">
-                    <li class="nav-item">
-                        <a th:href="@{/home}" class="nav-link">
-                            <span>ホーム</span>
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a th:href="@{/mypage}" class="nav-link">
-                            <span>マイページ</span>
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a th:href="@{/chat/rooms}" class="nav-link">
-                            <span>チャット</span>
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a th:href="@{/thread}" class="nav-link">
-                            <span>掲示板</span>
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a th:href="@{/photopin}" class="nav-link">
-                            <span>ピニット</span>
-                        </a>
-                    </li>
-                    <li class="nav-item logout-item">
-                        <form th:action="@{/logout}" method="post">
-                            <button type="submit" class="logout-button">ログアウト</button>
-                        </form>
-                    </li>
-                </ul>
-            </nav>
-        </div>
-    </header>
 
+        <button class="header-toggle-button" type="button" data-bs-toggle="collapse"
+                data-bs-target="#headerNavCollapse" aria-expanded="false" aria-controls="headerNavCollapse">
+            メニュー
+        </button>
+    </div>
+
+    <div class="collapse" id="headerNavCollapse">
+        <nav class="header-nav">
+            <ul class="nav-list">
+                <li class="nav-item">
+                    <a th:href="@{/home}" class="nav-link"><span>ホーム</span></a>
+                </li>
+                <li class="nav-item">
+                    <a th:href="@{/mypage}" class="nav-link"><span>マイページ</span></a>
+                </li>
+                <li class="nav-item">
+                    <a th:href="@{/chat/rooms}" class="nav-link"><span>チャット</span></a>
+                </li>
+                <li class="nav-item">
+                    <a th:href="@{/thread}" class="nav-link"><span>掲示板</span></a>
+                </li>
+                <li class="nav-item">
+                    <a th:href="@{/photopin}" class="nav-link"><span>ピニット</span></a>
+                </li>
+                <li class="nav-item logout-item">
+                    <form th:action="@{/logout}" method="post">
+                        <button type="submit" class="logout-button">ログアウト</button>
+                    </form>
+                </li>
+            </ul>
+        </nav>
+    </div>
+</header>
 </body>
 </html>

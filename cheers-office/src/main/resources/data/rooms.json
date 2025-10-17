@@ -1,26 +1,25 @@
 [ {
   "roomId" : "r1",
-  "roomName" : null,
-  "members" : [ "", "870029bd-68ec-480c-923c-8fc4465a2669" ],
-  "createdAt" : "2025-10-15T13:40:29.549641300"
+  "roomName" : "新しいチャット",
+  "members" : [ "u001_auto", "c2227a52-b7a0-463b-bbba-7a483368d3fc" ],
+  "createdAt" : "2025-10-16T15:38:47.461908300",
+  "icon" : "/images/default-group.png"
 }, {
   "roomId" : "r2",
-  "roomName" : null,
-  "members" : [ "", "u001_auto" ],
-  "createdAt" : "2025-10-15T13:40:39.754630900"
+  "roomName" : "新しいチャット",
+  "members" : [ "u001_auto", "8a93aa56-57ae-427c-85f1-909336eae99b" ],
+  "createdAt" : "2025-10-16T15:45:57.625945500",
+  "icon" : "/images/default-group.png"
 }, {
-  "roomId" : "r3",
-  "roomName" : null,
-  "members" : [ "", "8a93aa56-57ae-427c-85f1-909336eae99b" ],
-  "createdAt" : "2025-10-15T13:41:47.233442100"
+  "roomId" : "g_e186662a",
+  "roomName" : "ああああああああああああああああ",
+  "members" : [ "u001_auto", "8a93aa56-57ae-427c-85f1-909336eae99b", "c2227a52-b7a0-463b-bbba-7a483368d3fc" ],
+  "createdAt" : "2025-10-17T01:54:19.016970600",
+  "icon" : "/images/groups/de0b3b4a-a829-49a4-b1c4-e4be5b337736.png"
 }, {
-  "roomId" : "r4",
-  "roomName" : null,
-  "members" : [ "", "4f254c98-1c62-423f-8c94-da8a29299612" ],
-  "createdAt" : "2025-10-15T14:28:42.352919"
-}, {
-  "roomId" : "r5",
-  "roomName" : null,
-  "members" : [ "", "c2227a52-b7a0-463b-bbba-7a483368d3fc" ],
-  "createdAt" : "2025-10-15T15:06:58.002364200"
+  "roomId" : "g_127b4bf8",
+  "roomName" : "いいいいい",
+  "members" : [ "u001_auto", "4f254c98-1c62-423f-8c94-da8a29299612", "8a93aa56-57ae-427c-85f1-909336eae99b", "c2227a52-b7a0-463b-bbba-7a483368d3fc" ],
+  "createdAt" : "2025-10-17T01:55:07.966632300",
+  "icon" : "/images/groups/8049b509-731b-482e-9869-35156691662d.png"
 } ]

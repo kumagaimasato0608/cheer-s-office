@@ -32,6 +32,14 @@
     "anonymous" : true,
     "timestamp" : "2025/10/14 16:20",
     "replyId" : "216a937f-e7a9-4c5d-9407-8ec661fa5a84"
+  }, {
+    "message" : "あ\n",
+    "userId" : "u001_auto",
+    "userName" : "自動登録ユーザー",
+    "icon" : "/images/profile/u001_auto.png",
+    "anonymous" : false,
+    "timestamp" : "2025/10/16 14:32",
+    "replyId" : "2ebe2419-bcd0-418b-b77c-cdc68aee1884"
   } ]
 }, {
   "message" : "お昼ご飯のおススメ教えてください",

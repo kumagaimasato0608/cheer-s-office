@@ -2,289 +2,706 @@
 <html lang="ja" xmlns:th="http://www.thymeleaf.org">
 <head>
   <meta charset="UTF-8" />
-  <div th:replace="common/header :: header"></div>
-  <th:block th:replace="~{common/header :: header-style}"></th:block>
-  
   <title>Cheers Office - チャット</title>
 
-  <script src="https://cdn.jsdelivr.net/npm/vue@3.4.38/dist/vue.global.prod.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/axios@1.7.7/dist/axios.min.js"></script>
+  <link rel="stylesheet" th:href="@{/css/style.css}" />
+
+  <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/sockjs-client/dist/sockjs.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/stompjs/lib/stomp.min.js"></script>
 
   <style>
-    body { margin:0; padding:0; background:#201710; color:#f4f4f4; font-family:"Zen Maru Gothic","Noto Sans JP",sans-serif;}
-    main { display:flex; height:calc(100vh - 120px); margin-top:120px; background:#201710; }
+    /* === チャット専用スタイル === */
+    body {
+      margin: 0;
+      background: #201710;
+      color: #f4f4f4;
+      font-family: "Zen Maru Gothic", "Noto Sans JP", sans-serif;
+    }
+
+    main {
+      display: flex;
+      height: calc(100vh - 120px);
+      margin-top: 120px;
+    }
 
     /* ===== 左サイド ===== */
-    .room-list { width:260px; background:#2b2118; border-right:1px solid #3a2e25; padding:15px; display:flex; flex-direction:column; justify-content:space-between;}
-    .room-item { display:flex; align-items:center; gap:10px; padding:10px 12px; margin-bottom:8px; background:#3a2e25; border-radius:8px; cursor:pointer; transition:background .2s;}
-    .room-item:hover { background:#5a4030; }
-    .room-item.active { outline:2px solid #d4a373; }
-    .room-icon { width:36px; height:36px; border-radius:50%; object-fit:cover; border:1px solid #d4a373; }
-    .room-name { font-weight:bold; color:#fffaf0; flex:1; }
+    .room-list {
+      width: 260px;
+      background: #2b2118;
+      border-right: 1px solid #3a2e25;
+      padding: 15px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    .room-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 12px;
+      margin-bottom: 8px;
+      background: #3a2e25;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .room-item:hover { background: #5a4030; }
+    .room-item.active { outline: 2px solid #d4a373; }
+
+    .room-icon {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 1px solid #d4a373;
+    }
+    .room-name {
+      font-weight: bold;
+      color: #fffaf0;
+      flex: 1;
+    }
+
+    .button-stack {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-top: 10px;
+    }
 
     .create-room, .delete-room {
-      text-align:center;
-      background:linear-gradient(90deg,#b07d44,#d4a373);
-      color:#fff;
-      border-radius:8px;
-      padding:10px;
-      cursor:pointer;
-      font-weight:bold;
-      margin-top:10px;
-      transition:.2s;
+      text-align: center;
+      border-radius: 8px;
+      padding: 10px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: .2s;
+      color: #fff;
     }
-    .delete-room { background:linear-gradient(90deg,#a33,#d66); }
-    .delete-room:hover { background:linear-gradient(90deg,#b44,#f55); }
-    .empty-hint { opacity:.7; font-size:13px; padding:8px 0; }
+    .create-room { background: linear-gradient(90deg,#b07d44,#d4a373); }
+    .delete-room { background: linear-gradient(90deg,#a33,#d66); }
 
     /* ===== チャットエリア ===== */
-    .chat-main { flex:1; display:flex; flex-direction:column; background:#1a130d; }
-    .chat-header { padding:15px; background:#3a2e25; font-weight:bold; border-bottom:1px solid #4b3827; color:#f5deb3; display:flex; align-items:center; gap:10px; }
-    .header-icon { width:42px; height:42px; border-radius:50%; border:2px solid #d4a373; object-fit:cover; }
+    .chat-main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      background: #1a130d;
+    }
+    .chat-header {
+      padding: 15px;
+      background: #3a2e25;
+      border-bottom: 1px solid #4b3827;
+      color: #f5deb3;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: bold;
+    }
+    .messages {
+      flex: 1;
+      padding: 15px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      scroll-behavior: smooth;
+    }
 
-    .messages { flex:1; padding:15px; overflow-y:auto; display:flex; flex-direction:column; gap:10px; scroll-behavior:smooth; }
-    .msg-wrapper { display:flex; align-items:flex-end; gap:8px; }
-    .msg-wrapper.me { flex-direction:row-reverse; }
-    .msg { padding:10px 14px; border-radius:10px; max-width:70%; font-size:14px; word-wrap:break-word; color:#fffaf0; box-shadow:0 2px 6px rgba(0,0,0,.2); }
-    .me .msg { background:linear-gradient(145deg,#d4a373,#b07d44); }
-    .other .msg { background:#3a2e25; }
-    .msg-icon { width:36px; height:36px; border-radius:50%; object-fit:cover; border:1px solid #d4a373; }
-    .meta { font-size:11px; color:#c8b7a6; margin-top:3px; text-align:right; }
+    /* ===== メッセージ ===== */
+    .msg-wrapper {
+      display: flex;
+      align-items: flex-end;
+      gap: 8px;
+      width: 100%;
+      position: relative;
+    }
+    .msg-wrapper.me { justify-content: flex-end; }
+    .msg-wrapper.other { justify-content: flex-start; }
 
-    .input-area { display:flex; gap:10px; padding:15px; border-top:1px solid #4b3827; background:#2b2118; }
-    input[type="text"] { flex:1; border:1px solid #8b5a2b; border-radius:8px; padding:10px; font-size:14px; color:#f3e9dc; background:#1f150d; }
-    button { background:linear-gradient(90deg,#8b5a2b,#d4a373); color:#fff; border:none; border-radius:8px; padding:10px 16px; cursor:pointer; font-weight:bold; transition:.2s; }
-    button:hover { transform:translateY(-2px); }
+    .msg-wrapper.me > div {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+    }
+
+    .msg-meta {
+      font-size: 11px;
+      color: #c8b7a6;
+      margin-bottom: 3px;
+    }
+
+    .msg {
+      padding: 10px 14px;
+      border-radius: 10px;
+      font-size: 14px;
+      color: #fffaf0;
+      box-shadow: 0 2px 6px rgba(0,0,0,.2);
+      display: inline-block;
+      max-width: 60%;
+      word-wrap: break-word;
+      white-space: pre-wrap;
+    }
+    .me .msg {
+      background: linear-gradient(145deg, #d4a373, #b07d44);
+      text-align: right;
+    }
+    .other .msg { background: #3a2e25; }
+
+    .msg-icon {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 1px solid #d4a373;
+      cursor: pointer;
+    }
+    
+    .chat-image-standalone {
+      max-width: 60%;
+      max-height: 250px;
+      border-radius: 10px;
+      cursor: pointer;
+      display: block;
+    }
+    .chat-image-standalone + .msg { margin-top: 5px; }
+
+    /* ===== 入力エリア ===== */
+    .input-area {
+      display: none;
+      flex-direction: column;
+      border-top: 1px solid #4b3827;
+      background: #2b2118;
+    }
+    .input-controls {
+      display: flex;
+      gap: 10px;
+      padding: 15px;
+    }
+    .input-controls input[type="text"] {
+      flex: 1;
+      height: 42px;
+      border: 1px solid #8b5a2b;
+      border-radius: 8px;
+      padding: 0 12px;
+      background: #1f150d;
+      color: #f3e9dc;
+    }
+    .input-controls button {
+      height: 42px;
+      border: none;
+      border-radius: 8px;
+      color: #fff;
+      font-weight: bold;
+      padding: 0 16px;
+      cursor: pointer;
+    }
+    .input-controls .send-btn { background: linear-gradient(90deg,#8b5a2b,#d4a373); }
+    .input-controls button.attach-btn {
+      padding: 0 12px;
+      background: #5a4030;
+      font-size: 18px;
+    }
+    .input-controls button.attach-btn:hover { background: #7a6050; }
+
+    .image-preview-area {
+      display: none;
+      padding: 8px 15px;
+      background-color: #3a2e25;
+      position: relative;
+    }
+    .preview-container {
+      display: inline-block;
+      position: relative;
+    }
+    .preview-image {
+      max-height: 90px;
+      border-radius: 6px;
+      border: 1px solid #8b5a2b;
+    }
+    .preview-remove {
+      position: absolute;
+      top: -8px;
+      right: -8px;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background-color: rgba(0, 0, 0, 0.7);
+      color: white;
+      border: 1px solid white;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      line-height: 1;
+    }
+    
+    .chat-main.drag-over { box-shadow: 0 0 0 4px #d4a373 inset; }
 
     /* ===== モーダル ===== */
-    .modal-backdrop { position:fixed; inset:0; background:rgba(0,0,0,.7); display:flex; align-items:center; justify-content:center; z-index:9999; }
-    .modal-content { background:#2b2118; border-radius:10px; padding:20px 24px; width:400px; color:#f4f4f4; box-shadow:0 0 20px rgba(0,0,0,.5); }
-    .user-row { display:flex; align-items:center; gap:10px; padding:8px 0; }
-    .user-icon { width:32px; height:32px; border-radius:50%; object-fit:cover; border:1px solid #d4a373; }
-    .confirm-btn { background:linear-gradient(90deg,#a33,#f55); color:#fff; border:none; border-radius:8px; padding:10px 16px; font-weight:bold; width:100%; margin-top:12px; cursor:pointer; }
-    .cancel-btn { background:#555; color:#fff; border:none; border-radius:8px; padding:10px 16px; width:100%; margin-top:8px; cursor:pointer; }
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, .7);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+    }
+    .modal-content {
+      background: #2b2118;
+      border-radius: 10px;
+      padding: 20px;
+      width: 400px;
+      color: #f4f4f4;
+    }
+    .user-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 0;
+    }
+    .user-icon {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 1px solid #d4a373;
+    }
+    .modal-buttons {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      margin-top: 15px;
+    }
+    .modal-btn {
+      padding: 10px 16px;
+      border-radius: 8px;
+      border: none;
+      font-weight: bold;
+      color: #fff;
+      cursor: pointer;
+    }
+    .modal-btn.create { background: linear-gradient(90deg,#b07d44,#d4a373); }
+    .modal-btn.cancel { background: #555; }
+
+    /* ===== グループ作成モーダルのスタイル ===== */
+    .group-icon-area {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 15px;
+    }
+    .group-icon-preview {
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      border: 2px solid #d4a373;
+      object-fit: cover;
+    }
+    .group-icon-label {
+      font-size: 12px;
+      color: #d4a373;
+      cursor: pointer;
+      text-decoration: underline;
+    }
+    .group-name-input {
+      width: calc(100% - 24px);
+      height: 38px;
+      border: 1px solid #8b5a2b;
+      border-radius: 8px;
+      padding: 0 12px;
+      background: #1f150d;
+      color: #f3e9dc;
+      text-align: center;
+    }
   </style>
 </head>
-<body>
-  <main id="app" th:inline="none">
-    <!-- 左：ルーム一覧 -->
-    <aside class="room-list">
-      <div>
-        <div v-for="room in rooms" :key="room.roomId"
-             class="room-item"
-             :class="{active: currentRoom && currentRoom.roomId === room.roomId}">
-          <img :src="getOtherUserIcon(room)" class="room-icon">
-          <span class="room-name" @click="selectRoom(room)">{{ getOtherUserName(room) }}</span>
-        </div>
-        <div v-if="rooms.length === 0" class="empty-hint">まだチャットがありません</div>
-      </div>
 
-      <div>
-        <div class="create-room" @click="openCreate">＋ 新規チャット</div>
-        <div class="delete-room" @click="openDeleteModal">🗑 チャット削除</div>
+<body>
+  <div th:replace="~{common/header :: header}"></div>
+
+  <main id="chatRoot" th:inline="none">
+    <aside class="room-list">
+      <div id="roomList"></div>
+      <div class="button-stack">
+        <div class="create-room" id="openCreateBtn">＋ 新規チャット</div>
+        <div class="delete-room" id="openDeleteBtn">🗑 チャット削除</div>
       </div>
     </aside>
 
-    <!-- 右：チャット -->
     <section class="chat-main">
       <div class="chat-header">
-        <img v-if="currentRoom" :src="getOtherUserIcon(currentRoom)" class="header-icon">
-        <span>{{ headerTitle }}</span>
+        <span id="headerTitle">ルーム未選択</span>
       </div>
-
-      <div class="messages" ref="msgBox">
-        <div v-for="m in messages" :key="m.timestamp"
-             class="msg-wrapper" :class="m.userId === meId ? 'me' : 'other'">
-          <img :src="m.icon || '/images/default-avatar.png'" class="msg-icon">
-          <div class="msg">
-            <div>{{ m.content }}</div>
-            <div class="meta">{{ m.userName }}・{{ m.timestamp }}</div>
-          </div>
+      <div class="messages" id="messages"></div>
+      <div class="input-area" id="inputArea">
+        <div id="previewArea" class="image-preview-area"></div>
+        <div class="input-controls">
+            <input type="file" id="fileInput" accept="image/*" style="display: none;" />
+            <input type="text" id="messageInput" placeholder="メッセージを入力..." />
+            <button id="attachFileBtn" class="attach-btn" title="画像を添付">📎</button>
+            <button id="sendBtn" class="send-btn" disabled>送信</button>
         </div>
-      </div>
-
-      <div class="input-area" v-if="currentRoom">
-        <input type="text" v-model.trim="draft" placeholder="メッセージを入力..." @keydown.enter.prevent="send" />
-        <button @click="send" :disabled="!draft">送信</button>
       </div>
     </section>
 
-    <!-- モーダル：新規チャット作成 -->
-    <div v-if="showModal" class="modal-backdrop" @click.self="showModal=false">
+    <div class="modal-backdrop" id="createModal">
       <div class="modal-content">
         <h3>👥 チャット相手を選択</h3>
-        <div v-for="u in users" :key="u.userId" class="user-row">
-          <img :src="u.icon || '/images/default-avatar.png'" class="user-icon">
-          <label>
-            <input type="radio" name="targetUser" :value="u.userId" v-model="selectedUserId" />
-            {{ u.userName }}
-          </label>
+        <div id="userList"></div>
+        <div class="modal-buttons">
+          <button class="modal-btn create" id="createRoomBtn">作成</button>
+          <button class="modal-btn cancel" id="cancelCreateBtn">キャンセル</button>
         </div>
-        <div v-if="users.length === 0" class="empty-hint">相手ユーザーがいません</div>
-        <button class="confirm-btn" @click="createRoom">ルーム作成</button>
-        <button class="cancel-btn" @click="showModal=false">閉じる</button>
       </div>
     </div>
 
-    <!-- モーダル：削除確認 -->
-    <div v-if="showDeleteModal" class="modal-backdrop" @click.self="showDeleteModal=false">
+    <div class="modal-backdrop" id="groupModal">
+      <div class="modal-content">
+        <h3>👑 グループ作成</h3>
+        <div class="group-icon-area">
+          <img src="/images/groups/default-group-icon.png" id="groupIconPreview" class="group-icon-preview" />
+          <label for="groupIconInput" class="group-icon-label">アイコンを選択</label>
+          <input type="file" id="groupIconInput" accept="image/*" style="display: none;" />
+        </div>
+        <input type="text" id="groupNameInput" class="group-name-input" placeholder="グループ名を入力" />
+        <div class="modal-buttons">
+          <button class="modal-btn create" id="createGroupBtn">作成</button>
+          <button class="modal-btn cancel" id="cancelGroupBtn">キャンセル</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-backdrop" id="deleteModal">
       <div class="modal-content">
         <h3>🗑 チャット削除確認</h3>
-        <p>選択中のチャットを完全に削除します。履歴も復元できません。</p>
-        <button class="confirm-btn" @click="deleteRoomConfirm">削除する</button>
-        <button class="cancel-btn" @click="showDeleteModal=false">キャンセル</button>
+        <p>このチャットを完全に削除します。履歴も復元できません。</p>
+        <div class="modal-buttons">
+          <button class="modal-btn cancel" id="cancelDeleteBtn">キャンセル</button>
+          <button class="modal-btn create" id="confirmDeleteBtn">削除する</button>
+        </div>
       </div>
     </div>
   </main>
 
   <script>
-    const { createApp, ref, computed, onMounted, nextTick } = Vue;
+    // ====== アプリ状態 ======
+    let me = { id: "", name: "" };
+    let users = [];
+    let rooms = [];
+    let currentRoom = null;
+    let stomp = null;
+    let sub = null;
+    let selectedFile = null;
 
-    createApp({
-      setup() {
-        const rooms = ref([]);
-        const currentRoom = ref(null);
-        const messages = ref([]);
-        const draft = ref("");
-        const meId = ref("");
-        const meName = ref("");
-        const users = ref([]);
-        const showModal = ref(false);
-        const showDeleteModal = ref(false);
-        const selectedUserId = ref(null);
-        const msgBox = ref(null);
-        let stomp = null;
-        let currentSubscription = null;
+    const DEFAULT_ICON = "/images/default-avatar.png";
+    const DEFAULT_GROUP_ICON = "/images/groups/default-group-icon.png";
+    
+    // ====== 関数定義 ======
+    // (DOMの準備が完了してから実行されるinit関数の中でイベントリスナーを登録するため、
+    //  ここでは関数の定義のみを行います)
 
-        const scrollToBottom = () => nextTick(() => {
-          if (msgBox.value) msgBox.value.scrollTop = msgBox.value.scrollHeight;
-        });
-
-        const loadSessionUser = async () => {
-          const res = await axios.get("/api/sessionUser");
-          meId.value = res.data?.userId || "";
-          meName.value = res.data?.userName || "Me";
-        };
-        const loadUsers = async () => {
-          const res = await axios.get("/api/users");
-          users.value = (res.data || []).filter(u => u.userId !== meId.value);
-        };
-        const loadRooms = async () => {
-          const res = await axios.get("/api/rooms");
-          rooms.value = (res.data || []).filter(r =>
-            Array.isArray(r.members) && r.members.includes(meId.value)
-          );
-        };
-
-        const connectWS = (onConnected) => {
-          const socket = new SockJS("/ws");
-          stomp = Stomp.over(socket);
-          stomp.debug = null;
-          stomp.connect({}, () => {
-            console.log("✅ WebSocket接続成功");
-            if (onConnected) onConnected();
-          });
-        };
-
-        const subscribeToRoom = (roomId) => {
-          if (currentSubscription) currentSubscription.unsubscribe();
-          currentSubscription = stomp.subscribe(`/topic/chat/${roomId}`, (message) => {
-            const msg = JSON.parse(message.body);
-            messages.value.push(msg);
-            scrollToBottom();
-          });
-        };
-
-        const selectRoom = async (room) => {
-          currentRoom.value = room;
-          const res = await axios.get(`/api/chat/${room.roomId}`);
-          messages.value = res.data || [];
-          if (!stomp || !stomp.connected) {
-            connectWS(() => subscribeToRoom(room.roomId));
-          } else {
-            subscribeToRoom(room.roomId);
-          }
-          scrollToBottom();
-        };
-
-        const send = () => {
-          if (!draft.value || !currentRoom.value) return;
-          const payload = {
-            roomId: currentRoom.value.roomId,
-            userId: meId.value,
-            userName: meName.value,
-            content: draft.value,
-            timestamp: new Date().toLocaleString()
-          };
-          stomp.send(`/app/chat/${payload.roomId}`, {}, JSON.stringify(payload));
-          draft.value = "";
-        };
-
-        const openCreate = async () => {
-          selectedUserId.value = null;
-          showModal.value = true;
-          await loadUsers();
-        };
-
-        const createRoom = async () => {
-          if (!selectedUserId.value) return alert("相手を選択してください。");
-          const res = await axios.post("/api/rooms", { members: [meId.value, selectedUserId.value] });
-          const newRoom = res.data;
-          if (!rooms.value.some(r => r.roomId === newRoom.roomId)) {
-            rooms.value.push(newRoom);
-          }
-          showModal.value = false;
-          await selectRoom(newRoom);
-        };
-
-        const openDeleteModal = () => {
-          if (!currentRoom.value) return alert("削除するチャットを選択してください。");
-          showDeleteModal.value = true;
-        };
-
-        const deleteRoomConfirm = async () => {
-          if (!currentRoom.value) return;
-          try {
-            await axios.delete(`/api/rooms/${currentRoom.value.roomId}`);
-            rooms.value = rooms.value.filter(r => r.roomId !== currentRoom.value.roomId);
-            currentRoom.value = null;
-            messages.value = [];
-            showDeleteModal.value = false;
-            alert("チャットを完全に削除しました。");
-          } catch (e) {
-            console.error(e);
-            alert("削除に失敗しました。");
-          }
-        };
-
-        const getOtherId = (room) => room.members.find(id => id !== meId.value);
-        const getOtherUser = (room) => users.value.find(u => u.userId === getOtherId(room));
-        const getOtherUserName = (room) => getOtherUser(room)?.userName || "チャット";
-        const getOtherUserIcon = (room) => getOtherUser(room)?.icon || "/images/default-avatar.png";
-
-        const headerTitle = computed(() =>
-          currentRoom.value ? getOtherUserName(currentRoom.value) : "ルーム未選択"
-        );
-
-        onMounted(async () => {
-          await loadSessionUser();
-          await loadUsers();
-          await loadRooms();
-          connectWS();
-        });
-
-        return {
-          rooms, currentRoom, messages, draft, send,
-          showModal, showDeleteModal, users, selectedUserId, openCreate, createRoom,
-          openDeleteModal, deleteRoomConfirm,
-          meId, meName, selectRoom,
-          getOtherUserName, getOtherUserIcon, headerTitle, msgBox
-        };
+    function jstTime(iso) { try { return new Date(iso).toLocaleTimeString("ja-JP", { hour: "2-digit", minute: "2-digit" }); } catch (e) { return ""; }};
+    function scrollToBottom() { const box = $("#messages")[0]; if (box) box.scrollTop = box.scrollHeight; };
+    function getOtherId(room) { return (room.members || []).find(id => id !== me.id); }
+    function findUser(id) { return users.find(u => u.userId === id); }
+    function getOtherUser(room) { return findUser(getOtherId(room)); }
+    function getOtherUserName(room) { return (getOtherUser(room)?.userName) || "チャット"; }
+    function getOtherUserIcon(room) { return (getOtherUser(room)?.icon) || DEFAULT_ICON; }
+    function escapeHtml(str) { return String(str).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"); }
+    
+    function renderRooms() {
+      const $list = $("#roomList").empty();
+      if (!rooms.length) {
+        $list.append('<div class="empty-hint">まだチャットがありません</div>');
+        return;
       }
-    }).mount("#app");
+      rooms.forEach(r => {
+        const active = (currentRoom && currentRoom.roomId === r.roomId) ? "active" : "";
+        const isGroupChat = (r.roomName && r.members.length > 2);
+        const name = isGroupChat ? r.roomName : getOtherUserName(r);
+        const icon = isGroupChat ? (r.icon || DEFAULT_GROUP_ICON) : getOtherUserIcon(r);
+        const html = `<div class="room-item ${active}" data-room-id="${r.roomId}"><img src="${icon}" class="room-icon" /><span class="room-name">${name}</span></div>`;
+        $list.append(html);
+      });
+    }
+
+    function renderHeader() {
+      if (!currentRoom) {
+        $("#headerTitle").text("ルーム未選択");
+        return;
+      }
+      const isGroupChat = currentRoom.roomName && currentRoom.members.length > 2;
+      const name = isGroupChat ? currentRoom.roomName : getOtherUserName(currentRoom);
+      $("#headerTitle").text(name);
+    }
+
+    function renderMessages(msgs) {
+      const $msgs = $("#messages").empty();
+      (msgs || []).forEach(m => {
+        const mine = (m.userId === me.id) ? "me" : "other";
+        const icon = (m.userId === me.id) ? "" : `<img src="${m.icon || DEFAULT_ICON}" class="msg-icon" />`;
+        let messageBodyHtml = '';
+        if (m.type === 'IMAGE') {
+          messageBodyHtml = `<img src="${m.content}" alt="添付画像" class="chat-image-standalone" onclick="window.open('${m.content}')">`;
+          if (m.caption) {
+            messageBodyHtml += `<div class="msg">${escapeHtml(m.caption)}</div>`;
+          }
+        } else {
+          messageBodyHtml = `<div class="msg">${escapeHtml(m.content || "")}</div>`;
+        }
+        const html = `<div class="msg-wrapper ${mine}">${icon}<div><div class="msg-meta">${m.userName || ""}　${jstTime(m.timestamp)}</div>${messageBodyHtml}</div></div>`;
+        $msgs.append(html);
+      });
+      scrollToBottom();
+    }
+    
+    function subscribeRoom(roomId) {
+      if (!stomp || !stomp.connected) return;
+      if (sub) sub.unsubscribe();
+      sub = stomp.subscribe(`/topic/chat/${roomId}`, msg => {
+        const payload = JSON.parse(msg.body);
+        const mine = (payload.userId === me.id) ? "me" : "other";
+        const icon = (payload.userId === me.id) ? "" : `<img src="${findUser(payload.userId)?.icon || DEFAULT_ICON}" class="msg-icon" />`;
+        let messageBodyHtml = '';
+        if (payload.type === 'IMAGE') {
+          messageBodyHtml = `<img src="${payload.content}" alt="添付画像" class="chat-image-standalone" onclick="window.open('${payload.content}')">`;
+          if (payload.caption) {
+            messageBodyHtml += `<div class="msg">${escapeHtml(payload.caption)}</div>`;
+          }
+        } else {
+          messageBodyHtml = `<div class="msg">${escapeHtml(payload.content || "")}</div>`;
+        }
+        const html = `<div class="msg-wrapper ${mine}">${icon}<div><div class="msg-meta">${payload.userName || ""}　${jstTime(payload.timestamp)}</div>${messageBodyHtml}</div></div>`;
+        $("#messages").append(html);
+        scrollToBottom();
+      });
+    }
+
+    function selectRoomById(roomId) {
+      const room = rooms.find(r => r.roomId === roomId);
+      if(!room) return;
+      currentRoom = room;
+      renderRooms();
+      renderHeader();
+      $("#inputArea").css("display", "flex");
+      $("#sendBtn").prop("disabled", false);
+      loadMessages(roomId).then(() => connectWS(() => subscribeRoom(room.roomId)));
+    }
+    
+    function sendMessage() {
+      if(!currentRoom || !stomp || !stomp.connected) return;
+      const text = $("#messageInput").val().trim();
+      if(!text && !selectedFile) return;
+      if(selectedFile) {
+        uploadAndSendMessage(selectedFile, text);
+      } else {
+        sendTextMessage(text);
+      }
+    }
+    
+    function sendTextMessage(text) {
+      const meUser = findUser(me.id) || me;
+      const payload = { roomId: currentRoom.roomId, userId: me.id, userName: me.name, type: "TEXT", content: text, timestamp: new Date().toISOString(), icon: meUser.icon || DEFAULT_ICON };
+      stomp.send(`/app/chat/${payload.roomId}`, {}, JSON.stringify(payload));
+      $("#messageInput").val("");
+    }
+    
+    function uploadAndSendMessage(file, caption) {
+      const formData = new FormData();
+      formData.append("file", file);
+      $("#sendBtn, #attachFileBtn").prop("disabled", true);
+      $.ajax({ url: "/api/chat/upload", method: "POST", data: formData, processData: false, contentType: false })
+      .done(res => {
+        if(res && res.imageUrl) {
+          const meUser = findUser(me.id) || me;
+          const payload = { roomId: currentRoom.roomId, userId: me.id, userName: me.name, type: "IMAGE", content: res.imageUrl, caption: caption, timestamp: new Date().toISOString(), icon: meUser.icon || DEFAULT_ICON };
+          stomp.send(`/app/chat/${payload.roomId}`, {}, JSON.stringify(payload));
+          clearPreview();
+          $("#messageInput").val("");
+        }
+      })
+      .fail(err => alert("画像アップロード失敗"))
+      .always(() => $("#sendBtn, #attachFileBtn").prop("disabled", false));
+    }
+    
+    function setupPreview(file) {
+      if(!file.type.startsWith("image/")) {
+        alert("画像ファイルを選択してください");
+        return;
+      }
+      selectedFile = file;
+      const reader = new FileReader();
+      reader.onload = e => {
+        $("#previewArea").html(`<div class="preview-container"><img src="${e.target.result}" class="preview-image" /><button class="preview-remove">×</button></div>`).show();
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function clearPreview() {
+      selectedFile = null;
+      $("#fileInput").val("");
+      $("#previewArea").empty().hide();
+    }
+    
+    function openCreateModal() {
+      const $ul = $("#userList").empty();
+      users.forEach(u => {
+        const html = `<div class="user-row"><img src="${u.icon || DEFAULT_ICON}" class="user-icon" /><label><input type="checkbox" name="targetUser" value="${u.userId}" />${u.userName}</label></div>`;
+        $ul.append(html);
+      });
+      $("#createModal").css("display", "flex");
+    }
+
+    function createRoom() {
+      const selectedUsers = $('input[name="targetUser"]:checked').map(function() { return $(this).val(); }).get();
+      if (selectedUsers.length === 0) {
+        alert("相手を1人以上選択してください。");
+        return;
+      }
+      if (selectedUsers.length === 1) {
+        createSingleChat(selectedUsers[0]);
+      } else {
+        window.selectedGroupMembers = [me.id, ...selectedUsers];
+        $("#createModal").hide();
+        $("#groupModal").css("display", "flex");
+      }
+    }
+    
+    function createSingleChat(targetId) {
+      $.ajax({ url: "/api/rooms", method: "POST", contentType: "application/json", data: JSON.stringify({ members: [me.id, targetId] }) })
+      .then(newRoom => {
+        if (!rooms.some(r => r.roomId === newRoom.roomId)) {
+          rooms.push(newRoom);
+          renderRooms();
+        }
+        $("#createModal").hide();
+        selectRoomById(newRoom.roomId);
+      });
+    }
+
+    function openDeleteModal() {
+      if(!currentRoom) {
+        alert("削除するチャットを選択してください");
+        return;
+      }
+      $("#deleteModal").css("display", "flex");
+    }
+    
+    function deleteRoomConfirm() {
+      if(!currentRoom) return;
+      const rid = currentRoom.roomId;
+      $.ajax({ url: `/api/rooms/${rid}`, method: "DELETE" })
+      .then(() => {
+        rooms = rooms.filter(r => r.roomId !== rid);
+        currentRoom = null;
+        renderRooms();
+        renderHeader();
+        $("#messages").empty();
+        $("#inputArea").hide();
+        $("#deleteModal").hide();
+      });
+    }
+
+    function uploadGroupIcon(file) {
+      const formData = new FormData();
+      formData.append("file", file);
+      return $.ajax({ url: "/api/rooms/uploadIcon", method: "POST", data: formData, processData: false, contentType: false, })
+      .then(response => response.iconUrl);
+    }
+
+    function createGroupRoom(name, icon) {
+      const payload = { members: window.selectedGroupMembers, roomName: name, icon: icon, };
+      $.ajax({ url: "/api/rooms", method: "POST", contentType: "application/json", data: JSON.stringify(payload) })
+      .then(newRoom => {
+        if (!rooms.some(r => r.roomId === newRoom.roomId)) {
+          rooms.push(newRoom);
+        }
+        renderRooms();
+        $("#groupModal").hide();
+        resetGroupModal();
+        selectRoomById(newRoom.roomId);
+      });
+    }
+    
+    function resetGroupModal() {
+      $("#groupNameInput").val("");
+      $("#groupIconInput").val("");
+      $("#groupIconPreview").attr("src", DEFAULT_GROUP_ICON);
+      window.selectedGroupMembers = [];
+    }
+
+    // ====== 初期化 & イベントリスナー登録 ======
+    $(async function init() {
+      // --- イベントリスナーをここでまとめて登録 ---
+      $(document).on("click", ".room-item", function() { selectRoomById($(this).data("room-id")); });
+      $(document).on("click", ".preview-remove", clearPreview);
+      $("#sendBtn").on("click", sendMessage);
+      $("#messageInput").on("keydown", function(e) { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendMessage(); }});
+      $("#attachFileBtn").on("click", () => { if (!$("#attachFileBtn").prop("disabled")) $("#fileInput").click(); });
+      $("#fileInput").on("change", function(e) { if (e.target.files.length > 0) setupPreview(e.target.files[0]); });
+
+      const $chatMain = $(".chat-main");
+      $chatMain.on({
+        "dragover": (e) => { e.preventDefault(); e.stopPropagation(); $chatMain.addClass("drag-over"); },
+        "dragleave": (e) => { e.preventDefault(); e.stopPropagation(); $chatMain.removeClass("drag-over"); },
+        "drop": (e) => { e.preventDefault(); e.stopPropagation(); $chatMain.removeClass("drag-over"); if (e.originalEvent.dataTransfer.files.length > 0) setupPreview(e.originalEvent.dataTransfer.files[0]); }
+      });
+
+      // モーダルイベント
+      $("#openCreateBtn").on("click", openCreateModal);
+      $("#cancelCreateBtn").on("click", () => $("#createModal").hide());
+      $("#createRoomBtn").on("click", createRoom);
+      $("#openDeleteBtn").on("click", openDeleteModal);
+      $("#cancelDeleteBtn").on("click", () => $("#deleteModal").hide());
+      $("#confirmDeleteBtn").on("click", deleteRoomConfirm);
+
+      // グループ作成モーダルイベント
+      $("#createGroupBtn").on("click", function() {
+        const groupName = $("#groupNameInput").val().trim();
+        const iconFile = $("#groupIconInput")[0].files[0];
+        if (!groupName) { alert("グループ名を入力してください。"); return; }
+        if (iconFile) {
+          uploadGroupIcon(iconFile).then(iconUrl => createGroupRoom(groupName, iconUrl))
+          .catch(err => alert("アイコンのアップロードに失敗しました。"));
+        } else {
+          createGroupRoom(groupName, DEFAULT_GROUP_ICON);
+        }
+      });
+      $("#cancelGroupBtn").on("click", function() { $("#groupModal").hide(); resetGroupModal(); });
+      $("#groupIconInput").on("change", function(e) {
+        if (e.target.files && e.target.files[0]) {
+          const reader = new FileReader();
+          reader.onload = e => $("#groupIconPreview").attr("src", e.target.result);
+          reader.readAsDataURL(e.target.files[0]);
+        }
+      });
+      
+      // --- 初期データ読み込み ---
+      try {
+        const loadFunctions = {
+          loadMe: () => $.getJSON("/api/users/me").then(res => { me.id = res.userId; me.name = res.userName; }),
+          loadUsers: () => $.getJSON("/api/users").then(res => { users = (res || []).filter(u => u.userId !== me.id); }),
+          loadRooms: () => $.getJSON("/api/rooms").then(res => { rooms = (res || []).filter(r => (r.members || []).includes(me.id)); renderRooms(); }),
+          loadMessages: (roomId) => $.getJSON(`/api/chat/${roomId}`).then(res => renderMessages(res || [])),
+          connectWS: (cb) => { if(stomp && stomp.connected) { cb && cb(); return; } const sock = new SockJS("/ws"); stomp = Stomp.over(sock); stomp.debug = null; stomp.connect({}, () => { if(typeof cb === "function") cb(); }); }
+        };
+        // グローバルスコープに関数を割り当て
+        Object.assign(window, loadFunctions);
+
+        await loadMe();
+        await loadUsers();
+        await loadRooms();
+        connectWS();
+      } catch (e) {
+        console.error("初期化に失敗しました:", e);
+        alert("初期化に失敗しました。リロードしてください。");
+      }
+    });
   </script>
 </body>
 </html>
-

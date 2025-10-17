@@ -6,9 +6,16 @@ public class ChatMessage {
     private String userName;
     private String content;
     private String timestamp;
-
-    // ★ 追加：プロフィールアイコン
     private String icon;
+    
+    // ✅ メッセージの種類 ("TEXT" or "IMAGE") を格納
+    private String type;
+    
+    // ✅ 画像に添えるキャプション (テキスト) を格納
+    private String caption;
+
+
+    // --- 以下、Getter/Setter ---
 
     public String getRoomId() { return roomId; }
     public void setRoomId(String roomId) { this.roomId = roomId; }
@@ -25,7 +32,13 @@ public class ChatMessage {
     public String getTimestamp() { return timestamp; }
     public void setTimestamp(String timestamp) { this.timestamp = timestamp; }
 
-    // ★ getter/setter 追加
     public String getIcon() { return icon; }
     public void setIcon(String icon) { this.icon = icon; }
+    
+    // ✅ 追加したフィールドのGetter/Setter
+    public String getType() { return type; }
+    public void setType(String type) { this.type = type; }
+
+    public String getCaption() { return caption; }
+    public void setCaption(String caption) { this.caption = caption; }
 }

@@ -7,6 +7,7 @@ public class ChatRoom {
     private String roomName;
     private List<String> members;
     private String createdAt;
+    private String icon; // ★これが必要！
 
     public String getRoomId() { return roomId; }
     public void setRoomId(String roomId) { this.roomId = roomId; }
@@ -19,4 +20,7 @@ public class ChatRoom {
 
     public String getCreatedAt() { return createdAt; }
     public void setCreatedAt(String createdAt) { this.createdAt = createdAt; }
+
+    public String getIcon() { return icon; }
+    public void setIcon(String icon) { this.icon = icon; } // ★これがないとエラー！
 }

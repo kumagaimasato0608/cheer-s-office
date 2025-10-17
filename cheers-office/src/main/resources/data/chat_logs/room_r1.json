@@ -3,27 +3,143 @@
   "userId" : "u001_auto",
   "userName" : "自動登録ユーザー",
   "content" : "あ",
-  "timestamp" : "2025-10-08T17:50:54.554087100",
-  "icon" : null
+  "timestamp" : "2025-10-16T15:58:26.461640100",
+  "icon" : "/images/default-avatar.png",
+  "type" : null,
+  "caption" : null
+}, {
+  "roomId" : "r1",
+  "userId" : "c2227a52-b7a0-463b-bbba-7a483368d3fc",
+  "userName" : "izumi",
+  "content" : "a",
+  "timestamp" : "2025-10-16T16:01:02.212188200",
+  "icon" : "/images/default-avatar.png",
+  "type" : null,
+  "caption" : null
+}, {
+  "roomId" : "r1",
+  "userId" : "u001_auto",
+  "userName" : "自動登録ユーザー",
+  "content" : "",
+  "timestamp" : "2025-10-16T16:26:19.860972",
+  "icon" : "/images/profile/default.png",
+  "type" : null,
+  "caption" : null
 }, {
   "roomId" : "r1",
   "userId" : "u001_auto",
   "userName" : "自動登録ユーザー",
   "content" : "あ",
-  "timestamp" : "2025-10-08T17:50:57.616974400",
-  "icon" : null
+  "timestamp" : "2025-10-16T16:28:06.667498100",
+  "icon" : "/images/profile/default.png",
+  "type" : null,
+  "caption" : null
 }, {
   "roomId" : "r1",
   "userId" : "u001_auto",
   "userName" : "自動登録ユーザー",
-  "content" : "いいい",
-  "timestamp" : "2025-10-08T17:51:47.076186800",
-  "icon" : null
+  "content" : "",
+  "timestamp" : "2025-10-16T16:35:45.748280500",
+  "icon" : "/images/default-avatar.png",
+  "type" : null,
+  "caption" : null
 }, {
   "roomId" : "r1",
-  "userId" : "02223fb2-6a8f-42fd-8c1c-27875c8a103d",
-  "userName" : "しんご",
-  "content" : "こんにちは",
-  "timestamp" : "2025-10-09T13:08:03.180671500",
-  "icon" : "/images/profile/02223fb2-6a8f-42fd-8c1c-27875c8a103d.png"
+  "userId" : "u001_auto",
+  "userName" : "自動登録ユーザー",
+  "content" : "あ",
+  "timestamp" : "2025-10-16T16:35:54.776566900",
+  "icon" : "/images/default-avatar.png",
+  "type" : null,
+  "caption" : null
+}, {
+  "roomId" : "r1",
+  "userId" : "u001_auto",
+  "userName" : "自動登録ユーザー",
+  "content" : "あ",
+  "timestamp" : "2025-10-16T16:36:16.049029900",
+  "icon" : "/images/default-avatar.png",
+  "type" : null,
+  "caption" : null
+}, {
+  "roomId" : "r1",
+  "userId" : "u001_auto",
+  "userName" : "自動登録ユーザー",
+  "content" : "あ",
+  "timestamp" : "2025-10-16T16:40:53.138390800",
+  "icon" : "/images/default-avatar.png",
+  "type" : null,
+  "caption" : null
+}, {
+  "roomId" : "r1",
+  "userId" : "u001_auto",
+  "userName" : "自動登録ユーザー",
+  "content" : "",
+  "timestamp" : "2025-10-16T16:45:53.422741500",
+  "icon" : "/images/default-avatar.png",
+  "type" : null,
+  "caption" : null
+}, {
+  "roomId" : "r1",
+  "userId" : "u001_auto",
+  "userName" : "自動登録ユーザー",
+  "content" : "あ",
+  "timestamp" : "2025-10-16T16:45:58.997186600",
+  "icon" : "/images/default-avatar.png",
+  "type" : null,
+  "caption" : null
+}, {
+  "roomId" : "r1",
+  "userId" : "u001_auto",
+  "userName" : "自動登録ユーザー",
+  "content" : "あ",
+  "timestamp" : "2025-10-16T17:14:37.820565200",
+  "icon" : "/images/profile/default-avatar.png",
+  "type" : null,
+  "caption" : null
+}, {
+  "roomId" : "r1",
+  "userId" : "u001_auto",
+  "userName" : "自動登録ユーザー",
+  "content" : "あ",
+  "timestamp" : "2025-10-16T17:33:30.276985300",
+  "icon" : "/images/default-avatar.png",
+  "type" : "TEXT",
+  "caption" : null
+}, {
+  "roomId" : "r1",
+  "userId" : "u001_auto",
+  "userName" : "自動登録ユーザー",
+  "content" : "/images/chat/chat_1a1b2055-2da0-4194-bad8-3494ac4ac882.png",
+  "timestamp" : "2025-10-17T00:43:43.723832600",
+  "icon" : "/images/default-avatar.png",
+  "type" : "IMAGE",
+  "caption" : ""
+}, {
+  "roomId" : "r1",
+  "userId" : "u001_auto",
+  "userName" : "自動登録ユーザー",
+  "content" : "/images/chat/chat_9da84724-a7b8-4acb-871c-0506f053c190.png",
+  "timestamp" : "2025-10-17T00:55:02.601860400",
+  "icon" : "/images/default-avatar.png",
+  "type" : "IMAGE",
+  "caption" : "あああ"
+}, {
+  "roomId" : "r1",
+  "userId" : "c2227a52-b7a0-463b-bbba-7a483368d3fc",
+  "userName" : "izumi",
+  "content" : "a",
+  "timestamp" : "2025-10-17T00:59:30.394394100",
+  "icon" : "/images/default-avatar.png",
+  "type" : "TEXT",
+  "caption" : null
+}, {
+  "roomId" : "r1",
+  "userId" : "u001_auto",
+  "userName" : "自動登録ユーザー",
+  "content" : "あ",
+  "timestamp" : "2025-10-17T00:59:53.095496",
+  "icon" : "/images/default-avatar.png",
+  "type" : "TEXT",
+  "caption" : null
 } ]

@@ -3,14 +3,12 @@ package com.cheers.office.config;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 
 @Configuration
-@EnableWebSecurity
 public class SecurityConfig {
 
     @Bean
@@ -18,13 +16,12 @@ public class SecurityConfig {
         http
             // ------------------ CSRF設定 ------------------
             .csrf(csrf -> csrf
-                // CookieにCSRFトークンを保存（JSから取得可能）
                 .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
-                // APIでのCSRF検証を除外（fetch通信を通すため）
                 .ignoringRequestMatchers(
-                    "/api/**",          // 掲示板API・チャットAPIなど
+                    "/api/**",          // REST API
                     "/mypage/uploadIcon",
-                    "/ws/**"            // WebSocket通信
+                    "/api/chat/upload",
+                    "/ws/**"            // WebSocket
                 )
             )
 
@@ -35,7 +32,7 @@ public class SecurityConfig {
                     "/css/**", "/js/**",
                     "/images/**", "/uploads/**",
                     "/favicon.ico",
-                    "/ws/**" // WebSocket許可
+                    "/ws/**"
                 ).permitAll()
                 .anyRequest().authenticated()
             )
@@ -56,15 +53,15 @@ public class SecurityConfig {
                 .invalidateHttpSession(true)
                 .deleteCookies("JSESSIONID")
                 .permitAll()
-            );
+            )
 
-        // ✅ 同一オリジン（同一ドメイン内）でのiframe許可
-        http.headers(headers -> headers.frameOptions(frame -> frame.sameOrigin()));
+            // ------------------ 同一オリジンiframe許可 ------------------
+            .headers(headers -> headers.frameOptions(frame -> frame.sameOrigin()));
 
         return http.build();
     }
 
-    // ------------------ パスワード暗号化設定 ------------------
+    // ------------------ パスワード暗号化 ------------------
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
