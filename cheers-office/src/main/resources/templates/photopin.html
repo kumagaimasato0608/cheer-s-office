@@ -1,18 +1,19 @@
 <!DOCTYPE html>
 <html lang="ja" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
-<head>
-    <meta charset="UTF-8">
-    <meta name="_csrf" th:content="${_csrf.token}"/>
-    <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
-    <title>PinIt</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+	<head>
+	    <meta charset="UTF-8">
+	    <meta name="_csrf" th:content="${_csrf.token}"/>
+	    <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
+	    <title>PinIt from cheers office</title>
+	    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+	    
+	    <link rel="icon" type="image/png" href="/images/PinIt_logo.png">
+	    
+	    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+	    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+	    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
 
-    <link rel="stylesheet" href="/css/style.css"> 
-
+	    <link rel="stylesheet" href="/css/style.css">
     <style>
         /* PinIt独自のスタイル */
         .page-wrapper { padding-top: 115px; }
@@ -42,10 +43,74 @@
 		.comment-item-content { flex-grow: 1; }
 		.comment-item-user { font-weight: bold; font-size: 0.9em; }
 		.comment-item-text { font-size: 0.95em; color: #555; }
+		
+		/* ★★★ ローディングオーバーレイのスタイル追加 ★★★ */
+        #loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #e6f0ff; /* ホーム画面の背景色と合わせる */
+            z-index: 2000; /* ヘッダーやモーダルより手前に */
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            opacity: 1;
+            transition: opacity 0.5s ease-out;
+        }
+        #loading-overlay.hidden {
+            opacity: 0;
+            pointer-events: none; /* 非表示後、クリックイベントを透過させる */
+        }
+        .loading-content {
+            text-align: center;
+        }
+        /* ★ モーダルと共通のロゴスタイル */
+        .loading-content img, .modal-logo-pin {
+            max-width: 200px;
+            height: auto;
+            margin-bottom: 20px;
+            animation: pulse 1.5s infinite; /* 少し動きを付ける */
+        }
+        .modal-logo-pin {
+            max-width: 40px; /* モーダル用サイズ調整 */
+            margin-bottom: 0;
+            margin-right: 10px;
+            animation: none; /* モーダルではアニメーション停止 */
+        }
+        .loading-content h1 {
+            color: #dc3545; /* PinItの赤に合わせて調整 */
+            font-size: 3em;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        .loading-content p {
+            color: #007bff;
+            font-size: 1.2em;
+        }
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+
     </style>
 </head>
 <body>
   <div th:replace="common/header :: header"></div>
+  
+  <div id="loading-overlay">
+      <div class="loading-content">
+          <img src="/images/PinIt_logo.png" alt="PinIt Logo" onerror="this.onerror=null; this.src='data:image/png;base64,...(PinIt_logo.pngの代替Base64)';">
+          <h1>PinIt</h1>
+          <p>from cheers office</p>
+          <div class="spinner-border text-primary mt-4" role="status">
+              <span class="visually-hidden">Loading...</span>
+          </div>
+      </div>
+  </div>
   
   <div class="page-wrapper">
     <main class="main-content">
@@ -141,10 +206,15 @@
   <div class="modal fade" id="colorSelectionModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1">
       <div class="modal-dialog modal-dialog-centered">
           <div class="modal-content">
-              <div class="modal-header"><h5 class="modal-title">ようこそ！チームカラーを選択してください</h5></div>
+              <div class="modal-header">
+                  <h5 class="modal-title">
+                      <img src="/images/PinIt_logo.png" alt="PinIt Logo" class="modal-logo-pin">
+                      ようこそ！チームカラーを選択してください
+                  </h5>
+              </div>
               <div class="modal-body">
                   <p>あなたが配置するピンは、ここで選択した色で表示されます。</p>
-                  <form th:action="@{/save-color}" method="post" id="colorForm">
+                  <form th:action="@{/photopin/save-color}" method="post" id="colorForm">
                       <input type="hidden" name="color" id="selectedColorInput">
                       <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
                       <div class="d-flex justify-content-center">
@@ -163,21 +233,61 @@
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
   <script th:src="@{/js/common.js}"></script>
   
-  <script th:if="${showColorModal}" th:inline="javascript">
-    var showColorModal = true;
+  <script th:inline="javascript">
+    var showColorModalFlag = /*[[${showColorModal} ?: false]]*/ false; 
   </script>
-
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/sockjs-client/1.6.1/sockjs.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
 
   <script th:src="@{/js/photopin.js}"></script>
   
   <script>
     // WebSocket接続とスコア更新のロジック
     document.addEventListener('DOMContentLoaded', function() {
+        // ★ Bootstrapモーダルのインスタンス化
+        const colorModalElement = document.getElementById('colorSelectionModal');
+        const colorModal = new bootstrap.Modal(colorModalElement);
+        
+        // ★ チームカラー選択モーダルの起動ロジック
+        if (showColorModalFlag) {
+            colorModal.show();
+        }
+
         const scoreRedEl = document.getElementById('score-red');
         const scoreBlueEl = document.getElementById('score-blue');
         const scoreYellowEl = document.getElementById('score-yellow');
+
+        // チームカラー選択モーダル内のイベントハンドラを再適用
+        $('.color-option').on('click', function() { 
+            $('.color-option').removeClass('selected'); 
+            $(this).addClass('selected'); 
+            const color = $(this).css('background-color'); 
+            if (color.includes('255, 0, 0')) $('#selectedColorInput').val('red'); 
+            else if (color.includes('0, 0, 255')) $('#selectedColorInput').val('blue'); 
+            else if (color.includes('255, 255, 0')) $('#selectedColorInput').val('yellow'); 
+        });
+
+        // 💡 決定ボタンのクリックイベントハンドラを追加
+        $('#submitColorButton').on('click', function() {
+            if ($('#selectedColorInput').val()) {
+                // 選択された色があればフォームを送信
+                $('#colorForm').submit();
+            } else {
+                alert('チームカラーを選択してください。');
+            }
+        });
+        
+        // --- ローディング画面を隠す関数 ---
+        // photopin.js の fetchAllData() 呼び出し後にこの関数を呼ぶ必要があります。
+        window.hideLoadingOverlay = function() {
+            const overlay = document.getElementById('loading-overlay');
+            if (overlay) {
+                // データの描画が完了したら、アニメーション後にオーバーレイを隠す
+                // 強制的に2秒ロード
+                setTimeout(() => {
+                    overlay.classList.add('hidden');
+                }, 2000); 
+            }
+        };
+
 
         // WebSocket接続の確立
         const sock = new SockJS('/ws');
@@ -201,9 +311,12 @@
                 if (scores.yellow !== undefined) {
                     scoreYellowEl.textContent = scores.yellow + ' ポイント';
                 }
-
-                // マップのピンも更新したい場合は、ここでマップ再描画やピン再取得処理を呼び出す必要があります
-                // 例: window.reloadPins(); 
+                
+                // PinIt JSのfetchAllDataをトリガーしてマップとサイドバーを再描画
+                if (typeof fetchAllData === 'function') {
+                    // スコア更新時にはローディング画面は再表示しない
+                    fetchAllData(window.currentSeason); 
+                }
             });
         });
     });

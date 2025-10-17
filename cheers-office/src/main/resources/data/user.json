@@ -68,6 +68,6 @@
   "hobby" : "野球",
   "icon" : "/images/profile/84cb48e5-da12-48e3-a4ac-af3425396a6d.png",
   "statusMessage" : "こんにちは",
-  "teamColor" : null,
-  "lastPinTimestamp" : null
+  "teamColor" : "blue",
+  "lastPinTimestamp" : "2025-10-17T11:55:08.8783673"
 } ]

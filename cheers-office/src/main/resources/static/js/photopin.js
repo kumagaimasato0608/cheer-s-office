@@ -15,6 +15,7 @@ $(document).ready(function() {
     const allPins = {};
     const allUsers = {};
     let currentLocationMarker;
+	
 
     let gridState = {}; // 陣地の状態を保持するオブジェクト
     const gridCellLayers = {}; // 描画したマス目を保持するオブジェクト
@@ -78,10 +79,20 @@ $(document).ready(function() {
             
             // 3. スコア表示（WebSocketとは独立してローカルで計算）
             calculateAndShowScores(); 
+            
+            // ★★★ 追加: ロード完了後、オーバーレイを非表示にする ★★★
+            if (typeof window.hideLoadingOverlay === 'function') {
+                window.hideLoadingOverlay();
+            }
 
         }).catch(error => {
             console.error("データの取得に失敗しました:", error);
             $('#userPinAccordion').html('<p class="text-danger small">ユーザーデータの取得に失敗しました。</p>');
+            
+            // ★★★ 追加: エラー時もオーバーレイを非表示にする ★★★
+            if (typeof window.hideLoadingOverlay === 'function') {
+                window.hideLoadingOverlay();
+            }
         });
     }
 
@@ -318,7 +329,7 @@ $(document).ready(function() {
         const latStepCenter = Math.round(center.lat * METERS_PER_DEGREE_LAT / CELL_SIZE_METERS);
         const lngStepCenter = Math.round(center.lng * initialMetersPerLng / CELL_SIZE_METERS);
         
-        // ★ 修正: 最大ステップを50マス (50m / 1m) に固定
+        // ★ 修正: 最大ステップを50マス (50m / 5m) に固定
         const maxSteps = 10; 
 
 

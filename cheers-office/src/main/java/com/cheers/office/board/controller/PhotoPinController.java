@@ -86,6 +86,18 @@ public class PhotoPinController {
         return "photopin"; 
     }
     
+    // ★★★ 修正: URLを /photopin/save-color に変更して曖昧なマッピングを解消 ★★★
+    @PostMapping("/photopin/save-color")
+    public String saveTeamColor(@RequestParam("color") String color, @AuthenticationPrincipal CustomUserDetails userDetails) {
+        if (userDetails != null && color != null && !color.isEmpty()) {
+            User user = userDetails.getUser();
+            user.setTeamColor(color);
+            userAccountService.updateUser(user); // ユーザー情報を保存
+        }
+        // 処理後、PinItページにリダイレクト
+        return "redirect:/photopin"; 
+    }
+
     @GetMapping("/api/photopins")
     @ResponseBody
     public ResponseEntity<List<PhotoPin>> getAllPhotoPins(@RequestParam(required = false) String season) {

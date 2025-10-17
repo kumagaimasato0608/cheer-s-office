@@ -1,1 +1,13 @@
-[]
+[ {
+  "roomId" : "r_3a477edc",
+  "roomName" : "まさと",
+  "members" : [ "u001_auto", "870029bd-68ec-480c-923c-8fc4465a2669" ],
+  "createdAt" : "2025-10-17T11:19:07.024366",
+  "icon" : null
+}, {
+  "roomId" : "r_f6c76390",
+  "roomName" : "izumi",
+  "members" : [ "u001_auto", "c2227a52-b7a0-463b-bbba-7a483368d3fc" ],
+  "createdAt" : "2025-10-17T13:43:58.504385900",
+  "icon" : null
+} ]

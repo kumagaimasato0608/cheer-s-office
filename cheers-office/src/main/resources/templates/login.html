@@ -34,45 +34,44 @@
         h1 { 
             text-align: center; 
             margin-bottom: 25px; 
-            color: #007bff; /* 青色 */
-            font-size: 2em; 
+            color: #007bff; 
+            font-size: 1.8em;
         }
         
-        /* エラーメッセージのスタイル */
         .error-message {
             color: #dc3545; /* 赤 */
             margin-bottom: 15px;
             font-weight: bold;
         }
-        
-        .form-group { 
-            margin-bottom: 15px; 
+
+        .form-group {
             text-align: left;
+            margin-bottom: 15px;
         }
-        
-        label { 
-            display: block; 
-            margin-bottom: 5px; 
-            font-weight: bold; 
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
             color: #555;
             font-size: 0.9em;
         }
-        
-        input[type="text"], 
-        input[type="password"] { 
-            width: 100%; 
-            padding: 10px; 
-            border: 1px solid #ccc; 
-            border-radius: 5px; 
+
+        .form-group input[type="text"],
+        .form-group input[type="password"] {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ced4da;
+            border-radius: 8px;
             box-sizing: border-box;
             font-size: 1em;
         }
-        
-        button { 
-            width: 100%; 
-            padding: 12px; 
-            border: none; 
-            border-radius: 5px; 
+
+        button[type="submit"] {
+            width: 100%;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
             background-color: #007bff; /* ログインボタンは青 */
             color: white; 
             font-size: 1.1em; 
@@ -119,10 +118,17 @@
             
             <button type="submit">ログイン</button>
         </form>
-        
+
         <div class="register-link">
-            <a th:href="@{/register}">新しくアカウントを登録する方はこちら</a>
+            <a th:href="@{/register}">新規アカウント登録はこちら</a>
         </div>
     </div>
+    
+    <script th:if="${registrationSuccessAlert}">
+        // registrationSuccessAlert 属性が FlashAttribute から渡された場合のみ実行されます
+        // 値はコントローラーで設定した文字列（例: "登録されました。"）です
+        alert('登録されました。');
+    </script>
+
 </body>
 </html>

@@ -8,9 +8,11 @@
     
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     
-    <link href='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/main.min.css' rel='stylesheet' />
+    <link href='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/core/main.min.css' rel='stylesheet' />
+    <link href='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/daygrid/main.min.css' rel='stylesheet' />
     <script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.js'></script>
-    <script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/locales-all.global.min.js'></script>
+    <script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/locales/ja.global.min.js'></script> 
+    
     <script src="https://cdn.jsdelivr.net/npm/axios@1.7.7/dist/axios.min.js"></script>
     
     <style>
@@ -149,6 +151,40 @@
         .event-title {
             flex-grow: 1;
         }
+        
+        /* === オンラインユーザー表示用スタイル === */
+        .online-user-item {
+            display: flex;
+            align-items: center;
+            padding: 8px 0;
+            border-bottom: 1px solid #eee;
+        }
+        .online-user-item:last-child {
+            border-bottom: none;
+        }
+        .online-status-dot {
+            width: 10px;
+            height: 10px;
+            background-color: #28a745; /* green */
+            border-radius: 50%;
+            margin-right: 10px;
+            flex-shrink: 0;
+        }
+        .online-user-name {
+            font-weight: 500;
+        }
+        
+        /* === おみくじスタイル === */
+        .omikuji-result {
+            font-size: 2.5em;
+            font-weight: bold;
+            margin: 15px 0 10px;
+        }
+        .omikuji-comment {
+            font-size: 0.95em;
+            color: #555;
+            margin-bottom: 15px;
+        }
 		
 	</style>
     
@@ -192,31 +228,6 @@
                 </div>
 
                 <div class="card shadow-sm mb-4">
-                    <div class="card-header bg-danger text-white">
-                        <h5 class="mb-0">🎮 pinIt リアルタイムスコア (今シーズン残り: <span id="seasonRemainingDays">計算中...</span>)</h5>
-                    </div>
-                    <div class="card-body">
-                        <ul id="realtime-score-list" class="list-group list-group-flush">
-                            <li class="list-group-item d-flex justify-content-between align-items-center" style="color: red;">
-                                <span>🔴 RED チーム</span>
-                                <strong id="score-red">0 ポイント</strong>
-                            </li>
-                            <li class="list-group-item d-flex justify-content-between align-items-center" style="color: blue;">
-                                <span>🔵 BLUE チーム</span>
-                                <strong id="score-blue">0 ポイント</strong>
-                            </li>
-                            <li class="list-group-item d-flex justify-content-between align-items-center" style="color: gold;">
-                                <span>🟡 YELLOW チーム</span>
-                                <strong id="score-yellow">0 ポイント</strong>
-                            </li>
-                        </ul>
-                    </div>
-                    <div class="card-footer text-center">
-                        <a href="/photopin" class="btn btn-sm btn-outline-danger">pinIt マップへ (詳細)</a>
-                    </div>
-                </div>
-
-                <div class="card shadow-sm mb-4">
                     <div class="card-header bg-success text-white">
                         <h5 class="mb-0">📰 新着情報 (最新スレッド)</h5>
                     </div>
@@ -234,17 +245,59 @@
             <div class="col-lg-4">
                 
                 <div class="card shadow-sm mb-4">
+                    <div class="card-header bg-danger text-white">
+                        <h5 class="mb-0">🎮 PinItチームスコア</h5>
+                    </div>
                     <div class="card-body">
-                        <h3>メンバーの状況</h3>
-                        <p class="text-muted">（ここにメンバーのステータス更新や活動ログが表示されます）</p>
+                        <ul id="realtime-score-list" class="list-group list-group-flush">
+                            <li class="list-group-item d-flex justify-content-between align-items-center" style="color: red;">
+                                <span>🔴 RED チーム</span>
+                                <strong id="score-red">0 ポイント</strong>
+                            </li>
+                            <li class="list-group-item d-flex justify-content-between align-items-center" style="color: blue;">
+                                <span>🔵 BLUE チーム</span>
+                                <strong id="score-blue">0 ポイント</strong>
+                            </li>
+                            <li class="list-group-item d-flex justify-content-between align-items-center" style="color: gold;">
+                                <span>🟡 YELLOW チーム</span>
+                                <strong id="score-yellow">0 ポイント</strong>
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="card-footer d-flex justify-content-between align-items-center">
+                        <span class="text-muted small">今シーズン残り: <strong id="seasonRemainingDays">計算中...</strong></span>
+                        <a href="/photopin" class="btn btn-sm btn-outline-danger">pinIt マップへ (詳細)</a>
+                    </div>
+                </div>
+                
+                <div class="card shadow-sm mb-4">
+                    <div class="card-header bg-info text-white">
+                        <h5 class="mb-0">⛩️ 今日のおみくじ</h5>
+                    </div>
+                    <div class="card-body text-center">
+                        <p id="omikujiDate" class="text-muted small"></p>
+                        <div id="omikujiResultDisplay">
+                            <p class="omikuji-result" id="omikujiResult">???</p>
+                            <p class="omikuji-comment" id="omikujiComment">ボタンを押して今日の運勢を占ってみましょう！</p>
+                            <button class="btn btn-warning" id="drawOmikujiButton">おみくじを引く</button>
+                        </div>
                     </div>
                 </div>
 
-                <div class="card shadow-sm">
+                <div class="card shadow-sm mb-4">
                     <div class="card-body">
                         <h5 class="card-title">💬 チャット</h5>
                         <p class="card-text small text-muted">アクティブなチャットルームや未読情報がここに表示されます。</p>
                         <a href="/chat" class="btn btn-sm btn-outline-secondary">チャットルームへ</a>
+                    </div>
+                </div>
+                
+                <div class="card shadow-sm mb-4">
+                    <div class="card-body">
+                        <h5 class="card-title">🟢 オンラインメンバー (<span id="onlineCount">0</span>)</h5>
+                        <div id="onlineUsersList" class="list-group list-group-flush">
+                            <p class="text-muted small text-center pt-2">オンライン情報を読み込み中...</p>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -349,6 +402,159 @@
         };
         const todayDateStr = formatDate(new Date());
 
+        // ★★★ 修正: 文章レパートリーの追加と、ランダムシード用の設定 ★★★
+        const omikujiResults = [
+            // 大吉 (15%)
+            { result: "大吉", comment: "絶好調！何をしても上手くいくでしょう。新しい挑戦を恐れずに！", color: "#dc3545", weight: 15 },
+            // 中吉 (20%)
+            { result: "中吉", comment: "まずまずの運勢。目標に向かって一歩前進！計画的に行動しましょう。", color: "#ffc107", weight: 20 },
+            { result: "中吉", comment: "努力が報われる一日。周囲への感謝を忘れずに。", color: "#ffc107", weight: 20 },
+            // 小吉 (25%)
+            { result: "小吉", comment: "小さな幸せに感謝。地道な努力が実を結びます。午後に吉報あり。", color: "#28a745", weight: 25 },
+            { result: "小吉", comment: "気分転換が吉。新しいアイデアが浮かぶかもしれません。", color: "#28a745", weight: 25 },
+            // 吉 (20%)
+            { result: "吉", comment: "可もなく不可もなく。現状維持を心がけて。人間関係は良好。", color: "#17a2b8", weight: 20 },
+            { result: "吉", comment: "穏やかな一日。焦らず、自分のペースで進めましょう。", color: "#17a2b8", weight: 20 },
+            // 末吉 (10%)
+            { result: "末吉", comment: "焦りは禁物。慎重に行動すれば吉と出ます。午後の休憩で気分転換を。", color: "#007bff", weight: 10 },
+            // 凶 (5%)
+            { result: "凶", comment: "今日は厄日かも。大人しく過ごすのが吉。早めに帰宅しましょう。", color: "#6c757d", weight: 5 }
+        ];
+
+        let currentUserId = null; // ページロード時に設定されるユーザーID
+        let animationInterval = null; // アニメーションIDを保持するための変数
+
+        // ★★★ 修正: ユーザーIDと日付に基づく乱数生成関数 (シード付き乱数) ★★★
+        function seededRandom(seed) {
+            // シンプルな線形合同法を使用してシードに基づいた乱数を生成
+            let x = Math.sin(seed++) * 10000;
+            return x - Math.floor(x);
+        }
+
+        // --- おみくじ機能関数 ---
+        function drawOmikuji(isInitialLoad = false) {
+            if (!currentUserId) {
+                if (!isInitialLoad) {
+                    alert("ユーザー情報が読み込まれていません。しばらく待ってから再度お試しください。");
+                }
+                return;
+            }
+
+            const today = formatDate(new Date());
+            const localStorageKey = 'omikujiResult_' + currentUserId + '_' + today;
+            const $resultEl = $('#omikujiResult');
+            const $commentEl = $('#omikujiComment');
+            const $button = $('#drawOmikujiButton');
+            
+            $('#omikujiDate').text(today);
+
+            const storedResult = localStorage.getItem(localStorageKey);
+            let result;
+
+            if (storedResult) {
+                // 1. すでに引いていたら、その結果をロードして表示確定
+                result = JSON.parse(storedResult);
+                $resultEl.text(result.result).css('color', result.color);
+                $commentEl.text(result.comment).css('color', '#555');
+                $button.prop('disabled', true).text('本日の結果を表示中');
+                if (animationInterval) clearInterval(animationInterval);
+                return;
+            } 
+            
+            // 2. まだ引いていない場合 (ボタンクリック時のみ)
+            if (isInitialLoad) {
+                 // 初回ロード時はアニメーションなし
+                 $button.prop('disabled', false).text('おみくじを引く');
+                 return;
+            }
+            
+            // --- 演出開始 ---
+            $button.prop('disabled', true).text('運勢を占っています...');
+            $commentEl.text('シャカシャカ...シャカシャカ...');
+
+            const animationResults = omikujiResults.map(r => r.result); // 演出用の運勢リスト
+            let scrambleCount = 0;
+
+            animationInterval = setInterval(() => {
+                // ランダムに運勢を切り替える
+                const tempResult = animationResults[Math.floor(Math.random() * animationResults.length)];
+                $resultEl.text(tempResult).css('color', '#6c757d'); // 演出中は灰色
+                scrambleCount++;
+            }, 100); // 100msごとに切り替え
+
+            // 2秒後に確定
+            setTimeout(() => {
+                clearInterval(animationInterval);
+                
+                // 3. 乱数決定ロジック
+                const dateSeed = new Date(today).getTime();
+                // ユーザーIDから数値ハッシュを生成（安定した結果を得るため）
+                const userHashMatch = currentUserId.replace(/[^0-9]/g, '').match(/\d{1,8}/);
+                const userHash = userHashMatch ? parseInt(userHashMatch[0]) : 1; 
+                const seed = dateSeed + userHash; 
+                const random = seededRandom(seed); // ユーザーと日付に依存する乱数 (0.0～1.0)
+                
+                // 重み付きランダム選択
+                let totalWeight = omikujiResults.reduce((sum, r) => sum + r.weight, 0);
+                let randNum = random * totalWeight;
+                
+                let cumulativeWeight = 0;
+                let finalResult = omikujiResults[omikujiResults.length - 1]; // デフォルトは最後の要素（凶）
+                
+                for (let i = 0; i < omikujiResults.length; i++) {
+                    cumulativeWeight += omikujiResults[i].weight;
+                    if (randNum <= cumulativeWeight) {
+                        finalResult = omikujiResults[i];
+                        break;
+                    }
+                }
+                
+                result = finalResult;
+                
+                // 結果をローカルストレージに保存
+                localStorage.setItem(localStorageKey, JSON.stringify(result));
+                
+                // --- 演出終了、結果表示 ---
+                $resultEl.text(result.result).css('color', result.color);
+                $commentEl.text(result.comment).css('color', '#555');
+                $button.prop('disabled', true).text('本日の結果を表示中');
+                animationInterval = null;
+
+            }, 2000); // 2秒待機
+        }
+
+        // --- オンラインユーザーリスト表示関数 ---
+        function renderOnlineUsers(users) {
+            const listContainer = document.getElementById('onlineUsersList');
+            const onlineCountEl = document.getElementById('onlineCount');
+            listContainer.innerHTML = '';
+
+            // ★ 堅牢性のためのチェックを追加: usersが配列でなければ空にする
+            if (!users || !Array.isArray(users) || users.length === 0) {
+                listContainer.innerHTML = '<p class="text-muted small text-center pt-2">現在オンラインのメンバーはいません。</p>';
+                onlineCountEl.textContent = '0';
+                return;
+            }
+            
+            onlineCountEl.textContent = users.length;
+
+            users.forEach(user => {
+                const item = document.createElement('div');
+                item.className = 'online-user-item';
+                
+                // ユーザーアイコンの画像URLが user.icon に含まれていることを想定
+                const iconUrl = user.icon || '/images/default_icon.png';
+                
+                item.innerHTML = `
+                    <div class="online-status-dot"></div>
+                    <img src="${iconUrl}" alt="${user.userName} Icon" style="width: 30px; height: 30px; border-radius: 50%; margin-right: 10px;">
+                    <span class="online-user-name">${user.userName}</span>
+                `;
+                listContainer.appendChild(item);
+            });
+        }
+        // ------------------------------------
+
 
         document.addEventListener('DOMContentLoaded', async function() {
             const calendarEl = document.getElementById('home-calendar');
@@ -356,11 +562,11 @@
             const dayEventsModal = new bootstrap.Modal(document.getElementById('dayEventsModal'));
             const userNameEl = document.getElementById('loggedInUserName'); // ユーザー名表示要素
             const seasonRemainingDaysEl = document.getElementById('seasonRemainingDays'); // シーズン残り日数要素
-            let currentUserId = null;
             let allUsers = [];
             let calendar = null; // FullCalendarインスタンスをグローバルで保持
+            let usersById = {}; // ユーザーIDをキーとするマップ
 
-            // PinItの残り日数を計算する関数 (③)
+            // PinItの残り日数を計算する関数
             const calculateSeasonRemaining = () => {
                 const now = new Date();
                 const year = now.getFullYear();
@@ -378,17 +584,29 @@
                 }
             };
             calculateSeasonRemaining();
+            
+            // ★ おみくじボタンイベントハンドラの設定
+            $('#drawOmikujiButton').on('click', () => drawOmikuji(false));
 
 
             // 1. ユーザー情報とPinIt初期スコアの取得
             try {
                 // PinItスコア初期ロードとユーザー情報取得を統合
-                const [meRes, scoreRes] = await Promise.all([
+                const [meRes, scoreRes, usersRes] = await Promise.all([
                     axios.get('/api/users/me'),
-                    axios.get('/api/scores')
+                    axios.get('/api/scores'),
+                    axios.get('/api/users') // 全ユーザーリストを取得
                 ]);
                 
-                currentUserId = meRes.data.userId;
+                // ★ ユーザーIDをグローバル変数に設定
+                currentUserId = meRes.data.userId; 
+                
+                allUsers = usersRes.data || [];
+                // usersById マップの生成
+                usersById = allUsers.reduce((acc, user) => {
+                    acc[user.userId] = user;
+                    return acc;
+                }, {});
                 
                 // ★ ユーザー名を表示 (DOMが存在することを確認)
                 if (userNameEl) userNameEl.textContent = meRes.data.userName;
@@ -399,13 +617,16 @@
                 document.getElementById('score-blue').textContent = initialScores.blue + ' ポイント';
                 document.getElementById('score-yellow').textContent = initialScores.yellow + ' ポイント';
 
-                const usersRes = await axios.get('/api/users');
-                allUsers = usersRes.data || [];
                 renderSharedUsersSelection(); 
             } catch (error) {
                 console.error("データの初期ロードに失敗しました", error);
                 if (userNameEl) userNameEl.textContent = 'ゲスト';
             }
+            
+            // ★ ページロード時の初期表示ロジックを、ユーザー情報取得後に実行
+            // ユーザーIDが取得された後で、おみくじの初期表示をトリガー
+            drawOmikuji(true);
+
 
             // ユーザー選択チェックボックスをレンダリングする関数 (変更なし)
             function renderSharedUsersSelection(selectedIds = []) {
@@ -747,10 +968,11 @@
                         updateCalendarPlaceholder(0); 
                     },
                     success: function(rawEvents) {
-                        updateCalendarPlaceholder(rawEvents.length); 
+                        // ★ 念のため、rawEventsが配列でない場合に空配列として扱う
+                        const eventsArray = Array.isArray(rawEvents) ? rawEvents : [];
+                        updateCalendarPlaceholder(eventsArray.length); 
                         
-                        // ★★★ 修正: sharedWithUserIdsがない場合のフォールバックを追加 (②) ★★★
-                        const mappedEvents = rawEvents.map(event => ({
+                        const mappedEvents = eventsArray.map(event => ({
                             id: event.id,
                             title: event.title,
                             start: event.start,
@@ -821,6 +1043,19 @@
             const stompClient = Stomp.over(sock);
             stompClient.connect({}, function (frame) {
                 console.log('Connected: ' + frame);
+                
+                // ★ オンラインユーザー通知を購読
+                stompClient.subscribe('/topic/onlineUsers', function(userMessage) {
+                    const onlineUserIds = JSON.parse(userMessage.body);
+                    console.log('オンラインユーザーIDリストを受信:', onlineUserIds);
+                    
+                    // IDリストをUserオブジェクトのリストに変換
+                    const onlineUsers = onlineUserIds
+                        .map(userId => usersById[userId])
+                        .filter(user => user !== undefined);
+                        
+                    renderOnlineUsers(onlineUsers);
+                });
 
                 // ★ カレンダーイベント通知を購読
                 stompClient.subscribe('/topic/calendar', function(eventMessage) {
@@ -828,7 +1063,7 @@
                     calendar.refetchEvents();
                 });
                 
-                // ★ PinItスコア通知を購読 (スコア表示更新用) (③)
+                // ★ PinItスコア通知を購読 (スコア表示更新用)
                 stompClient.subscribe('/topic/scores', function(scoreMessage) {
                     const newScores = JSON.parse(scoreMessage.body);
                     
