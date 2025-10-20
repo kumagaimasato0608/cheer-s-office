@@ -42,7 +42,7 @@ $(document).ready(function() {
     };
 
 
-    // --- 初期化処理 ---
+    // --- 初期化処理 (省略) ---
     function initMap() {
         map = L.map('mapid').setView([35.6812, 139.7671], 13);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -57,7 +57,7 @@ $(document).ready(function() {
     function onLocationFound(e) { userLocation = e.latlng; if (currentLocationMarker) { currentLocationMarker.setLatLng(userLocation); } else { currentLocationMarker = L.circleMarker(userLocation, { radius: 8, fillColor: "black", color: "#fff", weight: 2, opacity: 1, fillOpacity: 0.8 }).addTo(map); } currentLocationMarker.bindPopup("あなたの現在地").openPopup(); setTimeout(() => currentLocationMarker.closePopup(), 3000); }
     function onLocationError() { console.log("現在地の取得に失敗しました。"); }
 
-    // ★★★ メインデータ取得・描画統合関数 ★★★
+    // ★★★ メインデータ取得・描画統合関数 (省略) ★★★
     function fetchAllData(season = "") {
         currentSeason = season;
         const thisMonth = new Date().getFullYear() + '-' + ('0' + (new Date().getMonth() + 1)).slice(-2);
@@ -155,6 +155,7 @@ $(document).ready(function() {
         });
     }
 
+    // ★★★ renderUserList 関数を修正 ★★★
     function renderUserList(pins, usersById) {
         const pinsByUserId = pins.reduce((acc, pin) => { if(pin.createdBy) { if (!acc[pin.createdBy]) { acc[pin.createdBy] = []; } acc[pin.createdBy].push(pin); } return acc; }, {});
         const $accordion = $('#userPinAccordion');
@@ -167,7 +168,30 @@ $(document).ready(function() {
             const iconUrl = (user.icon || '/images/default_icon.png') + '?t=' + new Date().getTime();
             $accordion.append(`<div class="accordion-item"><h2 class="accordion-header" id="heading-${index}"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-${index}"><img src="${iconUrl}" class="user-icon me-2"><strong style="color: ${userColor};">${crowns} ${escapeHTML(username)}</strong><span class="badge bg-secondary ms-auto">${userPins.length}</span></button></h2><div id="collapse-${index}" class="accordion-collapse collapse" data-bs-parent="#userPinAccordion"><div class="accordion-body p-0"><ul class="list-group list-group-flush">${userPins.map(pin => `<li class="list-group-item pin-list-item" data-pin-id="${pin.pinId}">${escapeHTML(pin.title)}</li>`).join('')}</ul></div></div></div>`);
         });
-        $('.pin-list-item').on('click', function() { const pinId = $(this).data('pin-id'); const marker = allMarkers[pinId]; if (marker) { map.flyTo(marker.getLatLng(), 17); marker.openPopup(); } });
+        
+        // ★★★ 修正: ピンリストアイテムクリック時の動作を地図移動完了後+3秒に変更 ★★★
+        $('.pin-list-item').off('click').on('click', function() { 
+            const pinId = $(this).data('pin-id'); 
+            const marker = allMarkers[pinId]; 
+            
+            if (marker) { 
+                // 1. flyToでピンの位置へ移動（アニメーション時間0.5秒）
+                map.flyTo(marker.getLatLng(), 17, { duration: 0.5 }); 
+                
+                // 2. moveendイベントを一度だけ待ち受ける（アニメーション完了を検知）
+                //    'moveend'イベントは、地図の移動が完全に終了したときに発生する
+                map.once('moveend', () => {
+                    // 3. 移動が完了したら、さらに1000ミリ秒（1秒）待機
+                    setTimeout(() => {
+                        // 4. ポップアップを開く
+                        marker.openPopup(); 
+                        
+                        // 5. ピン詳細モーダルを表示
+                        showPinDetailModal(pinId);
+                    }, 1000); // 1秒（1000ミリ秒）の遅延
+                });
+            } 
+        });
     }
 
     // --- イベントハンドラ (省略) ---
@@ -246,12 +270,10 @@ $(document).ready(function() {
         
         $('#seasonSelector').on('change', function() { fetchAllData($(this).val()); });
     }
-
-    function handleSaveNewPin() { /* この関数はインラインロジックに置き換えられたため、未使用 */ }
     
     // --- 補助機能 ---
     
-    // ★★★ showPinDetailModal 関数を上書き ★★★
+    // ★★★ showPinDetailModal 関数を上書き (前回修正済みのロジック) ★★★
     function showPinDetailModal(pinId) {
         currentOpenPinId = pinId;
         const pin = allPins[pinId];
@@ -271,7 +293,6 @@ $(document).ready(function() {
         
         Object.keys(REACTION_TYPES).forEach(type => {
             const reactionInfo = REACTION_TYPES[type];
-            // pin.reactions が null の可能性を考慮
             const usersReacted = pin.reactions ? (pin.reactions[type] || []) : []; 
             const count = usersReacted.length;
             const isActive = currentUserId && usersReacted.includes(currentUserId);
