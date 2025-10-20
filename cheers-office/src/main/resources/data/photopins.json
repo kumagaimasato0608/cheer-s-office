@@ -24,27 +24,6 @@
   },
   "season" : "2025-10"
 }, {
-  "pinId" : "eb4d0d55-c314-41f4-90fa-3b78cbb8230b",
-  "location" : {
-    "latitude" : 35.66366948184297,
-    "longitude" : 139.74638891954504
-  },
-  "title" : "ぴん",
-  "description" : "",
-  "createdBy" : "u001_auto",
-  "createdDate" : "2025-10-17T15:52:54.4147521",
-  "photos" : [ {
-    "photoId" : "ea97d3d4-476e-4fa0-b8cc-29328e54acd3",
-    "imageUrl" : "/images/photopins/eb4d0d55-c314-41f4-90fa-3b78cbb8230b_OIP (1).webp",
-    "comment" : null,
-    "uploadedBy" : "u001_auto",
-    "uploadedDate" : "2025-10-17T15:52:54.4147521"
-  } ],
-  "comments" : [ ],
-  "bonusPoints" : 0,
-  "reactions" : { },
-  "season" : "2025-10"
-}, {
   "pinId" : "d4a1ef47-c372-4446-b090-78027a9a912e",
   "location" : {
     "latitude" : 35.730088000000016,
@@ -68,6 +47,27 @@
     "content" : "映画館に行きました！",
     "timestamp" : "2025-10-19T14:12:26.4912383"
   } ],
+  "bonusPoints" : 0,
+  "reactions" : { },
+  "season" : "2025-10"
+}, {
+  "pinId" : "5874397e-482a-4128-a735-c2b647affe0a",
+  "location" : {
+    "latitude" : 35.66344482806724,
+    "longitude" : 139.74641653936348
+  },
+  "title" : "あ",
+  "description" : "",
+  "createdBy" : "4f254c98-1c62-423f-8c94-da8a29299612",
+  "createdDate" : "2025-10-20T16:19:19.7897593",
+  "photos" : [ {
+    "photoId" : "f6f600e5-e85e-4c52-b5fb-6ba318b72d3b",
+    "imageUrl" : "/images/photopins/5874397e-482a-4128-a735-c2b647affe0a_Gemini_Generated_Image_nskpa3nskpa3nskp.png",
+    "comment" : null,
+    "uploadedBy" : "4f254c98-1c62-423f-8c94-da8a29299612",
+    "uploadedDate" : "2025-10-20T16:19:19.7897593"
+  } ],
+  "comments" : [ ],
   "bonusPoints" : 0,
   "reactions" : { },
   "season" : "2025-10"

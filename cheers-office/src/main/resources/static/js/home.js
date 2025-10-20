@@ -2,10 +2,11 @@
 
 // ページロード時の処理
 $(document).ready(function() {
-    // 🗓️ イベント取得を実行
+    
+    // 🗓️ 直近のイベント取得を実行
     loadUpcomingEvents(); 
     
-    // 📰 スレッド取得を実行
+    // 📰 最新スレッドの取得を実行
     loadLatestThreads(); 
     
     // 🎮 スコアWebSocket接続を開始
@@ -16,55 +17,38 @@ $(document).ready(function() {
 
 
 /**
- * 🗓️ カレンダーAPIから直近のイベントを取得し、表示する
+ * 🗓️ カレンダーAPIから直近のイベントを取得し、「本日の予定」リスト（またはホーム画面のどこか）に表示する
+ * (※ home.html内のFullCalendar統合ロジックと連携させる必要あり)
  */
 function loadUpcomingEvents() {
-    const eventList = $('#upcoming-events-list');
+    const eventList = $('#today-event-list'); // home.html内の本日の予定リストIDを想定
     eventList.empty(); 
-    eventList.append('<li class="list-group-item text-center text-muted" id="loading-events">イベントを読み込み中...</li>');
+    eventList.append('<p class="text-center text-muted small mt-3" id="loading-events">予定を読み込み中...</p>'); // home.htmlの構造に合わせる
 
     $.ajax({
         url: '/api/events',
         method: 'GET',
         success: function(events) {
-            eventList.empty();
+            // この関数は「本日の予定」のHTML構造に合わせた描画ロジックが必要だが、
+            // 現在のホーム画面ロジックは updateTodayScheduleList(allEvents) に依存しているため、
+            // ここではデータの取得成功のみを確認し、DOM操作は最小限に留める。
 
-            const now = new Date();
-            const upcomingEvents = events.filter(event => {
-                return new Date(event.start) >= now;
-            });
-
-            upcomingEvents.sort((a, b) => new Date(a.start) - new Date(b.start));
-            const topEvents = upcomingEvents.slice(0, 3);
-
-            if (topEvents.length === 0) {
-                eventList.append('<li class="list-group-item text-center text-muted">直近のイベントはありません。</li>');
-                return;
+            eventList.find('#loading-events').remove(); // "読み込み中..."を削除
+            
+            // イベントのソート・フィルタリングは home.html のインラインスクリプトに任せる
+            if (events.length === 0) {
+                 eventList.append('<p class="text-center text-muted small mt-3">イベント情報がありません。</p>');
+            } else {
+                 eventList.append('<p class="text-center text-muted small mt-3">カレンダーデータが読み込まれました。</p>');
             }
 
-            topEvents.forEach(event => {
-                const startTime = new Date(event.start);
-                const formattedTime = startTime.toLocaleString('ja-JP', { 
-                    month: 'short', day: 'numeric', 
-                    hour: '2-digit', minute: '2-digit' 
-                });
-                
-                const eventItem = `
-                    <li class="list-group-item d-flex justify-content-between align-items-center">
-                        <div style="border-left: 4px solid ${event.color || '#007bff'}; padding-left: 10px;">
-                            <strong>${event.title}</strong>
-                            <div class="text-muted small">${event.description ? event.description.substring(0, 30) + (event.description.length > 30 ? '...' : '') : '詳細なし'}</div>
-                        </div>
-                        <span class="badge bg-secondary text-light">${formattedTime}</span>
-                    </li>
-                `;
-                eventList.append(eventItem);
-            });
+            // NOTE: FullCalendarと本日の予定リストの実際の更新は、home.htmlのDOMContentLoaded内で行われます。
+
         },
         error: function(xhr) {
             console.error('イベントの取得に失敗しました:', xhr);
             eventList.empty();
-            eventList.append('<li class="list-group-item text-center text-danger">イベントの読み込み中にエラーが発生しました。</li>');
+            eventList.append('<p class="text-center text-danger small mt-3">イベントの読み込み中にエラーが発生しました。</p>');
         }
     });
 }
@@ -143,6 +127,7 @@ function connectScoreWebSocket() {
 
     const socket = new SockJS('/ws'); // WebSocketConfig.javaで定義されたエンドポイント
     const stompClient = Stomp.over(socket);
+    stompClient.debug = null; // デバッグログを非表示に
 
     stompClient.connect({}, function(frame) {
         console.log('Connected to pinIt score WebSocket: ' + frame);
@@ -152,9 +137,10 @@ function connectScoreWebSocket() {
             const scoreData = JSON.parse(scoreUpdate.body);
             
             // DTO (ScoreUpdateDto) のフィールド名に応じてスコアを更新
-            $('#score-red').text(scoreData.red.toLocaleString());
-            $('#score-blue').text(scoreData.blue.toLocaleString());
-            $('#score-yellow').text(scoreData.yellow.toLocaleString());
+            // toLocaleString() で3桁区切りを適用
+            $('#score-red').text(scoreData.red.toLocaleString() + ' ポイント');
+            $('#score-blue').text(scoreData.blue.toLocaleString() + ' ポイント');
+            $('#score-yellow').text(scoreData.yellow.toLocaleString() + ' ポイント');
             
             console.log('Score updated:', scoreData);
         });

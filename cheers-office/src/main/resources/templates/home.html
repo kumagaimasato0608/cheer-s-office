@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org" lang="ja">
+<html xmlns:th="http://www.thymeleaf.org" lang="ja" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
 <head>
     <meta charset="UTF-8">
     <meta name="_csrf" th:content="${_csrf.token}"/>
@@ -15,6 +15,11 @@
     
     <script src="https://cdn.jsdelivr.net/npm/axios@1.7.7/dist/axios.min.js"></script>
     
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/sockjs-client/1.6.1/sockjs.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
+
+    <link rel="stylesheet" href="/css/style.css"> 
+
     <style>
 	    /* === ページ全体の基本設定 === */
 	    body {
@@ -187,7 +192,10 @@
         }
         /* ★★★ 通知バッジスタイル ★★★ */
         .notification-bar {
-            display: none; /* 初期状態では非表示 (JSで件数 > 0なら表示) */
+            /* JSで display: flex に切り替えます */
+            display: none; 
+            font-weight: bold;
+            cursor: pointer;
         }
 		
 	</style>
@@ -200,9 +208,9 @@
 
     <main class="container mt-5" style="padding-top: 100px;"> 
         
-        <div id="reactionNotificationBar" class="notification-bar alert alert-warning d-flex justify-content-between align-items-center mb-4" role="alert">
-            <span id="notificationMessage">新しいリアクションが <span id="unseenCount">0</span> 件届いています！</span>
-            <a href="/photopin" class="btn btn-sm btn-warning">PinItで確認する</a>
+        <div id="chatNotificationBar" class="notification-bar alert alert-danger d-flex justify-content-between align-items-center mb-4" role="alert">
+            <span id="chatNotificationMessage">チャットで新しいメッセージが <span id="unseenChatCount">0</span> 件届いています！</span>
+            <a th:href="@{/chat/rooms}" class="btn btn-sm btn-danger">チャットを確認する</a>
         </div>
         <div class="row mb-4">
             <div class="col-12">
@@ -227,7 +235,9 @@
                 <div class="card shadow-sm mb-4">
                     <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
                         <h5 class="mb-0">🗓️ 全体カレンダー</h5>
-                        <button type="button" class="btn btn-sm btn-light" id="openNewEventButton">
+                        
+                        <button type="button" class="btn btn-sm btn-light" id="openNewEventButton" 
+                                th:attr="data-is-admin=${#authorization.expression('hasRole(''ROLE_ADMIN'')')}"> 
                             + 予定追加
                         </button>
                     </div>
@@ -290,14 +300,6 @@
                             <p class="omikuji-comment" id="omikujiComment">ボタンを押して今日の運勢を占ってみましょう！</p>
                             <button class="btn btn-warning" id="drawOmikujiButton">おみくじを引く</button>
                         </div>
-                    </div>
-                </div>
-
-                <div class="card shadow-sm mb-4">
-                    <div class="card-body">
-                        <h5 class="card-title">💬 チャット</h5>
-                        <p class="card-text small text-muted">アクティブなチャットルームや未読情報がここに表示されます。</p>
-                        <a href="/chat" class="btn btn-sm btn-outline-secondary">チャットルームへ</a>
                     </div>
                 </div>
                 
@@ -389,12 +391,28 @@
     <script src="/js/common.js"></script>
     <script src="/js/home.js"></script>
     
+    <script th:inline="javascript">
+        // (no script here)
+    </script>
+    
     <script>
         // CSRFトークンをaxiosのデフォルトヘッダーに設定
         const token = document.querySelector('meta[name="_csrf"]').getAttribute('content');
         const header = document.querySelector('meta[name="_csrf_header"]').getAttribute('content');
         axios.defaults.headers.common[header] = token;
         
+        // --- 変数定義 ---
+        const openNewEventButton = document.getElementById('openNewEventButton'); 
+        const userIsAdmin = openNewEventButton.getAttribute('data-is-admin') === 'true'; 
+        let calendar = null;
+        let currentUserId = null; 
+        
+        // ★★★ 修正点: 共有機能のためにグローバルスコープに移動 ★★★
+        let allUsers = []; 
+        let usersById = {}; 
+        
+        let animationInterval = null; 
+
         // ユーティリティ関数
         const formatDate = (date) => {
              // dateオブジェクトまたはISO文字列を受け取り、"YYYY-MM-DD"形式の文字列を返す
@@ -411,45 +429,259 @@
         };
         const todayDateStr = formatDate(new Date());
 
-        // ★★★ 修正: 文章レパートリーの追加と、ランダムシード用の設定 ★★★
+        // ★★★ 独立した関数定義ブロック (省略) ★★★
+        
+        function updateCalendarPlaceholder(eventCount) {
+            const placeholderEl = document.getElementById('calendar-placeholder');
+            const calendarEl = document.getElementById('home-calendar');
+            if (!placeholderEl || !calendarEl) return;
+
+            if (eventCount === -1) {
+                // placeholderEl.textContent = 'カレンダーを読み込んでいます...'; // 読み込み中は非表示に
+                calendarEl.style.opacity = '0.3';
+            } else if (eventCount === 0) {
+                // placeholderEl.textContent = '現在、イベントはありません。'; // 0件でも非表示に
+                calendarEl.style.opacity = '1'; // 0件でもカレンダー自体は表示
+            } else {
+                // placeholderEl.textContent = '';
+                calendarEl.style.opacity = '1';
+            }
+        }
+        
+        function updateTodayScheduleList(allEvents) {
+            const listContainer = document.getElementById('today-event-list');
+            const todayDateEl = document.getElementById('todayDate');
+            const now = new Date();
+            const todayStr = formatDate(now);
+            
+            todayDateEl.textContent = new Intl.DateTimeFormat('ja-JP', {
+                year: 'numeric', month: 'numeric', day: 'numeric', weekday: 'short'
+            }).format(now);
+            
+            const todayEvents = allEvents.filter(event => {
+                const start = new Date(event.start);
+                const end = event.end ? new Date(event.end) : null;
+                const eventDateStr = formatDate(start);
+                
+                if (event.allDay) {
+                     // 終日イベントの場合、開始日と終了日の間に今日が含まれるか
+                     const endDate = end ? new Date(end.getTime() - 1) : start; // FullCalendarの仕様(終了日は含まない)に合わせる
+                     const endDateStr = formatDate(endDate);
+                     return todayStr >= eventDateStr && todayStr <= endDateStr;
+                } 
+                
+                return eventDateStr === todayStr;
+                
+            }).sort((a, b) => new Date(a.start) - new Date(b.start)); 
+
+            listContainer.innerHTML = '';
+            
+            if (todayEvents.length === 0) {
+                listContainer.innerHTML = '<p class="text-center text-muted small mt-3">本日の予定はありません。</p>';
+                return;
+            }
+
+            todayEvents.forEach(event => {
+                const startTime = new Date(event.start);
+                const endTime = event.end ? new Date(event.end) : null;
+                const timeOptions = { hour: '2-digit', minute: '2-digit' };
+                let timeText;
+                
+                if (event.allDay) {
+                    timeText = "終日";
+                } else if (endTime && formatDate(startTime) !== formatDate(endTime)) {
+                    // 複数日にわたる時間指定イベント
+                    timeText = `${startTime.toLocaleTimeString('ja-JP', timeOptions)} ~`;
+                } else if (endTime) {
+                    timeText = `${startTime.toLocaleTimeString('ja-JP', timeOptions)} ~ ${endTime.toLocaleTimeString('ja-JP', timeOptions)}`;
+                } else {
+                    timeText = startTime.toLocaleTimeString('ja-JP', timeOptions);
+                }
+                
+                const item = document.createElement('div');
+                item.className = 'today-event-item';
+                item.style.borderLeft = `5px solid ${event.color || '#007bff'}`;
+                item.style.cursor = 'pointer';
+                
+                // イベントクリックで編集モーダルを開く (FullCalendarのeventClickと連動)
+                item.onclick = () => {
+                     const calEvent = calendar.getEventById(event.id);
+                     if (calEvent) {
+                         openEventModal({ event: calEvent });
+                     } else {
+                         // FullCalendar本体にないイベント(加工後のデータ)の場合はそのまま渡す
+                         openEventModal({ event: event }); 
+                     }
+                };
+
+                item.innerHTML = `<span class="event-time">${timeText}</span><span class="event-title">${event.title}</span>`;
+                listContainer.appendChild(item);
+            });
+        }
+
+        // --- イベントモーダルを開く関数 (新規/編集) ---
+        function openEventModal(info) {
+            const isNew = info.event === undefined;
+            const eventModal = new bootstrap.Modal(document.getElementById('eventModal'));
+            const modalTitle = document.getElementById('eventModalLabel');
+            const deleteButton = document.getElementById('deleteEventButton');
+            const saveButton = document.getElementById('saveEventButton');
+            const form = document.getElementById('eventForm');
+
+            form.reset();
+            deleteButton.style.display = 'none';
+            document.getElementById('eventId').value = '';
+            
+            // 新規作成
+            if (isNew) {
+                modalTitle.textContent = '新しいイベントを登録';
+                saveButton.textContent = '登録';
+                saveButton.disabled = false; 
+                
+                const now = new Date();
+                const startDefault = `${formatDate(info.date || now)}T09:00`;
+
+                document.getElementById('eventStart').value = startDefault; 
+                document.getElementById('eventEnd').value = '';
+                document.getElementById('eventAllDay').checked = false; 
+                
+                form.querySelectorAll('input, textarea').forEach(el => el.disabled = false);
+
+                // ★★★ 修正点: 共有リストを空の状態で描画 ★★★
+                renderSharedUsersSelection([]); 
+                form.querySelectorAll('.shared-user-checkbox').forEach(el => el.disabled = false);
+            } 
+            // 編集/閲覧
+            else {
+                // (info.event は FullCalendar の EventObject)
+                const event = info.event; 
+                
+                // extendedProps から作成者IDを取得
+                const createdBy = event.extendedProps ? event.extendedProps.createdByUserId : null;
+                const canEdit = userIsAdmin || (createdBy === currentUserId); 
+                
+                modalTitle.textContent = canEdit ? 'イベントを編集' : 'イベントの詳細 (閲覧のみ)';
+                saveButton.textContent = canEdit ? '更新' : 'OK'; 
+                saveButton.disabled = !canEdit;
+                
+                document.getElementById('eventId').value = event.id;
+                document.getElementById('eventTitle').value = event.title;
+                document.getElementById('eventDescription').value = event.extendedProps ? event.extendedProps.description : '';
+                
+                // ISO 8601形式 ("YYYY-MM-DDTHH:MM") に整形
+                const startStr = event.start ? new Date(event.start.getTime() - (event.start.getTimezoneOffset() * 60000)).toISOString().substring(0, 16) : '';
+                const endStr = event.end ? new Date(event.end.getTime() - (event.end.getTimezoneOffset() * 60000)).toISOString().substring(0, 16) : '';
+
+                document.getElementById('eventStart').value = startStr;
+                document.getElementById('eventEnd').value = event.allDay ? '' : endStr; // 終日の場合は終了を空に
+                document.getElementById('eventAllDay').checked = event.allDay;
+                
+                deleteButton.style.display = canEdit ? 'block' : 'none';
+                form.querySelectorAll('input, textarea').forEach(el => el.disabled = !canEdit);
+
+                // ★★★ 修正点: 既存の共有リストを描画し、編集不可なら disabled にする ★★★
+                const sharedIds = (event.extendedProps && event.extendedProps.sharedWithUserIds) ? event.extendedProps.sharedWithUserIds : [];
+                renderSharedUsersSelection(sharedIds);
+                form.querySelectorAll('.shared-user-checkbox').forEach(el => el.disabled = !canEdit);
+            }
+
+            eventModal.show();
+        }
+
+        // --- イベントを保存/更新する関数 ---
+        document.getElementById('saveEventButton').onclick = async function() {
+            if (this.disabled) {
+                bootstrap.Modal.getInstance(document.getElementById('eventModal')).hide();
+                return;
+            }
+
+            const id = document.getElementById('eventId').value;
+            const title = document.getElementById('eventTitle').value;
+            const start = document.getElementById('eventStart').value;
+            let end = document.getElementById('eventEnd').value;
+            const description = document.getElementById('eventDescription').value;
+            const allDay = document.getElementById('eventAllDay').checked;
+            
+            if (allDay) {
+                end = null; // 終日の場合は終了日時をnullにする
+            }
+            
+            if (!title || !start) { alert('タイトルと開始日時は必須です。'); return; }
+
+            // ★★★ 修正点: 共有メンバーのIDリストを収集 ★★★
+            const sharedWithUserIds = Array.from(document.querySelectorAll('.shared-user-checkbox:checked'))
+                                           .map(cb => cb.value);
+
+            const eventData = { 
+                id: id || null, 
+                title: title, 
+                start: start, 
+                end: end || null, 
+                description: description, 
+                allDay: allDay,
+                sharedWithUserIds: sharedWithUserIds // ★★★ 修正点: 送信データに追加 ★★★
+            };
+            
+            // バックエンド (CalendarController) は @PostMapping のみ
+            const method = 'POST';
+            const url = '/api/events';
+
+            try {
+                await axios({ method: method, url: url, data: eventData }); 
+                
+                calendar.refetchEvents(); 
+                
+                alert(`イベントを${id ? '更新' : '登録'}しました。`);
+                
+                bootstrap.Modal.getInstance(document.getElementById('eventModal')).hide();
+            } catch (error) {
+                console.error('イベントの保存に失敗しました:', error);
+                alert(`イベントの保存に失敗しました。エラー: ${error.response ? (error.response.data || error.response.statusText) : 'ネットワークエラー'}`);
+            }
+        };
+
+        // --- イベントを削除する関数 ---
+        document.getElementById('deleteEventButton').onclick = async function() {
+            if (!confirm('本当にこのイベントを削除しますか？')) return;
+            const id = document.getElementById('eventId').value;
+            if (!id) return;
+            
+            try {
+                await axios.delete(`/api/events/${id}`);
+                
+                calendar.refetchEvents();
+                
+                alert('イベントを削除しました。');
+                bootstrap.Modal.getInstance(document.getElementById('eventModal')).hide();
+            } catch (error) {
+                console.error('イベントの削除に失敗しました:', error);
+                alert(`イベントの削除に失敗しました。エラー: ${error.response ? (error.response.data || error.response.statusText) : 'ネットワークエラー'}`);
+            }
+        };
+
+        // ★★★ おみくじ機能の関数定義 (省略) ★★★
         const omikujiResults = [
-            // 大吉 (15%)
             { result: "大吉", comment: "絶好調！何をしても上手くいくでしょう。新しい挑戦を恐れずに！", color: "#dc3545", weight: 15 },
-            // 中吉 (20%)
-            { result: "中吉", comment: "まずまずの運勢。目標に向かって一歩前進！計画的に行動しましょう。", color: "#ffc107", weight: 20 },
-            { result: "中吉", comment: "努力が報われる一日。周囲への感謝を忘れずに。", color: "#ffc107", weight: 20 },
-            // 小吉 (25%)
-            { result: "小吉", comment: "小さな幸せに感謝。地道な努力が実を結びます。午後に吉報あり。", color: "#28a745", weight: 25 },
-            { result: "小吉", comment: "気分転換が吉。新しいアイデアが浮かぶかもしれません。", color: "#28a745", weight: 25 },
-            // 吉 (20%)
-            { result: "吉", comment: "可もなく不可もなく。現状維持を心がけて。人間関係は良好。", color: "#17a2b8", weight: 20 },
-            { result: "吉", comment: "穏やかな一日。焦らず、自分のペースで進めましょう。", color: "#17a2b8", weight: 20 },
-            // 末吉 (10%)
-            { result: "末吉", comment: "焦りは禁物。慎重に行動すれば吉と出ます。午後の休憩で気分転換を。", color: "#007bff", weight: 10 },
-            // 凶 (5%)
+            { result: "中吉", comment: "まずまずの日。日々の努力が実を結びそうです。", color: "#ffc107", weight: 20 },
+            { result: "小吉", comment: "小さな幸せがありそう。身の回りに感謝しましょう。", color: "#198754", weight: 30 },
+            { result: "吉", comment: "平穏な一日。無理をせず、現状維持を心がけて。", color: "#0dcaf0", weight: 20 },
+            { result: "末吉", comment: "油断大敵。午後に向けて運気が下がり気味かも。", color: "#6610f2", weight: 10 },
             { result: "凶", comment: "今日は厄日かも。大人しく過ごすのが吉。早めに帰宅しましょう。", color: "#6c757d", weight: 5 }
         ];
 
-        let currentUserId = null; 
-        let animationInterval = null; 
-
-        // ★★★ 修正: ユーザーIDと日付に基づく乱数生成関数 (シード付き乱数) ★★★
         function seededRandom(seed) {
             let x = Math.sin(seed++) * 10000;
             return x - Math.floor(x);
         }
 
-        // --- おみくじ機能関数 ---
         function drawOmikuji(isInitialLoad = false) {
-            if (!currentUserId) {
-                if (!isInitialLoad) {
-                    alert("ユーザー情報が読み込まれていません。しばらく待ってから再度お試しください。");
-                }
+            if (!currentUserId && !isInitialLoad) {
+                alert("ユーザー情報が読み込まれていません。しばらく待ってから再度お試しください。");
                 return;
             }
 
             const today = formatDate(new Date());
-            const localStorageKey = 'omikujiResult_' + currentUserId + '_' + today;
+            const localStorageKey = 'omikujiResult_' + (currentUserId || 'guest') + '_' + today;
             const $resultEl = $('#omikujiResult');
             const $commentEl = $('#omikujiComment');
             const $button = $('#drawOmikujiButton');
@@ -473,7 +705,11 @@
                  return;
             }
             
-            // --- 演出開始 ---
+            if (!currentUserId) {
+                alert("ログイン情報が取得できませんでした。");
+                return;
+            }
+            
             $button.prop('disabled', true).text('運勢を占っています...');
             $commentEl.text('シャカシャカ...シャカシャカ...');
 
@@ -484,7 +720,6 @@
                 $resultEl.text(tempResult).css('color', '#6c757d'); 
             }, 100); 
 
-            // 2秒後に確定
             setTimeout(() => {
                 clearInterval(animationInterval);
                 
@@ -511,7 +746,6 @@
                 result = finalResult;
                 localStorage.setItem(localStorageKey, JSON.stringify(result));
                 
-                // --- 演出終了、結果表示 ---
                 $resultEl.text(result.result).css('color', result.color);
                 $commentEl.text(result.comment).css('color', '#555');
                 $button.prop('disabled', true).text('本日の結果を表示中');
@@ -519,13 +753,13 @@
 
             }, 2000); 
         }
+        $('#drawOmikujiButton').on('click', () => drawOmikuji(false));
+        // ★★★ おみくじ機能の関数定義ここまで ★★★
 
-        // --- オンラインユーザーリスト表示関数 (省略) ---
         function renderOnlineUsers(users) {
             const listContainer = document.getElementById('onlineUsersList');
             const onlineCountEl = document.getElementById('onlineCount');
             listContainer.innerHTML = '';
-            // ... (ロジック省略) ...
             if (!users || !Array.isArray(users) || users.length === 0) {
                 listContainer.innerHTML = '<p class="text-muted small text-center pt-2">現在オンラインのメンバーはいません。</p>';
                 onlineCountEl.textContent = '0';
@@ -540,56 +774,61 @@
                 listContainer.appendChild(item);
             });
         }
-        // ------------------------------------
-
-        // --- 未読通知の更新関数 ---
-        function updateUnseenReactionNotification() {
-            // ★★★ バックエンドに未読件数API (/api/notifications/unseen-reactions) が必要 ★★★
-            axios.get('/api/notifications/unseen-reactions')
+        
+        function updateUnseenChatNotification() {
+            axios.get('/api/chat/unseen-count')
                 .then(response => {
-                    const unseenCount = response.data.count; // サーバーが { "count": 5 } のように返す想定
-                    const $notificationBar = $('#reactionNotificationBar');
-                    const $unseenCount = $('#unseenCount');
+                    const unseenCount = response.data.count; 
+                    const $notificationBar = $('#chatNotificationBar');
+                    const $unseenChatCount = $('#unseenChatCount');
                     
                     if (unseenCount > 0) {
-                        $unseenCount.text(unseenCount);
-                        $notificationBar.css('display', 'flex'); // 表示
+                        $unseenChatCount.text(unseenCount);
+                        $notificationBar.css('display', 'flex'); 
                     } else {
-                        $notificationBar.css('display', 'none'); // 非表示
+                        $notificationBar.css('display', 'none'); 
                     }
                 })
                 .catch(error => {
-                    console.error("未読リアクション数の取得に失敗しました", error);
+                    console.error("未読チャット件数の取得に失敗しました", error);
                 });
+        }
+        
+        // ★★★ 修正点: この関数を DOMContentLoaded の外に移動 ★★★
+        function renderSharedUsersSelection(selectedIds = []) {
+            const container = document.getElementById('sharedUsersContainer');
+            container.innerHTML = '';
+            // allUsers と currentUserId はグローバル変数
+            if (!allUsers || allUsers.length <= 1) { 
+                container.innerHTML = '<p class="text-muted small">共有できる他のユーザーはいません。</p>'; 
+                return; 
+            }
+            
+            allUsers.forEach(user => {
+                // 自分以外のユーザーを表示
+                if (user.userId !== currentUserId) {
+                    const isChecked = selectedIds.includes(user.userId) ? 'checked' : '';
+                    const div = document.createElement('div');
+                    div.className = 'form-check';
+                    div.innerHTML = `<input class="form-check-input shared-user-checkbox" type="checkbox" value="${user.userId}" id="share_${user.userId}" ${isChecked}><label class="form-check-label small" for="share_${user.userId}">${user.userName}</label>`;
+                    container.appendChild(div);
+                }
+            });
         }
 
 
         document.addEventListener('DOMContentLoaded', async function() {
             const calendarEl = document.getElementById('home-calendar');
-            const eventModal = new bootstrap.Modal(document.getElementById('eventModal'));
-            const dayEventsModal = new bootstrap.Modal(document.getElementById('dayEventsModal'));
+            // const eventModal = new bootstrap.Modal(document.getElementById('eventModal')); // openEventModal内で都度生成
+            // const dayEventsModal = new bootstrap.Modal(document.getElementById('dayEventsModal'));
             const userNameEl = document.getElementById('loggedInUserName'); // ユーザー名表示要素
             const seasonRemainingDaysEl = document.getElementById('seasonRemainingDays'); // シーズン残り日数要素
-            let allUsers = [];
-            let calendar = null; 
-            let usersById = {}; 
-
-            // PinItの残り日数を計算する関数 (省略)
-            const calculateSeasonRemaining = () => {
-                const now = new Date();
-                const year = now.getFullYear();
-                const month = now.getMonth();
-                const lastDayOfMonth = new Date(year, month + 1, 0);
-                const diffTime = Math.abs(lastDayOfMonth - now);
-                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) - 1;
-                if (diffDays >= 0 && seasonRemainingDaysEl) { seasonRemainingDaysEl.textContent = `${diffDays}日`; } else if (seasonRemainingDaysEl) { seasonRemainingDaysEl.textContent = `終了`; }
-            };
-            calculateSeasonRemaining();
             
-            // ★ おみくじボタンイベントハンドラの設定
-            $('#drawOmikujiButton').on('click', () => drawOmikuji(false));
-
-
+            // ★★★ 修正点: let を削除 (グローバル変数を使用) ★★★
+            allUsers = []; 
+            usersById = {}; 
+            
+            
             // 1. ユーザー情報とPinIt初期スコアの取得
             try {
                 const [meRes, scoreRes, usersRes] = await Promise.all([
@@ -602,84 +841,142 @@
                 allUsers = usersRes.data || [];
                 usersById = allUsers.reduce((acc, user) => { acc[user.userId] = user; return acc; }, {});
                 
+                // DOM更新
                 if (userNameEl) userNameEl.textContent = meRes.data.userName;
 
                 const initialScores = scoreRes.data;
-                document.getElementById('score-red').textContent = initialScores.red + ' ポイント';
-                document.getElementById('score-blue').textContent = initialScores.blue + ' ポイント';
-                document.getElementById('score-yellow').textContent = initialScores.yellow + ' ポイント';
+                document.getElementById('score-red').textContent = initialScores.red.toLocaleString() + ' ポイント';
+                document.getElementById('score-blue').textContent = initialScores.blue.toLocaleString() + ' ポイント';
+                document.getElementById('score-yellow').textContent = initialScores.yellow.toLocaleString() + ' ポイント';
 
-                // ★★★ 初期ロード時に未読通知を確認 ★★★
-                updateUnseenReactionNotification();
+                updateUnseenChatNotification();
                 
-                renderSharedUsersSelection(); 
+                // 予定追加ボタンのクリックイベントを設定
+                openNewEventButton.addEventListener('click', () => openEventModal({}));
+
+
             } catch (error) {
-                console.error("データの初期ロードに失敗しました", error);
+                console.error("データの初期ロードに失敗しました:", error);
                 if (userNameEl) userNameEl.textContent = 'ゲスト';
+                updateCalendarPlaceholder(0); 
             }
             
             // ★ ページロード時のおみくじ初期表示
             drawOmikuji(true);
-
-
-            // ユーザー選択チェックボックスをレンダリングする関数 (省略)
-            function renderSharedUsersSelection(selectedIds = []) {
-                const container = document.getElementById('sharedUsersContainer');
-                container.innerHTML = '';
-                if (!allUsers || allUsers.length <= 1) { container.innerHTML = '<p class="text-muted small">共有できる他のユーザーはいません。</p>'; return; }
-                allUsers.forEach(user => {
-                    if (user.userId !== currentUserId) {
-                        const isChecked = selectedIds.includes(user.userId) ? 'checked' : '';
-                        const div = document.createElement('div');
-                        div.className = 'form-check';
-                        div.innerHTML = `<input class="form-check-input shared-user-checkbox" type="checkbox" value="${user.userId}" id="share_${user.userId}" ${isChecked}><label class="form-check-label small" for="share_${user.userId}">${user.userName}</label>`;
-                        container.appendChild(div);
-                    }
-                });
-            }
-
-            // ... (イベントモーダル、FullCalendarロジックは省略) ...
             
+            // PinItの残り日数を計算
+            const calculateSeasonRemaining = () => {
+                const now = new Date();
+                const year = now.getFullYear();
+                const month = now.getMonth();
+                const lastDayOfMonth = new Date(year, month + 1, 0);
+                const diffTime = Math.abs(lastDayOfMonth - now);
+                // 終了日までの「残り日数」なので、現在日を含まない
+                const diffDays = Math.max(0, Math.ceil(diffTime / (1000 * 60 * 60 * 24)) - 1); 
+                if (seasonRemainingDaysEl) { 
+                    seasonRemainingDaysEl.textContent = `${diffDays}日`; 
+                }
+            };
+            calculateSeasonRemaining();
+
+            // --- FullCalendarの初期化ロジック ---
             calendar = new FullCalendar.Calendar(calendarEl, {
-                // ... (FullCalendar設定省略) ...
+                initialView: 'dayGridMonth',
+                locale: 'ja',
+                height: 600, // 高さを少し確保
+                fixedWeekCount: false, // 月によって週の数を変える
+                headerToolbar: {
+                    left: 'prev,next today',
+                    center: 'title',
+                    right: 'dayGridMonth,timeGridWeek'
+                },
+                // ドラッグ＆ドロップ編集は管理者のみ
+                editable: userIsAdmin, 
+                droppable: userIsAdmin,
+                eventStartEditable: userIsAdmin,
+                eventDurationEditable: userIsAdmin,
+                
+                // 日付クリック（新規作成）は全員許可
+                dateClick: function(info) {
+                    openEventModal({ date: info.date });
+                },
+                
+                // イベントクリック（編集/閲覧）は全員許可
+                eventClick: function(info) {
+                    openEventModal({ event: info.event });
+                },
+
                 events: {
-                    url: '/api/events',
-                    failure: function() { alert('イベントの読み込みに失敗しました'); updateCalendarPlaceholder(0); },
+                    url: '/api/events', // ここが CalendarController の getEvents を呼ぶ
+                    failure: function(error) { 
+                        console.error('イベントの読み込みに失敗しました:', error);
+                        updateCalendarPlaceholder(0); 
+                    },
                     success: function(rawEvents) {
                         const eventsArray = Array.isArray(rawEvents) ? rawEvents : [];
                         updateCalendarPlaceholder(eventsArray.length); 
+                        
+                        // バックエンドから来たデータをFullCalendar用にマッピング
                         const mappedEvents = eventsArray.map(event => ({
-                            id: event.id, title: event.title, start: event.start, end: event.end, allDay: event.allDay, color: event.color || '#007bff',
-                            extendedProps: { description: event.description, createdByUserId: event.createdByUserId, sharedWithUserIds: event.sharedWithUserIds || [] }
+                            id: event.id, 
+                            title: event.title, 
+                            start: event.start, 
+                            end: event.end, 
+                            allDay: event.allDay, 
+                            color: event.color || (event.createdByUserId === currentUserId ? '#007bff' : '#28a745'), // 自分の予定と共有された予定の色を変える例
+                            extendedProps: { 
+                                description: event.description, 
+                                createdByUserId: event.createdByUserId, 
+                                sharedWithUserIds: event.sharedWithUserIds || [] 
+                            }
                         }));
+                        
+                        // 「本日の予定」リストも更新
                         updateTodayScheduleList(mappedEvents); 
+
+                        // 今日の日付をハイライト
                         const todayEl = document.querySelector(`.fc-day[data-date="${todayDateStr}"]`);
                         if(todayEl) { todayEl.classList.add('fc-day-selected'); }
+                        
                         return mappedEvents;
                     }
                 },
-                eventChange: function() { calendar.refetchEvents(); },
-                eventAdd: function() { calendar.refetchEvents(); },
-                eventRemove: function() { calendar.refetchEvents(); },
-                eventDrop: async function(info) { /* ... (ロジック省略) ... */ },
-                eventResize: async function(info) { /* ... (ロジック省略) ... */ }
+                // イベントがレンダリングされた後の処理 (もしあれば)
+                eventDidMount: function(info) {
+                    // ここでツールチップなどを追加できる
+                }
             });
-            calendar.render();
-            updateCalendarPlaceholder(-1); 
             
-            // WebSocket接続によるリアルタイム更新
+            calendar.render();
+            updateCalendarPlaceholder(-1); // 初期読み込み中
+            
+            // WebSocket接続
             const sock = new SockJS('/ws'); 
             const stompClient = Stomp.over(sock);
+            stompClient.debug = null; // デバッグログを非表示
+            
             stompClient.connect({}, function (frame) {
-                console.log('Connected: ' + frame);
+                console.log('Connected to WebSocket: ' + frame);
                 
-                // ★ PinItのリアクション通知を購読 (バックエンドが通知を送信する想定)
-                stompClient.subscribe('/topic/reactions', function(message) {
-                    console.log('PinItリアクション通知を受信。');
-                    updateUnseenReactionNotification(); // 通知が来たら即座に更新
+                // チャット通知
+                stompClient.subscribe('/topic/chat/notifications', function(message) {
+                    updateUnseenChatNotification();
                 });
                 
-                // ... (他のWebSocket購読ロジック省略) ...
+                // PinItスコア
+                stompClient.subscribe('/topic/scores', function(scoreMessage) {
+                    const newScores = JSON.parse(scoreMessage.body);
+                    $('#score-red').text(newScores.red.toLocaleString() + ' ポイント');
+                    $('#score-blue').text(newScores.blue.toLocaleString() + ' ポイント');
+                    $('#score-yellow').text(newScores.yellow.toLocaleString() + ' ポイント');
+                });
+                
+                // ★★★ カレンダー更新通知 ★★★
+                stompClient.subscribe('/topic/calendar', function(eventMessage) {
+                    console.log('カレンダー更新通知を受信');
+                    // 他の誰かがイベントを更新/作成/削除した
+                    calendar.refetchEvents();
+                });
             });
         });
     </script>

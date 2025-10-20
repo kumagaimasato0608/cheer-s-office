@@ -31,4 +31,26 @@
   "icon" : "/images/default-avatar.png",
   "messageId" : null,
   "readBy" : [ ]
+}, {
+  "roomId" : "r_3a477edc",
+  "userId" : "u001_auto",
+  "userName" : "自動登録ユーザー",
+  "type" : "TEXT",
+  "content" : "こんにちは",
+  "caption" : null,
+  "timestamp" : "2025-10-20T15:58:42.750241800",
+  "icon" : "/images/default-avatar.png",
+  "messageId" : "36743bd7-683d-42e0-bf14-d4350070e490",
+  "readBy" : [ "u001_auto" ]
+}, {
+  "roomId" : "r_3a477edc",
+  "userId" : "u001_auto",
+  "userName" : "自動登録ユーザー",
+  "type" : "TEXT",
+  "content" : "こんちにあ",
+  "caption" : null,
+  "timestamp" : "2025-10-20T15:58:44.978191100",
+  "icon" : "/images/default-avatar.png",
+  "messageId" : "25c2caa2-afcd-4582-a218-82a49225fef4",
+  "readBy" : [ "u001_auto" ]
 } ]

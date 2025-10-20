@@ -39,6 +39,14 @@ public class UserController {
             userForResponse.setHobby(originalUser.getHobby());
             userForResponse.setStatusMessage(originalUser.getStatusMessage());
             userForResponse.setTeamColor(originalUser.getTeamColor());
+            userForResponse.setLastPinTimestamp(originalUser.getLastPinTimestamp()); // 既存のlastPinTimestampもコピー
+            
+            // ★★★ 追加: 配属先情報フィールドのコピー ★★★
+            userForResponse.setDeploymentDestination(originalUser.getDeploymentDestination());
+            userForResponse.setDeploymentArea(originalUser.getDeploymentArea());
+            userForResponse.setCommuteFrequency(originalUser.getCommuteFrequency());
+            userForResponse.setWorkTime(originalUser.getWorkTime());
+            userForResponse.setWorkContent(originalUser.getWorkContent());
             
             return ResponseEntity.ok(userForResponse);
         }
@@ -60,7 +68,6 @@ public class UserController {
                 .collect(Collectors.toList());
     }
 
-    // ▼▼▼ このメソッドをファイルの一番下に追加してください ▼▼▼
     /**
      * 指定されたIDのユーザー詳細情報を取得するAPI
      * チャット画面が呼び出すのはこのエンドポイントです。
@@ -69,7 +76,6 @@ public class UserController {
      */
     @GetMapping("/api/users/{userId}")
     public ResponseEntity<User> getUserById(@PathVariable String userId) {
-        // リポジトリを使い、IDでユーザーを検索します
         Optional<User> userOptional = userRepository.findById(userId);
 
         if (userOptional.isPresent()) {
@@ -86,6 +92,14 @@ public class UserController {
             safeUser.setHobby(originalUser.getHobby());
             safeUser.setStatusMessage(originalUser.getStatusMessage());
             safeUser.setTeamColor(originalUser.getTeamColor());
+            safeUser.setLastPinTimestamp(originalUser.getLastPinTimestamp());
+            
+            // ★★★ 追加: 配属先情報フィールドのコピー ★★★
+            safeUser.setDeploymentDestination(originalUser.getDeploymentDestination());
+            safeUser.setDeploymentArea(originalUser.getDeploymentArea());
+            safeUser.setCommuteFrequency(originalUser.getCommuteFrequency());
+            safeUser.setWorkTime(originalUser.getWorkTime());
+            safeUser.setWorkContent(originalUser.getWorkContent());
             
             // ユーザーが見つかった場合、そのデータを200 OKステータスで返します
             return ResponseEntity.ok(safeUser);
