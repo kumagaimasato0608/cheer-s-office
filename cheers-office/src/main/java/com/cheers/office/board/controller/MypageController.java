@@ -29,18 +29,17 @@ public class MypageController {
     private final UserRepository userRepository;
     private final UserAccountService userAccountService;
 
+    // パスワードの最小文字数定義
+    private static final int MIN_PASSWORD_LENGTH = 8; 
+
     @Value("${app.upload-dir.profile:src/main/resources/static/images/profile}")
     private String profileUploadDir;
     
-    // ★★★ パスワードの最小文字数定義を追加 ★★★
-    private static final int MIN_PASSWORD_LENGTH = 8; 
-
     public MypageController(UserRepository userRepository, UserAccountService userAccountService) {
         this.userRepository = userRepository;
         this.userAccountService = userAccountService;
     }
     
-    // ... (mypage, updateProfile, showPasswordChangeForm, updateEmail メソッドは省略) ...
     @GetMapping("/mypage")
     public String mypage(Model model, @AuthenticationPrincipal CustomUserDetails customUserDetails) {
         if (customUserDetails != null) {
@@ -68,11 +67,19 @@ public class MypageController {
         }
         User currentUser = currentUserOpt.get();
         
+        // 既存フィールドの更新
         currentUser.setUserName(formUser.getUserName());
         currentUser.setStatusMessage(formUser.getStatusMessage());
         currentUser.setGroup(formUser.getGroup());
         currentUser.setHobby(formUser.getHobby());
         currentUser.setMyBoom(formUser.getMyBoom());
+        
+        // ★★★ 追加: 配属先情報フィールドの更新 ★★★
+        currentUser.setDeploymentDestination(formUser.getDeploymentDestination());
+        currentUser.setDeploymentArea(formUser.getDeploymentArea());
+        currentUser.setCommuteFrequency(formUser.getCommuteFrequency());
+        currentUser.setWorkTime(formUser.getWorkTime());
+        currentUser.setWorkContent(formUser.getWorkContent());
         
         userRepository.save(currentUser); 
         
@@ -104,23 +111,21 @@ public class MypageController {
         }
     }
 
+    
     @PostMapping("/mypage/password/update/password")
     public String updatePassword(@ModelAttribute PasswordUpdateForm form, 
                                  RedirectAttributes redirectAttributes,
                                  @AuthenticationPrincipal CustomUserDetails customUserDetails) {
         
-        // ★★★ 1. 新しいパスワードの文字数チェックを追加 ★★★
         if (form.getNewPassword().length() < MIN_PASSWORD_LENGTH) {
             redirectAttributes.addFlashAttribute("errorMessage", "新しいパスワードは" + MIN_PASSWORD_LENGTH + "文字以上で入力してください。");
             return "redirect:/mypage/password";
         }
         
-        // 2. パスワード一致チェック
         if (!form.getNewPassword().equals(form.getConfirmPassword())) {
             redirectAttributes.addFlashAttribute("errorMessage", "新しいパスワードが確認用と一致しません。");
             return "redirect:/mypage/password";
         }
-        
         Optional<User> updatedUserOpt = userAccountService.updatePassword(customUserDetails.getUsername(), form.getCurrentPassword(), form.getNewPassword());
         if (updatedUserOpt.isPresent()) {
             customUserDetails.setUser(updatedUserOpt.get());
@@ -140,7 +145,6 @@ public class MypageController {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new ResponseDto(false, "ファイルが空です。"));
         }
         try {
-            // ★★★ サービスに保存先パスを渡すように変更 ★★★
             String newIconPath = userAccountService.saveProfileIcon(file, userId, profileUploadDir);
             
             User updatedUser = userAccountService.updateUserIcon(userId, newIconPath);

@@ -1,7 +1,9 @@
 package com.cheers.office.board.model;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -21,7 +23,11 @@ public class PhotoPin {
     private List<Comment> comments = new ArrayList<>();
     private int bonusPoints = 0;  // このピンで獲得したボーナスポイント
 
-    // ★★★ このフィールドを追加 ★★★
+    // ★★★ リアクションを保存するマップ ★★★
+    // キー: リアクションタイプ ("like", "want", "seen")
+    // 値: そのリアクションをしたユーザーIDのリスト
+    private Map<String, List<String>> reactions = new HashMap<>(); 
+
     private String season;        // "YYYY-MM"形式 (例: "2025-10")
 
     // Lombokの@Dataがゲッター/セッターを自動生成しますが、
@@ -33,16 +39,15 @@ public class PhotoPin {
         this.description = description;
         this.createdBy = createdBy;
         this.createdDate = createdDate;
-        this.photos = new ArrayList<>(); // 必ず初期化
-        this.comments = new ArrayList<>(); // コメントリストも初期化
-        this.bonusPoints = 0; // bonusPointsも初期化
-        this.season = null; // seasonフィールドも初期化
+        this.photos = new ArrayList<>();
+        this.comments = new ArrayList<>();
+        this.bonusPoints = 0;
+        this.season = null;
+        this.reactions = new HashMap<>(); 
     }
 
     // photosリストがnullになることを防ぐためのセッター (Lombokが生成するが、念のため)
     public void setPhotos(List<Photo> photos) {
         this.photos = (photos != null) ? photos : new ArrayList<>();
     }
-    
-    // getPhotos(), getSeason(), setSeason() などは @Data が自動生成します
 }

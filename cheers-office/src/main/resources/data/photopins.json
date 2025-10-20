@@ -17,6 +17,11 @@
   } ],
   "comments" : [ ],
   "bonusPoints" : 0,
+  "reactions" : {
+    "seen" : [ "u001_auto" ],
+    "want" : [ "u001_auto" ],
+    "like" : [ "u001_auto" ]
+  },
   "season" : "2025-10"
 }, {
   "pinId" : "eb4d0d55-c314-41f4-90fa-3b78cbb8230b",
@@ -37,5 +42,33 @@
   } ],
   "comments" : [ ],
   "bonusPoints" : 0,
+  "reactions" : { },
+  "season" : "2025-10"
+}, {
+  "pinId" : "d4a1ef47-c372-4446-b090-78027a9a912e",
+  "location" : {
+    "latitude" : 35.730088000000016,
+    "longitude" : 139.714704
+  },
+  "title" : "池袋",
+  "description" : "",
+  "createdBy" : "u001_auto",
+  "createdDate" : "2025-10-19T14:11:55.0679748",
+  "photos" : [ {
+    "photoId" : "e9c44e89-6f42-4792-ad25-bd683bb3723b",
+    "imageUrl" : "/images/photopins/d4a1ef47-c372-4446-b090-78027a9a912e_OIP (1).webp",
+    "comment" : null,
+    "uploadedBy" : "u001_auto",
+    "uploadedDate" : "2025-10-19T14:11:55.0679748"
+  } ],
+  "comments" : [ {
+    "commentId" : "83788b9c-4c28-43c1-986c-ee19d9df9388",
+    "pinId" : "d4a1ef47-c372-4446-b090-78027a9a912e",
+    "userId" : "u001_auto",
+    "content" : "映画館に行きました！",
+    "timestamp" : "2025-10-19T14:12:26.4912383"
+  } ],
+  "bonusPoints" : 0,
+  "reactions" : { },
   "season" : "2025-10"
 } ]

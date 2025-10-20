@@ -8,6 +8,7 @@ import java.time.LocalDateTime;
 import java.time.YearMonth;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -86,7 +87,6 @@ public class PhotoPinController {
         return "photopin"; 
     }
     
-    // ★★★ 修正: URLを /photopin/save-color に変更して曖昧なマッピングを解消 ★★★
     @PostMapping("/photopin/save-color")
     public String saveTeamColor(@RequestParam("color") String color, @AuthenticationPrincipal CustomUserDetails userDetails) {
         if (userDetails != null && color != null && !color.isEmpty()) {
@@ -94,7 +94,6 @@ public class PhotoPinController {
             user.setTeamColor(color);
             userAccountService.updateUser(user); // ユーザー情報を保存
         }
-        // 処理後、PinItページにリダイレクト
         return "redirect:/photopin"; 
     }
 
@@ -124,6 +123,58 @@ public class PhotoPinController {
     public ScoreUpdateDto getPinItScores() {
         return calculateScoresInternal();
     }
+    
+    // ★★★ 新規追加: リアクションAPI ★★★
+    @PostMapping("/api/photopins/{pinId}/react")
+    @ResponseBody
+    public ResponseEntity<?> toggleReaction(@PathVariable String pinId, 
+                                            @RequestParam String type, // "like", "want", "seen"
+                                            @AuthenticationPrincipal CustomUserDetails userDetails) {
+        if (userDetails == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("ログインが必要です。");
+        }
+        
+        String currentUserId = userDetails.getUser().getUserId();
+        Optional<PhotoPin> pinOpt = photoPinRepository.findById(pinId);
+
+        if (pinOpt.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+        
+        PhotoPin pin = pinOpt.get();
+        
+        // Pinモデルに reactions マップが存在しない場合は初期化
+        if (pin.getReactions() == null) {
+            pin.setReactions(new HashMap<>());
+        }
+        
+        // 指定されたタイプのリアクションリストを取得 (存在しなければ新規作成)
+        List<String> usersReacted = pin.getReactions().computeIfAbsent(type, k -> new ArrayList<>());
+
+        if (usersReacted.contains(currentUserId)) {
+            // 既にリアクションしている場合 -> 削除 (トグル)
+            usersReacted.remove(currentUserId);
+            System.out.println("User " + currentUserId + " removed reaction " + type + " from pin " + pinId);
+        } else {
+            // リアクションしていない場合 -> 追加 (トグル)
+            usersReacted.add(currentUserId);
+            System.out.println("User " + currentUserId + " added reaction " + type + " to pin " + pinId);
+            
+            // ★ オプション: 自分のピンにリアクションしても通知は発生しないようにする
+            if (!pin.getCreatedBy().equals(currentUserId)) {
+                // Pin作成者にリアクション通知を送信 (これはWebSocketブロードキャストのトリガーを想定)
+                // messagingTemplate.convertAndSend("/topic/reactions/" + pin.getCreatedBy(), new ReactionNotificationDto(type, currentUserId, pinId));
+            }
+        }
+        
+        // データを永続化
+        PhotoPin savedPin = photoPinRepository.savePin(pin);
+
+        // クライアント側に更新されたピンオブジェクトを返す
+        return ResponseEntity.ok(savedPin);
+    }
+    // ★★★ 新規追加: リアクションAPI (ここまで) ★★★
+
 
     @PostMapping("/api/photopins")
     @ResponseBody

@@ -6,6 +6,8 @@
     <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
     <title>マイページ - プロフィール編集</title>
     
+    <link rel="icon" type="image/png" href="/images/PinIt_logo.png">
+    
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/jquery-jcrop/0.9.12/css/jquery.Jcrop.min.css" rel="stylesheet">
 
@@ -33,6 +35,14 @@
         h1 { 
             color: #333; text-align: center; margin-bottom: 30px; 
             font-size: 2.2em; border-bottom: 2px solid #007bff; padding-bottom: 10px; 
+        }
+        h2 {
+            font-size: 1.5em; /* 追加したセクションタイトル用 */
+            color: #17a2b8; /* Bootstrap info colorに近い色で強調 */
+            border-bottom: 1px solid #eee;
+            padding-bottom: 5px;
+            margin-top: 30px;
+            margin-bottom: 20px;
         }
         .form-group { margin-bottom: 20px; text-align: left; }
         label { display: block; margin-bottom: 8px; font-weight: bold; color: #555; font-size: 1.1em; }
@@ -71,6 +81,9 @@
             <input type="hidden" th:field="*{userId}" />
             <input type="hidden" th:field="*{password}" />
             <input type="hidden" th:field="*{icon}" id="iconPathInput" /> 
+            
+            <input type="hidden" th:field="*{teamColor}" />
+            <input type="hidden" th:field="*{lastPinTimestamp}" />
             
             <div class="profile-icon-container">
                 <img th:src="@{${user.icon} ?: '/images/default_icon.png'}" 
@@ -115,6 +128,33 @@
                 <input type="text" id="myBoom" th:field="*{myBoom}">
             </div>
 
+            <hr class="my-4">
+            <h2>💼 配属先情報 <span class="small text-muted">(情報の取り扱いにご注意ください)</span></h2>
+
+            <div class="form-group">
+                <label for="deploymentDestination">配属先:</label>
+                <input type="text" id="deploymentDestination" th:field="*{deploymentDestination}" placeholder="例: 東京本社 / プロジェクトA">
+            </div>
+
+            <div class="form-group">
+                <label for="deploymentArea">配属先エリア (市区町村等):</label>
+                <input type="text" id="deploymentArea" th:field="*{deploymentArea}" placeholder="例: 千代田区, 大阪市中央区">
+            </div>
+
+            <div class="form-group">
+                <label for="commuteFrequency">出社回数:</label>
+                <input type="text" id="commuteFrequency" th:field="*{commuteFrequency}" placeholder="例: 週3回、フルリモート、必要に応じてなど">
+            </div>
+
+            <div class="form-group">
+                <label for="workTime">勤務時間:</label>
+                <input type="text" id="workTime" th:field="*{workTime}" placeholder="例: 9:00 - 18:00 (フレックス)">
+            </div>
+
+            <div class="form-group">
+                <label for="workContent">勤務内容:</label>
+                <textarea id="workContent" th:field="*{workContent}" rows="3" placeholder="例: サーバーサイド開発、営業支援"></textarea>
+            </div>
             <button type="submit" class="btn-update">プロフィールを更新</button>
             
             <div class="link-section text-center mt-3">

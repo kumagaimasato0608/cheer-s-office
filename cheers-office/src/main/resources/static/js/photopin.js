@@ -33,6 +33,14 @@ $(document).ready(function() {
             xhr.setRequestHeader(csrfHeader, csrfToken);
         }
     });
+    
+    // ★★★ PinItのリアクションタイプ定義 ★★★
+    const REACTION_TYPES = {
+        'like': { emoji: '👍', name: 'いいね' },
+        'want': { emoji: '✨', name: '行きたい' },
+        'seen': { emoji: '👀', name: '見たよ' } // 新しいタイプ
+    };
+
 
     // --- 初期化処理 ---
     function initMap() {
@@ -162,7 +170,7 @@ $(document).ready(function() {
         $('.pin-list-item').on('click', function() { const pinId = $(this).data('pin-id'); const marker = allMarkers[pinId]; if (marker) { map.flyTo(marker.getLatLng(), 17); marker.openPopup(); } });
     }
 
-    // --- イベントハンドラ ---
+    // --- イベントハンドラ (省略) ---
     function setupEventHandlers() {
         $('#search-button').on('click', function() {
             const query = $('#location-search').val();
@@ -242,10 +250,13 @@ $(document).ready(function() {
     function handleSaveNewPin() { /* この関数はインラインロジックに置き換えられたため、未使用 */ }
     
     // --- 補助機能 ---
+    
+    // ★★★ showPinDetailModal 関数を上書き ★★★
     function showPinDetailModal(pinId) {
         currentOpenPinId = pinId;
         const pin = allPins[pinId];
         if (!pin) return;
+        const isPinCreator = currentUser && currentUser.userId === pin.createdBy;
         const isPastSeason = currentSeason !== "" && currentSeason !== (new Date().getFullYear() + '-' + ('0' + (new Date().getMonth() + 1)).slice(-2));
 
         $('#pinDetailTitle').html(escapeHTML(pin.title));
@@ -254,9 +265,76 @@ $(document).ready(function() {
         if (pin.photos && pin.photos.length > 0) { photosHtml = pin.photos.map(p => `<img src="${p.imageUrl}" class="img-fluid rounded mb-2" alt="Pin Photo">`).join(''); }
         $('#pinDetailPhotos').html(photosHtml);
         
+        // ★★★ 1. リアクションバーの描画 (全員に表示) ★★★
+        const $reactionBar = $('#pinReactionsBar').empty();
+        const currentUserId = currentUser ? currentUser.userId : null;
+        
+        Object.keys(REACTION_TYPES).forEach(type => {
+            const reactionInfo = REACTION_TYPES[type];
+            // pin.reactions が null の可能性を考慮
+            const usersReacted = pin.reactions ? (pin.reactions[type] || []) : []; 
+            const count = usersReacted.length;
+            const isActive = currentUserId && usersReacted.includes(currentUserId);
+            
+            const $button = $(`<button type="button" class="reaction-button ${isActive ? 'active' : ''}" data-reaction-type="${type}">
+                ${reactionInfo.emoji} <span class="reaction-count">${count}</span>
+            </button>`);
+
+            // ボタンクリックイベント (リアクションのトグル)
+            $button.on('click', () => handleReaction(pinId, type));
+            
+            // カウント部分にクリックイベントを設定（作成者のみユーザー一覧を表示）
+            if (isPinCreator) {
+                // Pin作成者のみ、カウント部分をクリックするとモーダルが表示される
+                $button.find('.reaction-count').wrap('<span class="reaction-user-link"></span>').parent().on('click', (e) => {
+                     e.stopPropagation(); // ボタン自体のトグル動作を抑制
+                     if (count > 0) {
+                         // window.showReactionUsersModal は後述の関数で定義
+                         window.showReactionUsersModal(type, usersReacted);
+                     }
+                });
+            }
+            
+            $reactionBar.append($button);
+        });
+
+        // ★★★ 2. ユーザー一覧の描画 (作成者のみに表示) ★★★
+        const $userContainer = $('#reactionUsersContainer').empty();
+        
+        if (isPinCreator) {
+            $userContainer.show();
+            $userContainer.append('<h6>リアクションしたメンバー:</h6>');
+            
+            Object.keys(REACTION_TYPES).forEach(type => {
+                const usersReacted = pin.reactions ? (pin.reactions[type] || []) : []; 
+                const count = usersReacted.length;
+                if (count > 0) {
+                    // リアクションしたユーザー名のリストを生成
+                    const userNames = usersReacted
+                        .map(userId => allUsers[userId] ? escapeHTML(allUsers[userId].userName) : '不明')
+                        .join(', ');
+                        
+                    $userContainer.append(`<p class="small mb-1">
+                        ${REACTION_TYPES[type].emoji} (${count}件): 
+                        <span class="text-primary reaction-user-link" onclick="window.showReactionUsersModal('${type}', ['${usersReacted.join("','")}'])">
+                            ${userNames}
+                        </span>
+                    </p>`);
+                }
+            });
+            if ($userContainer.find('p').length === 0) {
+                $userContainer.append('<p class="text-muted small">まだリアクションはありません。</p>');
+            }
+        } else {
+            // 作成者以外にはユーザーリストを非表示
+            $userContainer.hide();
+        }
+
+
         const comments = pin.comments || [];
         const $comments = $('#pinDetailComments');
         $comments.empty();
+        // ... (コメント表示ロジックは省略/既存のまま) ...
         if (comments.length > 0) {
             comments.forEach(comment => {
                 const user = allUsers[comment.userId] || { userName: '不明', icon: '/images/default_icon.png' };
@@ -266,6 +344,7 @@ $(document).ready(function() {
         } else {
             $comments.html('<p class="text-muted small">まだコメントはありません。</p>');
         }
+
 
         const $footer = $('#pinDetailFooter');
         $footer.empty();
@@ -299,12 +378,10 @@ $(document).ready(function() {
     function handleEditPin() { const pin = allPins[currentOpenPinId]; $('#pinDetailTitle').html(`<input type="text" class="form-control" id="editTitleInput" value="${escapeHTML(pin.title)}">`); $('#pinDetailDescription').html(`<textarea class="form-control" id="editDescriptionInput" rows="3">${escapeHTML(pin.description)}</textarea>`); $('#pinDetailFooter').html('<button type="button" class="btn btn-success" id="savePinButton">保存</button>'); }
     function handleSavePin() { const newTitle = $('#editTitleInput').val(); const newDescription = $('#editDescriptionInput').val(); const updatedData = { title: newTitle, description: newDescription }; $.ajax({ url: `/api/photopins/${currentOpenPinId}`, type: 'PUT', contentType: 'application/json', data: JSON.stringify(updatedData) }).done(function(updatedPin) { allPins[currentOpenPinId] = updatedPin; showPinDetailModal(currentOpenPinId); }).fail(function() { alert('ピンの更新に失敗しました。'); }); }
     
-    // handleDeletePin 関数はインラインロジックに置き換えられた
-
     function addCurrentLocationControl() { L.Control.GoToCurrentLocation = L.Control.extend({ onAdd: function(map) { const btn = L.DomUtil.create('div', 'leaflet-bar leaflet-control custom-button-control'); const link = L.DomUtil.create('a', '', btn); link.href = '#'; link.innerHTML = '現在地'; link.role = 'button'; L.DomEvent.on(link, 'click', function(e) { e.preventDefault(); if (userLocation) { map.flyTo(userLocation, 16); } else { map.locate({ setView: true, maxZoom: 16 }); } }); return btn; } }); new L.Control.GoToCurrentLocation({ position: 'bottomright' }).addTo(map); }
     function escapeHTML(str) { if (typeof str !== 'string') { return ''; } return str.replace(/[&<>"']/g, match => ({'&': '&amp;','<': '&lt;','>': '&gt;','"': '&quot;',"'": '&#39;'})[match]); }
 
-    // --- 陣地計算と描画のロジック ---
+    // --- 陣地計算と描画のロジック (省略) ---
     function buildInitialGridState(pins, users) {
         gridState = {};
         const sortedPins = [...pins].sort((a, b) => new Date(a.createdDate) - new Date(b.createdDate));
@@ -314,33 +391,20 @@ $(document).ready(function() {
     }
 
     function updateGridForPin(pin, users) {
-        // ★ 修正: teamColor が存在しない場合は処理をスキップ
         const teamColor = users[pin.createdBy]?.teamColor;
         if (!teamColor) return;
-        
         const center = L.latLng(pin.location.latitude, pin.location.longitude);
-        const CELL_SIZE_METERS = 5.0; // 5m
+        const CELL_SIZE_METERS = 5.0; 
         const METERS_PER_DEGREE_LAT = 111320.0;
-        
-        // ピンの緯度での経度メートルを計算
         const initialMetersPerLng = 40075000 * Math.cos(center.lat * Math.PI / 180) / 360;
-        
-        // ★ 修正: Math.round でタイルインデックスを決定 (Javaと一致)
         const latStepCenter = Math.round(center.lat * METERS_PER_DEGREE_LAT / CELL_SIZE_METERS);
         const lngStepCenter = Math.round(center.lng * initialMetersPerLng / CELL_SIZE_METERS);
-        
-        // ★ 修正: 最大ステップを50マス (50m / 5m) に固定
         const maxSteps = 10; 
-
 
         for (let i = -maxSteps; i <= maxSteps; i++) {
             for (let j = -maxSteps; j <= maxSteps; j++) {
-                
-                // マスの中心座標（ステップ数）
                 const tileLatStep = latStepCenter + i;
                 const tileLngStep = lngStepCenter + j;
-
-                // ★★★ 修正: 円形判定を完全に排除 (正方形判定) ★★★
                 const cellId = `${tileLatStep}_${tileLngStep}`;
                 gridState[cellId] = teamColor;
             }
@@ -350,26 +414,16 @@ $(document).ready(function() {
     function drawGrid() {
         for (const cellId in gridCellLayers) { map.removeLayer(gridCellLayers[cellId]); delete gridCellLayers[cellId]; }
         const METERS_PER_DEGREE_LAT = 111320.0;
-        const CELL_SIZE_METERS = 5.0; // 5m
+        const CELL_SIZE_METERS = 5.0; 
         
         for (const cellId in gridState) {
             const [latStep, lngStep] = cellId.split('_').map(Number);
             const color = gridState[cellId];
-            
-            // 1. タイルの中心緯度をステップ数から計算
             const centerLat = latStep * CELL_SIZE_METERS / METERS_PER_DEGREE_LAT;
-            
-            // 2. タイル中心の緯度に基づいて、正確な metersPerLng を計算
             const tileMetersPerLng = 40075000.0 * Math.cos(centerLat * Math.PI / 180) / 360.0;
-            
-            // 3. タイルの中心経度を計算
             const centerLng = lngStep * CELL_SIZE_METERS / tileMetersPerLng;
-            
-            // 4. タイルの緯度・経度方向の幅 (度単位)
             const latStepDegree = (CELL_SIZE_METERS / METERS_PER_DEGREE_LAT);
             const lngStepDegree = (CELL_SIZE_METERS / tileMetersPerLng);
-
-            // 5. 描画用の境界線を計算 (中心から半分の幅を引く/足す)
             const bounds = [ 
                 [centerLat - latStepDegree / 2, centerLng - lngStepDegree / 2], 
                 [centerLat + latStepDegree / 2, centerLng + lngStepDegree / 2] 
@@ -392,40 +446,82 @@ $(document).ready(function() {
                 if (scores.hasOwnProperty(teamColor)) { scores[teamColor] += pin.bonusPoints; }
             }
         }
-        // サーバーが更新したスコアをWebSocketで受信するまでは、ローカルで計算したスコアを表示
         $('#score-red').text(scores.red + ' ポイント');
         $('#score-blue').text(scores.blue + ' ポイント');
         $('#score-yellow').text(scores.yellow + ' ポイント');
     }
+    // --- 陣地計算と描画のロジック (ここまで省略) ---
 
-    // --- WebSocket ---
+    // ★★★ PinItのリアクション処理 (追加) ★★★
+    function handleReaction(pinId, type) {
+        if (!currentUser || !currentUser.userId) {
+            alert("リアクションするにはログインが必要です。");
+            return;
+        }
+        
+        const url = `/api/photopins/${pinId}/react?type=${type}`;
+        
+        $.ajax({
+            url: url,
+            type: 'POST',
+            contentType: 'application/json'
+        }).done(function(updatedPin) {
+            allPins[pinId] = updatedPin;
+            showPinDetailModal(pinId);
+            fetchAllData(currentSeason); 
+        }).fail(function(response) {
+            alert("リアクションの更新に失敗しました。\n" + (response.responseText || ""));
+        });
+    }
+
+    // ★★★ ユーザー一覧モーダル表示関数 (追加) ★★★
+    window.showReactionUsersModal = function(type, userIds) {
+        const $modal = $('#reactionUsersModal');
+        const $list = $('#reactionUsersList').empty();
+        const reactionName = REACTION_TYPES[type].name;
+        
+        $('#reactionUsersModalTitle').text(`${reactionName} (${REACTION_TYPES[type].emoji}) をしたユーザー`);
+
+        // ユーザーIDリストをユーザーオブジェクトに変換し、存在するユーザーのみにフィルタリング
+        const usersToDisplay = userIds.filter(id => allUsers[id]).map(id => allUsers[id]);
+
+        if (usersToDisplay.length === 0) {
+             $list.append('<li class="list-group-item text-muted small">まだリアクションしたユーザーはいません。</li>');
+        } else {
+            usersToDisplay.forEach(user => {
+                const iconUrl = (user.icon || '/images/default_icon.png') + '?t=' + new Date().getTime();
+                $list.append(`
+                    <li class="list-group-item d-flex align-items-center">
+                        <img src="${iconUrl}" class="user-icon me-2" style="width: 32px; height: 32px; border-radius: 50%;">
+                        <span>${escapeHTML(user.userName)}</span>
+                    </li>
+                `);
+            });
+        }
+        $modal.modal('show');
+    };
+
+
+    // --- WebSocket (省略) ---
     function connectWebSocket() {
         const socket = new SockJS('/ws');
         stompClient = Stomp.over(socket);
         stompClient.debug = null;
         stompClient.connect({}, function (frame) {
             console.log('✅ WebSocket接続成功: ' + frame);
-            // スコア更新メッセージの購読
             stompClient.subscribe('/topic/scores', function (message) {
                 const newScores = JSON.parse(message.body);
-                console.log('スコア更新を受信:', newScores);
-                
-                // 画面上のスコアを更新
                 $('#score-red').text(newScores.red + ' ポイント');
                 $('#score-blue').text(newScores.blue + ' ポイント');
                 $('#score-yellow').text(newScores.yellow + ' ポイント');
-                
-                // ★ 修正: スコア更新通知が来たら、全て再描画する関数を呼び出す
                 fetchAllData(currentSeason); 
             });
         });
     }
 
-    // --- アプリケーション実行開始 ---
+    // --- アプリケーション実行開始 (省略) ---
     initMap();
     populateSeasonSelector();
     setupEventHandlers();
     connectWebSocket();
-    
-    // スコアモーダルの表示ロジックは photopin.html のインラインスクリプトに依存します
 });

@@ -9,7 +9,12 @@
   "icon" : "/images/profile/u001_auto.png",
   "statusMessage" : "よろしくお願いします！",
   "teamColor" : "yellow",
-  "lastPinTimestamp" : "2025-10-17T15:52:54.4283076"
+  "deploymentDestination" : "株式会社アーキテクトコア",
+  "deploymentArea" : "神谷町",
+  "commuteFrequency" : "週５回",
+  "workTime" : "9:00~18:00",
+  "workContent" : "webアプリ開発",
+  "lastPinTimestamp" : "2025-10-19T14:11:55.0797911"
 }, {
   "userId" : "870029bd-68ec-480c-923c-8fc4465a2669",
   "userName" : "まさと",
@@ -21,7 +26,12 @@
   "icon" : "/images/profile/870029bd-68ec-480c-923c-8fc4465a2669.png",
   "statusMessage" : "よろしくお願いします！",
   "teamColor" : "blue",
-  "lastPinTimestamp" : "2025-10-16T16:18:47.4394897"
+  "deploymentDestination" : null,
+  "deploymentArea" : null,
+  "commuteFrequency" : null,
+  "workTime" : null,
+  "workContent" : null,
+  "lastPinTimestamp" : "2025-10-19T14:13:36.7309035"
 }, {
   "userId" : "4f254c98-1c62-423f-8c94-da8a29299612",
   "userName" : "テスト２",
@@ -33,6 +43,11 @@
   "icon" : "/images/profile/4f254c98-1c62-423f-8c94-da8a29299612.png",
   "statusMessage" : "",
   "teamColor" : "red",
+  "deploymentDestination" : null,
+  "deploymentArea" : null,
+  "commuteFrequency" : null,
+  "workTime" : null,
+  "workContent" : null,
   "lastPinTimestamp" : "2025-10-16T11:25:15.065731"
 }, {
   "userId" : "8a93aa56-57ae-427c-85f1-909336eae99b",
@@ -45,6 +60,11 @@
   "icon" : "/images/profile/8a93aa56-57ae-427c-85f1-909336eae99b.png",
   "statusMessage" : "",
   "teamColor" : "blue",
+  "deploymentDestination" : null,
+  "deploymentArea" : null,
+  "commuteFrequency" : null,
+  "workTime" : null,
+  "workContent" : null,
   "lastPinTimestamp" : "2025-10-13T19:59:23.5095363"
 }, {
   "userId" : "c2227a52-b7a0-463b-bbba-7a483368d3fc",
@@ -57,6 +77,11 @@
   "icon" : "/images/profile/c2227a52-b7a0-463b-bbba-7a483368d3fc.png",
   "statusMessage" : "よろしくです",
   "teamColor" : null,
+  "deploymentDestination" : null,
+  "deploymentArea" : null,
+  "commuteFrequency" : null,
+  "workTime" : null,
+  "workContent" : null,
   "lastPinTimestamp" : null
 }, {
   "userId" : "84cb48e5-da12-48e3-a4ac-af3425396a6d",
@@ -69,6 +94,11 @@
   "icon" : "/images/profile/84cb48e5-da12-48e3-a4ac-af3425396a6d.png",
   "statusMessage" : "こんにちは",
   "teamColor" : "blue",
+  "deploymentDestination" : null,
+  "deploymentArea" : null,
+  "commuteFrequency" : null,
+  "workTime" : null,
+  "workContent" : null,
   "lastPinTimestamp" : "2025-10-17T11:55:08.8783673"
 }, {
   "userId" : "37bb8198-da25-476f-9ed5-6cb02797536a",
@@ -81,5 +111,27 @@
   "icon" : "/images/default_icon.png",
   "statusMessage" : null,
   "teamColor" : "red",
+  "deploymentDestination" : null,
+  "deploymentArea" : null,
+  "commuteFrequency" : null,
+  "workTime" : null,
+  "workContent" : null,
+  "lastPinTimestamp" : null
+}, {
+  "userId" : "f1d9e40a-9ad3-45a8-94ef-dc8beb702a0b",
+  "userName" : "c",
+  "mailAddress" : "c@c",
+  "password" : "$2a$10$x9uklbco0P2U8HvLuPoFoOGyV4GJeRMTedekxJCGsSJCxLgTALTZq",
+  "group" : "未設定",
+  "myBoom" : null,
+  "hobby" : null,
+  "icon" : "/images/default_icon.png",
+  "statusMessage" : null,
+  "teamColor" : null,
+  "deploymentDestination" : null,
+  "deploymentArea" : null,
+  "commuteFrequency" : null,
+  "workTime" : null,
+  "workContent" : null,
   "lastPinTimestamp" : null
 } ]

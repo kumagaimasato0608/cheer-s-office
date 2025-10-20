@@ -15,6 +15,14 @@ public class User implements Serializable {
     private String statusMessage;
     private String teamColor;
 
+    // ★★★ 新規追加フィールド ★★★
+    private String deploymentDestination;
+    private String deploymentArea;
+    private String commuteFrequency;
+    private String workTime;
+    private String workContent;
+    // ★★★ 新規追加フィールド ここまで ★★★
+
     // ★★★ 最後にピンを置いた日時を記録するフィールドを追加 ★★★
     private LocalDateTime lastPinTimestamp;
     
@@ -40,6 +48,18 @@ public class User implements Serializable {
     public String getTeamColor() { return teamColor; }
     public void setTeamColor(String teamColor) { this.teamColor = teamColor; }
 
+    // ★★★ 新規追加フィールド用のGetterとSetter ★★★
+    public String getDeploymentDestination() { return deploymentDestination; }
+    public void setDeploymentDestination(String deploymentDestination) { this.deploymentDestination = deploymentDestination; }
+    public String getDeploymentArea() { return deploymentArea; }
+    public void setDeploymentArea(String deploymentArea) { this.deploymentArea = deploymentArea; }
+    public String getCommuteFrequency() { return commuteFrequency; }
+    public void setCommuteFrequency(String commuteFrequency) { this.commuteFrequency = commuteFrequency; }
+    public String getWorkTime() { return workTime; }
+    public void setWorkTime(String workTime) { this.workTime = workTime; }
+    public String getWorkContent() { return workContent; }
+    public void setWorkContent(String workContent) { this.workContent = workContent; }
+    
     // ★★★ lastPinTimestamp用のGetterとSetterを追加 ★★★
     public LocalDateTime getLastPinTimestamp() { return lastPinTimestamp; }
     public void setLastPinTimestamp(LocalDateTime lastPinTimestamp) { this.lastPinTimestamp = lastPinTimestamp; }
