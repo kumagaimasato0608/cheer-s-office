@@ -775,24 +775,31 @@
             });
         }
         
-        function updateUnseenChatNotification() {
-            axios.get('/api/chat/unseen-count')
-                .then(response => {
-                    const unseenCount = response.data.count; 
-                    const $notificationBar = $('#chatNotificationBar');
-                    const $unseenChatCount = $('#unseenChatCount');
-                    
-                    if (unseenCount > 0) {
-                        $unseenChatCount.text(unseenCount);
-                        $notificationBar.css('display', 'flex'); 
-                    } else {
-                        $notificationBar.css('display', 'none'); 
-                    }
-                })
-                .catch(error => {
-                    console.error("未読チャット件数の取得に失敗しました", error);
-                });
-        }
+		function updateUnseenChatNotification() {
+		            axios.get('/api/rooms')
+		                .then(response => {
+		                    // ★ 修正点: response.data (APIからの応答データ) を 'rooms' として扱う
+		                    const rooms = response.data || []; 
+		                    
+		                    // rooms 配列を走査して、各 room の unreadCount を合計する
+		                    const unseenCount = rooms.reduce((sum, room) => sum + (room.unreadCount || 0), 0); 
+		                    
+		                    const $notificationBar = $('#chatNotificationBar');
+		                    const $unseenChatCount = $('#unseenChatCount');
+		                    
+		                    if (unseenCount > 0) {
+		                        $unseenChatCount.text(unseenCount);
+		                        $notificationBar.css('display', 'flex'); 
+		                    } else {
+		                        $notificationBar.css('display', 'none'); 
+		                    }
+		                })
+		                .catch(error => {
+		                    console.error("未読チャット件数の取得に失敗しました", error);
+							// エラーが発生した場合は通知バーを隠す
+							$('#chatNotificationBar').css('display', 'none');
+		                });
+		        }
         
         // ★★★ 修正点: この関数を DOMContentLoaded の外に移動 ★★★
         function renderSharedUsersSelection(selectedIds = []) {

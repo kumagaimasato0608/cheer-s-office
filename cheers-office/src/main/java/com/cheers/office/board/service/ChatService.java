@@ -85,6 +85,7 @@ public class ChatService {
         List<ChatRoom> rooms = mapper.readValue(file, new TypeReference<>() {});
 
         return rooms.stream()
+        	.filter(room -> room.getMembers() != null && room.getMembers().contains(currentUserId))	
             .map(room -> {
                 ChatRoomDto dto = new ChatRoomDto(room);
                 try {

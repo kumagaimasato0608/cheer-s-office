@@ -618,6 +618,7 @@ function renderMessages(msgs) {
     let readStatusHtml = '';
     if (isMine && m.readBy && currentRoom) {
       const otherReadersCount = (m.readBy || []).filter(id => id !== me.id).length;
+      
       if ((currentRoom.members || []).length > 2 && otherReadersCount > 0) {
         readStatusHtml = `<span class="msg-read-status">既読 ${otherReadersCount}</span>`;
       } else if ((currentRoom.members || []).length === 2 && otherReadersCount > 0) {
@@ -656,12 +657,16 @@ function subscribeRoom(roomId) {
   if (sub) sub.unsubscribe();
   sub = stomp.subscribe(`/topic/chat/${roomId}`, msg => {
     const payload = JSON.parse(msg.body);
+    
+    // --- 既読通知の処理 ---
     if (payload.type === 'READ_UPDATE') {
       const { messageId, readBy } = payload;
       const $msgWrapper = $(`.msg-wrapper[data-message-id="${messageId}"]`);
+      
       if ($msgWrapper.hasClass('me')) {
         const otherReadersCount = (readBy || []).filter(id => id !== me.id).length;
         let statusText = '';
+        
         if ((currentRoom.members || []).length > 2 && otherReadersCount > 0) {
           statusText = `既読 ${otherReadersCount}`;
         } else if ((currentRoom.members || []).length === 2 && otherReadersCount > 0) {
@@ -677,6 +682,7 @@ function subscribeRoom(roomId) {
       return;
     }
 
+    // --- 新規メッセージの処理 ---
     const isMine = (payload.userId === me.id);
     const user = findUser(payload.userId) || { userName: payload.userName, icon: payload.icon };
     let messageBodyHtml = '';
@@ -736,29 +742,67 @@ function connectWS(cb) {
   });
 }
 
-// ▼▼▼ この関数をまるごと修正 ▼▼▼
+// ▼▼▼ ★★★ ここが修正された関数です ★★★ ▼▼▼
 function selectRoomById(roomId) {
   const room = rooms.find(r => r.roomId === roomId);
   if(!room) return;
+  
+  // 1. バッジを先に消す
   notificationCounts[roomId] = 0;
   currentRoom = room;
   renderRooms();
   renderHeader();
   $("#inputArea").css("display", "flex");
   $("#sendBtn").prop("disabled", false);
+
+  // 2. メッセージをサーバーから読み込む
   loadMessages(roomId).then(loadedMessages => {
-    renderMessages(loadedMessages);
-    connectWS(() => {
+    
+    // ★ 修正: 既読にするメッセージIDをすべて保存する配列
+    const unreadMessageIds = []; 
+
+    // 3. 【自分用の修正】
+    // 画面に表示する *前* に、未読メッセージをローカルデータ上で既読にする
+    (loadedMessages || []).forEach(msg => {
+        if (msg.userId !== me.id && !(msg.readBy || []).includes(me.id)) {
+            if (!msg.readBy) {
+                msg.readBy = [];
+            }
+            msg.readBy.push(me.id); // ローカルの 'readBy' リストに自分を追加
+            
+            // ★ 修正: 最後の1件だけでなく、すべての未読IDを保存
+            unreadMessageIds.push(msg.messageId); 
+        }
+    });
+
+    // 4. 既読に書き換えたデータで画面を描画する (自分の画面が正しくなる)
+    renderMessages(loadedMessages); 
+    
+    // 5. WebSocketに接続
+    connectWS(() => { 
       subscribeRoom(roomId);
-      // 未読メッセージが1件でもあれば、「まとめて既読」リクエストを1回だけ送信する
-      const hasUnread = (loadedMessages || []).some(msg => msg.userId !== me.id && !(msg.readBy || []).includes(me.id));
-      if (hasUnread) {
+      
+      // 6. ★ 修正: unreadMessageIds配列にIDが1件でもあれば
+      if (unreadMessageIds.length > 0) {
+          
+          // 6a. 【サーバー用の修正】
+          // バックエンドのJSONファイルを *1回だけ* 更新
           stomp.send(`/app/chat/${roomId}/markAllAsRead`, {}, JSON.stringify({ userId: me.id }));
+          
+          // 6b. 【相手用の修正】
+          // 相手（送信者）に「既読」を伝えるため、
+          // 既読にした *すべてのメッセージ* について 'read' リクエストを送信する
+          unreadMessageIds.forEach(msgId => {
+             stomp.send(`/app/chat/${roomId}/read`, {}, JSON.stringify({ 
+                  messageId: msgId, 
+                  userId: me.id 
+              }));
+          });
       }
     });
   });
 }
-// ▲▲▲ ここまで修正 ▲▲▲
+// ▲▲▲ ★★★ 修正箇所はここまでです ★★★ ▲▲▲
 
 function sendMessage() {
   if(!currentRoom || !stomp || !stomp.connected) return;
@@ -904,6 +948,7 @@ function resetGroupModal() {
 }
 
 $(async function init() {
+    // --- イベントリスナー設定 ---
     $(document).on("click", ".room-item", function() { selectRoomById($(this).data("room-id")); });
     $(document).on("click", ".preview-remove", clearPreview);
     $("#sendBtn").on("click", sendMessage);
@@ -916,12 +961,16 @@ $(async function init() {
     });
     $("#attachFileBtn").on("click", () => { if (!$("#attachFileBtn").prop("disabled")) $("#fileInput").click(); });
     $("#fileInput").on("change", function(e) { if (e.target.files.length > 0) setupPreview(e.target.files[0]); });
+    
+    // ドラッグ＆ドロップ
     const $chatMain = $(".chat-main");
     $chatMain.on({
         "dragover": (e) => { e.preventDefault(); e.stopPropagation(); $chatMain.addClass("drag-over"); },
         "dragleave": (e) => { e.preventDefault(); e.stopPropagation(); $chatMain.removeClass("drag-over"); },
         "drop": (e) => { e.preventDefault(); e.stopPropagation(); $chatMain.removeClass("drag-over"); if (e.originalEvent.dataTransfer.files.length > 0) setupPreview(e.originalEvent.dataTransfer.files[0]); }
     });
+    
+    // プロフィールモーダル
     $("#messages").on("click", ".msg-wrapper.other .msg-icon", function() {
         const userId = $(this).closest(".msg-wrapper").data("user-id");
         if (!userId) return;
@@ -948,12 +997,16 @@ $(async function init() {
     $(".profile-modal-content").on("click", function(e) {
         e.stopPropagation();
     });
+
+    // 新規・削除モーダル
     $("#openCreateBtn").on("click", openCreateModal);
     $("#cancelCreateBtn").on("click", () => $("#createModal").hide());
     $("#createRoomBtn").on("click", createRoom);
     $("#openDeleteBtn").on("click", openDeleteModal);
     $("#cancelDeleteBtn").on("click", () => $("#deleteModal").hide());
     $("#confirmDeleteBtn").on("click", deleteRoomConfirm);
+    
+    // グループ作成モーダル
     $("#createGroupBtn").on("click", function() {
         const groupName = $("#groupNameInput").val().trim();
         const iconFile = $("#groupIconInput")[0].files[0];
@@ -982,6 +1035,7 @@ $(async function init() {
         await $.getJSON("/api/rooms").then(res => {
             rooms = (res || []).filter(r => (r.members || []).includes(me.id));
             
+            // 既読カウントの初期化
             notificationCounts = {}; 
             rooms.forEach(room => {
                 if (room.unreadCount > 0) {
@@ -991,7 +1045,7 @@ $(async function init() {
         });
 
         renderRooms(); 
-        connectWS();
+        connectWS(); // WebSocketに接続（通知購読のため）
     } catch (e) {
         console.error("初期化に失敗しました:", e);
         alert("初期化に失敗しました。リロードしてください。");
