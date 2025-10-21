@@ -23,6 +23,8 @@ import com.cheers.office.board.model.User;
 import com.cheers.office.board.repository.UserRepository;
 import com.cheers.office.board.service.UserAccountService;
 
+import lombok.Data; // ★★★ Lombokのimportを追加 ★★★
+
 @Controller
 public class MypageController {
 
@@ -74,7 +76,7 @@ public class MypageController {
         currentUser.setHobby(formUser.getHobby());
         currentUser.setMyBoom(formUser.getMyBoom());
         
-        // ★★★ 追加: 配属先情報フィールドの更新 ★★★
+        // 配属先情報フィールドの更新
         currentUser.setDeploymentDestination(formUser.getDeploymentDestination());
         currentUser.setDeploymentArea(formUser.getDeploymentArea());
         currentUser.setCommuteFrequency(formUser.getCommuteFrequency());
@@ -167,14 +169,19 @@ public class MypageController {
     }
 
     // --- JSONレスポンス用内部クラス ---
+    @Data
     private static class ResponseDto {
         public boolean success;
         public String message;
         public ResponseDto(boolean success, String message) { this.success = success; this.message = message; }
     }
 
+    @Data
     private static class IconResponseDto extends ResponseDto {
         public String iconPath;
-        public IconResponseDto(boolean success, String message, String iconPath) { super(success, message); this.iconPath = iconPath; }
+        public IconResponseDto(boolean success, String message, String iconPath) { 
+            super(success, message); 
+            this.iconPath = iconPath; 
+        }
     }
 }

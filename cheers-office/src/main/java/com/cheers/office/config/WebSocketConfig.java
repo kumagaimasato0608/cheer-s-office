@@ -6,30 +6,26 @@ import org.springframework.web.socket.config.annotation.EnableWebSocketMessageBr
 import org.springframework.web.socket.config.annotation.StompEndpointRegistry;
 import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerConfigurer;
 
+/**
+ * WebSocketおよびSTOMPメッセージブローカーの設定
+ */
 @Configuration
-@EnableWebSocketMessageBroker // WebSocketメッセージ処理を有効化
+@EnableWebSocketMessageBroker
 public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
-    /**
-     * STOMPエンドポイントを登録
-     * WebSocketクライアントが接続する最初のURL
-     */
+    // クライアントが接続するエンドポイント（SockJSを使用）
     @Override
     public void registerStompEndpoints(StompEndpointRegistry registry) {
-        // /ws のエンドポイントを登録。SockJSを有効にし、ブラウザの互換性を高める
-        registry.addEndpoint("/ws").withSockJS(); 
+        // wsエンドポイントを追加し、SockJSを有効にする
+        registry.addEndpoint("/ws").withSockJS();
     }
 
-    /**
-     * メッセージブローカーを設定
-     * どこにメッセージを送り、どこから受け取るかを定義
-     */
+    // メッセージブローカーの設定
     @Override
     public void configureMessageBroker(MessageBrokerRegistry registry) {
-        // /topic/ はブローカー宛先 (クライアントが購読し、サーバーがブロードキャストする)
-        registry.enableSimpleBroker("/topic"); 
-        
-        // /app/ はアプリケーション宛先 (クライアントがサーバーの @Controller にメッセージを送る)
+        // /topic がブロードキャスト用プレフィックス
+        registry.enableSimpleBroker("/topic");
+        // /app が @MessageMapping アノテーションを持つサーバー側エンドポイント用プレフィックス
         registry.setApplicationDestinationPrefixes("/app");
     }
 }
