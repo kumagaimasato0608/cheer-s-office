@@ -155,18 +155,31 @@ $(document).ready(function() {
         });
     }
 
-    // ★★★ renderUserList 関数を修正 ★★★
+    // ★★★ renderUserList 関数を修正 (日付表示を追加) ★★★
     function renderUserList(pins, usersById) {
         const pinsByUserId = pins.reduce((acc, pin) => { if(pin.createdBy) { if (!acc[pin.createdBy]) { acc[pin.createdBy] = []; } acc[pin.createdBy].push(pin); } return acc; }, {});
         const $accordion = $('#userPinAccordion');
         $accordion.empty();
         Object.values(usersById).forEach((user, index) => {
-            const userPins = pinsByUserId[user.userId] || [];
+            // ピンを日付の降順（新しい順）にソート
+            const userPins = (pinsByUserId[user.userId] || []).sort((a, b) => new Date(b.createdDate) - new Date(a.createdDate));
+
             const userColor = user.teamColor || 'grey';
             const crowns = '👑'.repeat(user.victoryCrowns || 0);
             const username = user.userName || '不明なユーザー';
             const iconUrl = (user.icon || '/images/default_icon.png') + '?t=' + new Date().getTime();
-            $accordion.append(`<div class="accordion-item"><h2 class="accordion-header" id="heading-${index}"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-${index}"><img src="${iconUrl}" class="user-icon me-2"><strong style="color: ${userColor};">${crowns} ${escapeHTML(username)}</strong><span class="badge bg-secondary ms-auto">${userPins.length}</span></button></h2><div id="collapse-${index}" class="accordion-collapse collapse" data-bs-parent="#userPinAccordion"><div class="accordion-body p-0"><ul class="list-group list-group-flush">${userPins.map(pin => `<li class="list-group-item pin-list-item" data-pin-id="${pin.pinId}">${escapeHTML(pin.title)}</li>`).join('')}</ul></div></div></div>`);
+            
+            // アコーディオンのヘッダーを作成
+            $accordion.append(`<div class="accordion-item"><h2 class="accordion-header" id="heading-${index}"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-${index}"><img src="${iconUrl}" class="user-icon me-2"><strong style="color: ${userColor};">${crowns} ${escapeHTML(username)}</strong><span class="badge bg-secondary ms-auto">${userPins.length}</span></button></h2><div id="collapse-${index}" class="accordion-collapse collapse" data-bs-parent="#userPinAccordion"><div class="accordion-body p-0"><ul class="list-group list-group-flush">${userPins.map(pin => {
+                // Pinの作成日時から日付部分のみを抽出 (例: "2025-10-21T10:33:36" -> "10/21")
+                const datePart = pin.createdDate ? pin.createdDate.substring(5, 10).replace('-', '/') : '日付不明';
+                
+                // ★ 日付とタイトルを表示するリストアイテムを生成
+                return `<li class="list-group-item pin-list-item" data-pin-id="${pin.pinId}">
+                            <span class="text-muted small me-2">${datePart}</span>
+                            ${escapeHTML(pin.title)}
+                        </li>`;
+            }).join('')}</ul></div></div></div>`);
         });
         
         // ★★★ 修正: ピンリストアイテムクリック時の動作を地図移動完了後+3秒に変更 ★★★
@@ -179,16 +192,15 @@ $(document).ready(function() {
                 map.flyTo(marker.getLatLng(), 17, { duration: 0.5 }); 
                 
                 // 2. moveendイベントを一度だけ待ち受ける（アニメーション完了を検知）
-                //    'moveend'イベントは、地図の移動が完全に終了したときに発生する
                 map.once('moveend', () => {
-                    // 3. 移動が完了したら、さらに1000ミリ秒（1秒）待機
+                    // 3. 移動が完了したら、さらに3000ミリ秒（3秒）待機
                     setTimeout(() => {
                         // 4. ポップアップを開く
                         marker.openPopup(); 
                         
                         // 5. ピン詳細モーダルを表示
                         showPinDetailModal(pinId);
-                    }, 1000); // 1秒（1000ミリ秒）の遅延
+                    }, 3000); // 3秒（3000ミリ秒）の遅延
                 });
             } 
         });
@@ -270,6 +282,8 @@ $(document).ready(function() {
         
         $('#seasonSelector').on('change', function() { fetchAllData($(this).val()); });
     }
+
+    function handleSaveNewPin() { /* この関数はインラインロジックに置き換えられたため、未使用 */ }
     
     // --- 補助機能 ---
     

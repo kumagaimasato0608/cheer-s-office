@@ -69,6 +69,8 @@
   } ],
   "comments" : [ ],
   "bonusPoints" : 0,
-  "reactions" : { },
+  "reactions" : {
+    "like" : [ "870029bd-68ec-480c-923c-8fc4465a2669" ]
+  },
   "season" : "2025-10"
 } ]
