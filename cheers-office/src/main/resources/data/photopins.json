@@ -104,4 +104,25 @@
     "like" : [ "5c418e93-b28e-42f6-80b7-ad5bf4adc080", "1ed22d3c-1409-4ccc-b49c-eb552fb3106a" ]
   },
   "season" : "2025-10"
+}, {
+  "pinId" : "dc044649-a844-4f54-8bf0-d4ba9e0b9e6f",
+  "location" : {
+    "latitude" : 35.663459493132144,
+    "longitude" : 139.74642434034897
+  },
+  "title" : "ｔ",
+  "description" : "",
+  "createdBy" : "1ed22d3c-1409-4ccc-b49c-eb552fb3106a",
+  "createdDate" : "2025-10-21T16:14:42.9595275",
+  "photos" : [ {
+    "photoId" : "a579e69c-f60c-4b41-b3a0-db0c3d641633",
+    "imageUrl" : "/images/photopins/dc044649-a844-4f54-8bf0-d4ba9e0b9e6f_ダウンロード.webp",
+    "comment" : null,
+    "uploadedBy" : "1ed22d3c-1409-4ccc-b49c-eb552fb3106a",
+    "uploadedDate" : "2025-10-21T16:14:42.9595275"
+  } ],
+  "comments" : [ ],
+  "bonusPoints" : 0,
+  "reactions" : { },
+  "season" : "2025-10"
 } ]

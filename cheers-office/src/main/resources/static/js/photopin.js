@@ -42,7 +42,8 @@ $(document).ready(function() {
     };
 
 
-    // --- チュートリアルモーダル表示機能 (新規追加) ---
+    // --- チュートリアルモーダル表示機能 (DOMContentLoadedの外で定義し、グローバルにアクセス可能にする) ★★★
+    // showColorModalFlag は photopin.html のインラインスクリプトで定義されている想定です。
     function showTutorialModal() {
         const tutorialModalEl = document.getElementById('tutorialModal');
         if (tutorialModalEl) {
@@ -67,12 +68,13 @@ $(document).ready(function() {
     }
     
     // ユーザーがクリックで表示できるように、windowスコープに関数を公開
+    // サイドバーの '🔰 PinItの使い方ガイド' ボタンから呼ばれます
     window.openTutorial = function() {
-         localStorage.setItem('pinItTutorialSeen', 'false'); // 強制的に再表示
+         // 強制的に再表示フラグを立てる
+         localStorage.setItem('pinItTutorialSeen', 'false'); 
          const tutorialModal = new bootstrap.Modal(document.getElementById('tutorialModal'));
          tutorialModal.show();
     } 
-    // --- チュートリアルモーダル表示機能 (ここまで) ---
 
 
     // --- 初期化処理 (省略) ---
@@ -196,7 +198,6 @@ $(document).ready(function() {
         });
     }
 
-    // ★★★ renderUserList 関数を修正 (日付表示と地図移動+3秒遅延) ★★★
     function renderUserList(pins, usersById) {
         const pinsByUserId = pins.reduce((acc, pin) => { if(pin.createdBy) { if (!acc[pin.createdBy]) { acc[pin.createdBy] = []; } acc[pin.createdBy].push(pin); } return acc; }, {});
         const $accordion = $('#userPinAccordion');
@@ -229,8 +230,8 @@ $(document).ready(function() {
             const marker = allMarkers[pinId]; 
             
             if (marker) { 
-                // 1. flyToでピンの位置へ移動（アニメーション時間0.5秒）
-                map.flyTo(marker.getLatLng(), 17, { duration: 0.5 }); 
+                // 1. flyToでピンの位置へ移動（アニメーション時間を1.5秒に変更）
+                map.flyTo(marker.getLatLng(), 17, { duration: 1.5 }); 
                 
                 // 2. moveendイベントを一度だけ待ち受ける（アニメーション完了を検知）
                 map.once('moveend', () => {
@@ -601,6 +602,5 @@ $(document).ready(function() {
     setupEventHandlers();
     connectWebSocket();
     
-    // ★★★ チュートリアル自動表示をここで実行 ★★★
-    showTutorialModal();
+    // チュートリアル表示の初期化（DOMContentLoadedで実行される showTutorialModal() に依存）
 });

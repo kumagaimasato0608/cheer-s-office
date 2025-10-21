@@ -1,0 +1,23 @@
+[ {
+  "roomId" : "r_df6eb755",
+  "userId" : "1ed22d3c-1409-4ccc-b49c-eb552fb3106a",
+  "userName" : "a",
+  "type" : "TEXT",
+  "content" : "konnitiha",
+  "caption" : null,
+  "timestamp" : "2025-10-21T15:05:18.226571100",
+  "icon" : "/images/default_icon.png",
+  "messageId" : "1408172e-d9cf-453c-9255-2324f55e0c86",
+  "readBy" : [ "1ed22d3c-1409-4ccc-b49c-eb552fb3106a", "u001_auto" ]
+}, {
+  "roomId" : "r_df6eb755",
+  "userId" : "u001_auto",
+  "userName" : "自動登録ユーザー",
+  "type" : "TEXT",
+  "content" : "konnmtiha",
+  "caption" : null,
+  "timestamp" : "2025-10-21T15:05:45.158868800",
+  "icon" : "/images/default_icon.png",
+  "messageId" : "8c31bc73-0b02-4df9-ac98-7a302f003074",
+  "readBy" : [ "u001_auto", "1ed22d3c-1409-4ccc-b49c-eb552fb3106a" ]
+} ]
