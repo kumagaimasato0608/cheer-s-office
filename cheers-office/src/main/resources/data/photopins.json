@@ -73,4 +73,29 @@
     "like" : [ "870029bd-68ec-480c-923c-8fc4465a2669" ]
   },
   "season" : "2025-10"
+}, {
+  "pinId" : "dd83301c-b39d-463e-8774-62c4c126c285",
+  "location" : {
+    "latitude" : 35.663459931305184,
+    "longitude" : 139.74638700059432
+  },
+  "title" : "tesuto ",
+  "description" : "",
+  "createdBy" : "u001_auto",
+  "createdDate" : "2025-10-21T14:46:47.5067887",
+  "photos" : [ {
+    "photoId" : "d29c80ef-7519-4aa4-a135-c6592ea6d5f9",
+    "imageUrl" : "/images/photopins/dd83301c-b39d-463e-8774-62c4c126c285_cheers_office_logo.png",
+    "comment" : null,
+    "uploadedBy" : "u001_auto",
+    "uploadedDate" : "2025-10-21T14:46:47.5067887"
+  } ],
+  "comments" : [ ],
+  "bonusPoints" : 0,
+  "reactions" : {
+    "seen" : [ "5c418e93-b28e-42f6-80b7-ad5bf4adc080" ],
+    "want" : [ "5c418e93-b28e-42f6-80b7-ad5bf4adc080" ],
+    "like" : [ "5c418e93-b28e-42f6-80b7-ad5bf4adc080" ]
+  },
+  "season" : "2025-10"
 } ]

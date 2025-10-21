@@ -92,6 +92,13 @@
             cursor: pointer;
             text-decoration: underline;
         }
+        /* ★★★ 初心者ボタンのスタイル ★★★ */
+        #openTutorialButton {
+            width: 100%;
+            margin-bottom: 15px;
+            font-weight: bold;
+            font-size: 1em;
+        }
 
     </style>
 </head>
@@ -113,6 +120,10 @@
     <main class="main-content">
       <aside class="user-list-sidebar">
         
+        <button class="btn btn-info btn-sm" id="openTutorialButton" onclick="window.openTutorial()">
+            <span style="font-size: 1.2em;">🔰</span> PinItの使い方ガイド
+        </button>
+
         <div class="mb-3">
           <label for="seasonSelector" class="form-label small">シーズン選択</label>
           <select class="form-select form-select-sm" id="seasonSelector"></select>
@@ -134,6 +145,7 @@
         
         <h4>ユーザー一覧</h4>
         <div class="accordion" id="userPinAccordion"></div>
+        
       </aside>
       <section id="map-container">
         <div id="map-overlay-controls">
@@ -170,7 +182,7 @@
                 <div id="pinDetailComments" class="mb-3" style="max-height: 200px; overflow-y: auto;"></div>
                 <div class="input-group">
                     <input type="text" id="newCommentInput" class="form-control" placeholder="コメントを追加...">
-                    <button class="btn btn-outline-secondary" type="button" id="submitCommentButton">送信</button>
+                    <button type="button" class="btn btn-outline-secondary" id="submitCommentButton">送信</button>
                 </div>
             </div>
             <div class="modal-footer" id="pinDetailFooter"></div>
@@ -249,6 +261,70 @@
           </div>
       </div>
   </div>
+  
+  <div class="modal fade" id="tutorialModal" tabindex="-1" aria-labelledby="tutorialModalLabel" aria-hidden="true">
+      <div class="modal-dialog modal-xl modal-dialog-centered">
+          <div class="modal-content">
+              <div class="modal-header">
+                  <h5 class="modal-title" id="tutorialModalLabel">PinItへようこそ！ - 使い方ガイド</h5>
+                  <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+              </div>
+              <div class="modal-body">
+                  <div id="tutorialCarousel" class="carousel slide" data-bs-interval="false" data-bs-touch="false" data-bs-keyboard="false">
+                      <div class="carousel-indicators">
+                          <button type="button" data-bs-target="#tutorialCarousel" data-bs-slide-to="0" class="active"></button>
+                          <button type="button" data-bs-target="#tutorialCarousel" data-bs-slide-to="1"></button>
+                          <button type="button" data-bs-target="#tutorialCarousel" data-bs-slide-to="2"></button>
+                          <button type="button" data-bs-target="#tutorialCarousel" data-bs-slide-to="3"></button>
+                      </div>
+                      <div class="carousel-inner">
+                          <div class="carousel-item active">
+                              <h3>1. PinItで何ができる？</h3>
+                              <p>PinItは、チームの**活動範囲を可視化**し、メンバーの**興味・関心**を共有する地図アプリケーションです。ピンを立てて、あなたの「マイブームな場所」や「行ってみたい場所」を共有しましょう！</p>
+                              <img src="/images/PinIt_logo.png" class="img-fluid my-3" alt="PinIt Logo" style="max-height: 200px;">
+                          </div>
+                          <div class="carousel-item">
+                              <h3>2. ピンの投稿とチームスコア</h3>
+                              <p>地図上にピンを置くと、あなたのチームカラーの陣地が広がります。シーズン終了時により広い陣地を持つチームの勝利です！</p>
+                              <p class="text-danger">投稿は**現在のシーズン**のみ可能です。</p>
+                              <div class="d-flex justify-content-around my-3">
+                                  <div class="p-3 text-center border rounded"><strong><span style="color:red;">🔴</span> ピン配置:</strong> 陣地獲得</div>
+                                  <div class="p-3 text-center border rounded"><strong><span style="color:gold;">👑</span> シーズン:</strong> 月単位でスコアがリセット</div>
+                              </div>
+                          </div>
+                          <div class="carousel-item">
+                              <h3>3. リアクション機能</h3>
+                              <p>他のメンバーのピンに対して、**いいね👍**、**行きたい✨**、**見たよ👀**のリアクションを送りましょう！</p>
+                              <p>あなたが作成したピンには、誰がリアクションしたかを確認できます。コミュニケーションのきっかけに活用してください！</p>
+                              <div class="reaction-bar my-3 d-flex justify-content-center">
+                                  <button class="btn btn-outline-primary me-2">👍 5</button>
+                                  <button class="btn btn-outline-success me-2">✨ 2</button>
+                                  <button class="btn btn-outline-secondary">👀 8</button>
+                              </div>
+                          </div>
+                          <div class="carousel-item">
+                              <h3>4. チームカラーと制限</h3>
+                              <p>初めてピンを置く前に、チームカラーの選択が必要です。一度選ぶとシーズン中は変更できません。</p>
+                              <p class="text-warning">⚠️ **投稿制限**: ピン投稿は、**1時間に1回**までです。</p>
+                              <p class="text-info">さあ、地図を広げて、PinItを始めましょう！</p>
+                          </div>
+                      </div>
+                      <button class="carousel-control-prev" type="button" data-bs-target="#tutorialCarousel" data-bs-slide="prev">
+                          <span class="carousel-control-prev-icon bg-dark p-3 rounded-circle" aria-hidden="true"></span>
+                          <span class="visually-hidden">Previous</span>
+                      </button>
+                      <button class="carousel-control-next" type="button" data-bs-target="#tutorialCarousel" data-bs-slide="next">
+                          <span class="carousel-control-next-icon bg-dark p-3 rounded-circle" aria-hidden="true"></span>
+                          <span class="visually-hidden">Next</span>
+                      </button>
+                  </div>
+              </div>
+              <div class="modal-footer">
+                  <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">PinItを始める</button>
+              </div>
+          </div>
+      </div>
+  </div>
 
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -262,6 +338,38 @@
   <script th:src="@{/js/photopin.js}"></script>
   
   <script>
+    // --- チュートリアルモーダル表示機能 ---
+
+    function showTutorialModal() {
+        const tutorialModalEl = document.getElementById('tutorialModal');
+        if (tutorialModalEl) {
+            const tutorialModal = new bootstrap.Modal(tutorialModalEl);
+            
+            // PinItを始めるボタンが押されたら、localStorageにフラグを立ててモーダルを閉じる
+            $('#tutorialFinishButton').off('click').on('click', function() {
+                localStorage.setItem('pinItTutorialSeen', 'true');
+                tutorialModal.hide();
+            });
+
+            // 初回表示フラグを確認
+            const tutorialSeen = localStorage.getItem('pinItTutorialSeen');
+            
+            // チームカラー選択モーダルが開いていなければ、チュートリアルを表示
+            if (tutorialSeen !== 'true' && !showColorModalFlag) {
+                 // データロード完了後に表示されるよう、フラグを立てる
+                 window.shouldShowTutorialOnLoad = true;
+            }
+        }
+    }
+
+    // ユーザーがクリックで表示できるように、windowスコープに関数を公開
+    window.openTutorial = function() {
+         // 強制的に再表示フラグを立てる必要はない（単に openTutorial を呼ぶだけでよい）
+         const tutorialModal = new bootstrap.Modal(document.getElementById('tutorialModal'));
+         tutorialModal.show();
+    } 
+    
+    
     // WebSocket接続とスコア更新のロジック
     document.addEventListener('DOMContentLoaded', function() {
         // ★ Bootstrapモーダルのインスタンス化
@@ -341,6 +449,11 @@
                 }
             });
         });
+        
+        // チームカラー選択モーダルが開いていない、かつチュートリアルが未完了の場合に表示
+        if (!showColorModalFlag) {
+            showTutorialModal();
+        }
     });
   </script>
 </body>

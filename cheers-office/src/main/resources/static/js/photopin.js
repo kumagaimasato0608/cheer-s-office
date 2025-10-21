@@ -42,6 +42,39 @@ $(document).ready(function() {
     };
 
 
+    // --- チュートリアルモーダル表示機能 (新規追加) ---
+    function showTutorialModal() {
+        const tutorialModalEl = document.getElementById('tutorialModal');
+        if (tutorialModalEl) {
+            const tutorialModal = new bootstrap.Modal(tutorialModalEl);
+            
+            // PinItを始めるボタンが押されたら、localStorageにフラグを立ててモーダルを閉じる
+            $('#tutorialFinishButton').off('click').on('click', function() {
+                localStorage.setItem('pinItTutorialSeen', 'true');
+                tutorialModal.hide();
+            });
+
+            // 初回表示フラグを確認
+            const tutorialSeen = localStorage.getItem('pinItTutorialSeen');
+            
+            // チームカラー選択モーダルが開いていない、かつチュートリアルが未完了の場合に表示
+            // showColorModalFlag は photopin.html のインラインスクリプトから取得される
+            if (tutorialSeen !== 'true' && (typeof showColorModalFlag === 'undefined' || !showColorModalFlag)) {
+                 // ページロード時のデータ取得完了後に表示されるよう、フラグを立てる
+                 window.shouldShowTutorialOnLoad = true;
+            }
+        }
+    }
+    
+    // ユーザーがクリックで表示できるように、windowスコープに関数を公開
+    window.openTutorial = function() {
+         localStorage.setItem('pinItTutorialSeen', 'false'); // 強制的に再表示
+         const tutorialModal = new bootstrap.Modal(document.getElementById('tutorialModal'));
+         tutorialModal.show();
+    } 
+    // --- チュートリアルモーダル表示機能 (ここまで) ---
+
+
     // --- 初期化処理 (省略) ---
     function initMap() {
         map = L.map('mapid').setView([35.6812, 139.7671], 13);
@@ -57,7 +90,7 @@ $(document).ready(function() {
     function onLocationFound(e) { userLocation = e.latlng; if (currentLocationMarker) { currentLocationMarker.setLatLng(userLocation); } else { currentLocationMarker = L.circleMarker(userLocation, { radius: 8, fillColor: "black", color: "#fff", weight: 2, opacity: 1, fillOpacity: 0.8 }).addTo(map); } currentLocationMarker.bindPopup("あなたの現在地").openPopup(); setTimeout(() => currentLocationMarker.closePopup(), 3000); }
     function onLocationError() { console.log("現在地の取得に失敗しました。"); }
 
-    // ★★★ メインデータ取得・描画統合関数 (省略) ★★★
+    // ★★★ メインデータ取得・描画統合関数 ★★★
     function fetchAllData(season = "") {
         currentSeason = season;
         const thisMonth = new Date().getFullYear() + '-' + ('0' + (new Date().getMonth() + 1)).slice(-2);
@@ -92,6 +125,14 @@ $(document).ready(function() {
             if (typeof window.hideLoadingOverlay === 'function') {
                 window.hideLoadingOverlay();
             }
+            
+            // ★★★ チュートリアル表示 (データロードが完了したことを確認) ★★★
+            if (window.shouldShowTutorialOnLoad) {
+                 const tutorialModal = new bootstrap.Modal(document.getElementById('tutorialModal'));
+                 tutorialModal.show();
+                 window.shouldShowTutorialOnLoad = false;
+            }
+
 
         }).catch(error => {
             console.error("データの取得に失敗しました:", error);
@@ -155,7 +196,7 @@ $(document).ready(function() {
         });
     }
 
-    // ★★★ renderUserList 関数を修正 (日付表示を追加) ★★★
+    // ★★★ renderUserList 関数を修正 (日付表示と地図移動+3秒遅延) ★★★
     function renderUserList(pins, usersById) {
         const pinsByUserId = pins.reduce((acc, pin) => { if(pin.createdBy) { if (!acc[pin.createdBy]) { acc[pin.createdBy] = []; } acc[pin.createdBy].push(pin); } return acc; }, {});
         const $accordion = $('#userPinAccordion');
@@ -554,9 +595,12 @@ $(document).ready(function() {
         });
     }
 
-    // --- アプリケーション実行開始 (省略) ---
+    // --- アプリケーション実行開始 ---
     initMap();
     populateSeasonSelector();
     setupEventHandlers();
     connectWebSocket();
+    
+    // ★★★ チュートリアル自動表示をここで実行 ★★★
+    showTutorialModal();
 });
