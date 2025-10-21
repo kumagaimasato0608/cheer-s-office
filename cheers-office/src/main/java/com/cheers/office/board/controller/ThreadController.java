@@ -3,8 +3,10 @@ package com.cheers.office.board.controller;
 import java.util.List;
 import java.util.Map;
 
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -18,9 +20,6 @@ import com.cheers.office.board.model.ThreadModels.Reply;
 import com.cheers.office.board.model.ThreadModels.ThreadPost;
 import com.cheers.office.board.service.ThreadService;
 
-/**
- * 掲示板コントローラ（REST + ページ表示）
- */
 @RestController
 @RequestMapping("/api/thread")
 public class ThreadController {
@@ -43,7 +42,7 @@ public class ThreadController {
         return service.search(keyword);
     }
 
-    /** 🧵 掲示板スレッド作成（画像付き対応） */
+    /** 🧵 掲示板スレッド作成 */
     @PostMapping("/create")
     public ThreadPost create(
             @AuthenticationPrincipal CustomUserDetails user,
@@ -86,11 +85,28 @@ public class ThreadController {
     public ThreadPost getThread(@PathVariable String threadId) {
         return service.findById(threadId);
     }
+
+    /** 🗑️ スレッド削除 */
+    @DeleteMapping("/{threadId}")
+    public ResponseEntity<?> deleteThread(
+            @AuthenticationPrincipal CustomUserDetails user,
+            @PathVariable String threadId) {
+        
+        if (user == null) {
+            return ResponseEntity.status(401).body("ログインが必要です。");
+        }
+        
+        try {
+            service.deleteThread(threadId, user.getUser().getUserId());
+            return ResponseEntity.ok().body("スレッドを削除しました。");
+        } catch (IllegalStateException e) {
+            return ResponseEntity.status(403).body(e.getMessage());
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body("スレッドの削除に失敗しました。");
+        }
+    }
 }
 
-/* ==============================
-   📄 画面遷移コントローラ
-   ============================== */
 @Controller
 class ThreadViewController {
     @GetMapping("/thread")

@@ -18,6 +18,7 @@ import org.springframework.messaging.handler.annotation.DestinationVariable;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -30,6 +31,8 @@ import org.springframework.web.multipart.MultipartFile;
 
 import com.cheers.office.board.model.ChatMessage;
 import com.cheers.office.board.model.ChatRoom;
+import com.cheers.office.board.model.ChatRoomDto;
+import com.cheers.office.board.model.CustomUserDetails;
 import com.cheers.office.board.model.User;
 import com.cheers.office.board.repository.UserRepository;
 import com.cheers.office.board.service.ChatService;
@@ -61,9 +64,6 @@ public class ChatController {
         this.simpMessagingTemplate = simpMessagingTemplate;
     }
 
-    // ==============================
-    //  WebSocket: メッセージ送信
-    // ==============================
     @MessageMapping("/chat/{roomId}")
     public void sendMessage(@DestinationVariable String roomId, @Payload ChatMessage msg) throws IOException {
         msg.setMessageId(UUID.randomUUID().toString());
@@ -77,65 +77,111 @@ public class ChatController {
         if (msg.getIcon() == null || msg.getIcon().isEmpty()) {
             msg.setIcon(getUserIconById(msg.getUserId()));
         }
-
-        File logFile = new File(CHAT_DIR + "room_" + roomId + ".json");
-        List<ChatMessage> logs = logFile.exists()
-                ? mapper.readValue(logFile, new TypeReference<>() {})
-                : new ArrayList<>();
-        logs.add(msg);
-        mapper.writerWithDefaultPrettyPrinter().writeValue(logFile, logs);
         
+        synchronized (this) {
+            File logFile = new File(CHAT_DIR + "room_" + roomId + ".json");
+            List<ChatMessage> logs = logFile.exists() && logFile.length() > 0
+                    ? mapper.readValue(logFile, new TypeReference<>() {})
+                    : new ArrayList<>();
+            logs.add(msg);
+            mapper.writerWithDefaultPrettyPrinter().writeValue(logFile, logs);
+        }
+
         simpMessagingTemplate.convertAndSend("/topic/chat/" + roomId, msg);
+
+        Optional<ChatRoom> roomOpt = chatService.findRoomById(roomId);
+        if (roomOpt.isPresent()) {
+            ChatRoom room = roomOpt.get();
+            for (String memberId : room.getMembers()) {
+                if (!memberId.equals(msg.getUserId())) {
+                    String userSpecificDestination = "/topic/notifications/" + memberId;
+                    simpMessagingTemplate.convertAndSend(
+                            userSpecificDestination,
+                            Map.of("type", "NEW_MESSAGE", "roomId", roomId)
+                    );
+                }
+            }
+        }
     }
 
-    // ==============================
-    //  WebSocket: 既読通知
-    // ==============================
     @MessageMapping("/chat/{roomId}/read")
     public void markAsRead(@DestinationVariable String roomId, @Payload Map<String, String> payload) throws IOException {
         String userId = payload.get("userId");
         String messageId = payload.get("messageId");
 
         if (userId == null || messageId == null) {
-            return; // 必要な情報がなければ何もしない
-        }
-
-        File logFile = new File(CHAT_DIR + "room_" + roomId + ".json");
-        if (!logFile.exists()) {
             return;
         }
 
-        List<ChatMessage> logs = mapper.readValue(logFile, new TypeReference<>() {});
-        
-        Optional<ChatMessage> targetMessageOpt = logs.stream()
-                .filter(log -> messageId.equals(log.getMessageId()))
-                .findFirst();
-
-        if (targetMessageOpt.isPresent()) {
-            ChatMessage targetMessage = targetMessageOpt.get();
-
-            if (targetMessage.getReadBy() == null) {
-                targetMessage.setReadBy(new ArrayList<>());
+        synchronized (this) {
+            File logFile = new File(CHAT_DIR + "room_" + roomId + ".json");
+            if (!logFile.exists()) {
+                return;
             }
 
-            if (!targetMessage.getReadBy().contains(userId)) {
-                targetMessage.getReadBy().add(userId);
-                mapper.writerWithDefaultPrettyPrinter().writeValue(logFile, logs);
-            }
+            List<ChatMessage> logs = mapper.readValue(logFile, new TypeReference<>() {});
+            
+            Optional<ChatMessage> targetMessageOpt = logs.stream()
+                    .filter(log -> messageId.equals(log.getMessageId()))
+                    .findFirst();
 
-            simpMessagingTemplate.convertAndSend("/topic/chat/" + roomId,
-                Map.of(
-                    "type", "READ_UPDATE",
-                    "messageId", targetMessage.getMessageId(),
-                    "readBy", targetMessage.getReadBy()
-                )
-            );
+            if (targetMessageOpt.isPresent()) {
+                ChatMessage targetMessage = targetMessageOpt.get();
+
+                if (targetMessage.getReadBy() == null) {
+                    targetMessage.setReadBy(new ArrayList<>());
+                }
+
+                if (!targetMessage.getReadBy().contains(userId)) {
+                    targetMessage.getReadBy().add(userId);
+                    mapper.writerWithDefaultPrettyPrinter().writeValue(logFile, logs);
+                }
+
+                simpMessagingTemplate.convertAndSend("/topic/chat/" + roomId,
+                    Map.of(
+                        "type", "READ_UPDATE",
+                        "messageId", targetMessage.getMessageId(),
+                        "readBy", targetMessage.getReadBy()
+                    )
+                );
+            }
         }
     }
     
-    // ==============================
-    //  HTTP API
-    // ==============================
+    @MessageMapping("/chat/{roomId}/markAllAsRead")
+    public void markAllMessagesAsRead(@DestinationVariable String roomId, @Payload Map<String, String> payload) throws IOException {
+        String userId = payload.get("userId");
+        if (userId == null) {
+            return;
+        }
+
+        File logFile = new File(CHAT_DIR + "room_" + roomId + ".json");
+        if (!logFile.exists() || logFile.length() == 0) {
+            return;
+        }
+
+        synchronized (this) {
+            List<ChatMessage> logs = mapper.readValue(logFile, new TypeReference<>() {});
+            boolean isChanged = false;
+
+            for (ChatMessage message : logs) {
+                if (!userId.equals(message.getUserId())) {
+                    if (message.getReadBy() == null) {
+                        message.setReadBy(new ArrayList<>());
+                    }
+                    if (!message.getReadBy().contains(userId)) {
+                        message.getReadBy().add(userId);
+                        isChanged = true;
+                    }
+                }
+            }
+
+            if (isChanged) {
+                mapper.writerWithDefaultPrettyPrinter().writeValue(logFile, logs);
+            }
+        }
+    }
+    
     @PostMapping("/chat/upload")
     public ResponseEntity<Map<String, String>> uploadChatImage(@RequestParam("file") MultipartFile file) {
         if (file.isEmpty()) return ResponseEntity.badRequest().body(Map.of("error", "ファイルが空です"));
@@ -162,64 +208,74 @@ public class ChatController {
 
     @PostMapping("/rooms")
     public ChatRoom createRoom(@RequestBody ChatRoom requestData) throws IOException {
-        File file = new File(ROOM_FILE);
-        List<ChatRoom> rooms = file.exists() ? mapper.readValue(file, new TypeReference<>() {}) : new ArrayList<>();
-        if (requestData.getMembers() != null && requestData.getMembers().size() == 2) {
-            for (ChatRoom r : rooms) {
-                if (r.getMembers() != null && r.getMembers().size() == 2 && r.getMembers().containsAll(requestData.getMembers())) return r;
+        synchronized (this) {
+            File file = new File(ROOM_FILE);
+            List<ChatRoom> rooms = file.exists() ? mapper.readValue(file, new TypeReference<>() {}) : new ArrayList<>();
+            if (requestData.getMembers() != null && requestData.getMembers().size() == 2) {
+                for (ChatRoom r : rooms) {
+                    if (r.getMembers() != null && r.getMembers().size() == 2 && r.getMembers().containsAll(requestData.getMembers())) return r;
+                }
+                ChatRoom newSingleRoom = new ChatRoom();
+                newSingleRoom.setRoomId("r_" + UUID.randomUUID().toString().substring(0, 8));
+                newSingleRoom.setCreatedAt(LocalDateTime.now().toString());
+                newSingleRoom.setMembers(requestData.getMembers());
+                String myUserId = requestData.getMembers().get(0);
+                String otherId = requestData.getMembers().stream().filter(id -> !id.equals(myUserId)).findFirst().orElse("");
+                newSingleRoom.setRoomName(getUserNameById(otherId));
+                rooms.add(newSingleRoom);
+                mapper.writerWithDefaultPrettyPrinter().writeValue(file, rooms);
+                return newSingleRoom;
+            } else if (requestData.getMembers() != null && requestData.getMembers().size() > 2) {
+                ChatRoom newGroupRoom = new ChatRoom();
+                newGroupRoom.setRoomId("g_" + UUID.randomUUID().toString().substring(0, 8));
+                newGroupRoom.setCreatedAt(LocalDateTime.now().toString());
+                newGroupRoom.setMembers(requestData.getMembers());
+                newGroupRoom.setRoomName(requestData.getRoomName());
+                newGroupRoom.setIcon(requestData.getIcon());
+                rooms.add(newGroupRoom);
+                mapper.writerWithDefaultPrettyPrinter().writeValue(file, rooms);
+                return newGroupRoom;
             }
-            ChatRoom newSingleRoom = new ChatRoom();
-            newSingleRoom.setRoomId("r_" + UUID.randomUUID().toString().substring(0, 8));
-            newSingleRoom.setCreatedAt(LocalDateTime.now().toString());
-            newSingleRoom.setMembers(requestData.getMembers());
-            String myUserId = requestData.getMembers().get(0);
-            String otherId = requestData.getMembers().stream().filter(id -> !id.equals(myUserId)).findFirst().orElse("");
-            newSingleRoom.setRoomName(getUserNameById(otherId));
-            rooms.add(newSingleRoom);
-            mapper.writerWithDefaultPrettyPrinter().writeValue(file, rooms);
-            return newSingleRoom;
-        } else if (requestData.getMembers() != null && requestData.getMembers().size() > 2) {
-            ChatRoom newGroupRoom = new ChatRoom();
-            newGroupRoom.setRoomId("g_" + UUID.randomUUID().toString().substring(0, 8));
-            newGroupRoom.setCreatedAt(LocalDateTime.now().toString());
-            newGroupRoom.setMembers(requestData.getMembers());
-            newGroupRoom.setRoomName(requestData.getRoomName());
-            newGroupRoom.setIcon(requestData.getIcon());
-            rooms.add(newGroupRoom);
-            mapper.writerWithDefaultPrettyPrinter().writeValue(file, rooms);
-            return newGroupRoom;
         }
         throw new IOException("Invalid room creation request");
     }
-
+    
     @GetMapping("/chat/{roomId}")
     public List<ChatMessage> getChatLogs(@PathVariable String roomId) throws IOException {
         File file = new File(CHAT_DIR + "room_" + roomId + ".json");
         if (!file.exists()) return new ArrayList<>();
         return mapper.readValue(file, new TypeReference<>() {});
     }
-
+    
     @GetMapping("/rooms")
-    public List<ChatRoom> getRooms() throws IOException {
-        File file = new File(ROOM_FILE);
-        if (!file.exists()) return new ArrayList<>();
-        return mapper.readValue(file, new TypeReference<>() {});
+    public List<ChatRoomDto> getRooms(@AuthenticationPrincipal CustomUserDetails loginUser) throws IOException {
+        if (loginUser == null) {
+            return Collections.emptyList();
+        }
+        User currentUser = loginUser.getUser();
+        if (currentUser == null || currentUser.getUserId() == null) {
+            return Collections.emptyList();
+        }
+        String currentUserId = currentUser.getUserId();
+        return chatService.getRoomsWithUnreadCount(currentUserId);
     }
 
     @DeleteMapping("/rooms/{roomId}")
     public boolean deleteRoom(@PathVariable String roomId) throws IOException {
-        File file = new File(ROOM_FILE);
-        if (!file.exists()) return false;
-        List<ChatRoom> rooms = mapper.readValue(file, new TypeReference<>() {});
-        rooms.removeIf(r -> r.getRoomId().equals(roomId));
-        mapper.writerWithDefaultPrettyPrinter().writeValue(file, rooms);
-        File logFile = new File(CHAT_DIR + "room_" + roomId + ".json");
-        if (logFile.exists()) logFile.delete();
-        return true;
+        synchronized (this) {
+            File file = new File(ROOM_FILE);
+            if (!file.exists()) return false;
+            List<ChatRoom> rooms = mapper.readValue(file, new TypeReference<>() {});
+            rooms.removeIf(r -> r.getRoomId().equals(roomId));
+            mapper.writerWithDefaultPrettyPrinter().writeValue(file, rooms);
+            File logFile = new File(CHAT_DIR + "room_" + roomId + ".json");
+            if (logFile.exists()) logFile.delete();
+            return true;
+        }
     }
 
     private String getUserIconById(String userId) {
-        return userRepo.findById(userId).map(User::getIcon).filter(Objects::nonNull).orElse("/images/default-avatar.png");
+        return userRepo.findById(userId).map(User::getIcon).filter(Objects::nonNull).orElse("/images/default_icon.png");
     }
 
     private String getUserNameById(String userId) {

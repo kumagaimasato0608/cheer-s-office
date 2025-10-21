@@ -21,6 +21,9 @@ public class ThreadModels {
     /** リプライ（コメント代替） */
     public static class Reply extends MessageBase {
         public String replyId;
+        
+        // ▼▼▼ この行を追加 ▼▼▼
+        public String authorId; // 実際の投稿者のIDを保存
     }
 
     /** 掲示板スレッド */
@@ -29,5 +32,8 @@ public class ThreadModels {
         public String title;
         public String imageBase64;
         public List<Reply> replies = new ArrayList<>();
+        
+        // ▼▼▼ この行を追加 ▼▼▼
+        public String authorId; // 実際の投稿者のIDを保存
     }
 }

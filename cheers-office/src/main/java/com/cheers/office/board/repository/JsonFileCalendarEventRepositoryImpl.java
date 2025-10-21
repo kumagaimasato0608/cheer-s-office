@@ -8,6 +8,7 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Repository;
 
 import com.cheers.office.board.model.CalendarEvent;
@@ -17,20 +18,22 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 @Repository
 public class JsonFileCalendarEventRepositoryImpl implements CalendarEventRepository {
 
-    private static final String DATA_DIR = "src/main/resources/data/";
-    private static final String FILE_PATH = DATA_DIR + "calendar_events.json";
     private final ObjectMapper mapper = new ObjectMapper();
+    private final File eventFile;
 
-    public JsonFileCalendarEventRepositoryImpl() {
-        File dir = new File(DATA_DIR);
-        if (!dir.exists()) {
-            dir.mkdirs();
+    // ✅ application.propertiesからファイルパスを読み取る
+    public JsonFileCalendarEventRepositoryImpl(
+        @Value("${app.event-file-path:src/main/resources/data/calendar_events.json}") String eventFilePath
+    ) {
+        this.eventFile = new File(eventFilePath);
+        // ディレクトリがなければ作成
+        if (!eventFile.getParentFile().exists()) {
+            eventFile.getParentFile().mkdirs();
         }
-        File file = new File(FILE_PATH);
-        if (!file.exists()) {
+        // ファイルがなければ空リストで初期化
+        if (!eventFile.exists()) {
             try {
-                // 初期ファイル作成 (空リスト)
-                mapper.writeValue(file, new ArrayList<CalendarEvent>());
+                mapper.writeValue(eventFile, new ArrayList<CalendarEvent>());
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -38,12 +41,9 @@ public class JsonFileCalendarEventRepositoryImpl implements CalendarEventReposit
     }
 
     private List<CalendarEvent> readAll() {
-        File file = new File(FILE_PATH);
-        if (!file.exists() || file.length() == 0) {
-            return new ArrayList<>();
-        }
         try {
-            return mapper.readValue(file, new TypeReference<List<CalendarEvent>>() {});
+            if (!eventFile.exists() || eventFile.length() == 0) return new ArrayList<>();
+            return mapper.readValue(eventFile, new TypeReference<List<CalendarEvent>>() {});
         } catch (IOException e) {
             e.printStackTrace();
             return new ArrayList<>();
@@ -52,7 +52,7 @@ public class JsonFileCalendarEventRepositoryImpl implements CalendarEventReposit
 
     private void writeAll(List<CalendarEvent> events) {
         try {
-            mapper.writerWithDefaultPrettyPrinter().writeValue(new File(FILE_PATH), events);
+            mapper.writerWithDefaultPrettyPrinter().writeValue(eventFile, events);
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -73,13 +73,11 @@ public class JsonFileCalendarEventRepositoryImpl implements CalendarEventReposit
     @Override
     public CalendarEvent save(CalendarEvent event) {
         List<CalendarEvent> events = readAll();
-        
+
         if (event.getId() == null || event.getId().isEmpty()) {
-            // 新規作成
             event.setId(UUID.randomUUID().toString());
             events.add(event);
         } else {
-            // 更新
             events = events.stream()
                     .map(e -> e.getId().equals(event.getId()) ? event : e)
                     .collect(Collectors.toList());

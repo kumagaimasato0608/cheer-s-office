@@ -55,7 +55,7 @@ function loadUpcomingEvents() {
 
 
 /**
- * 📰 掲示板APIから最新のスレッドを取得し、表示する
+ * 📰 掲示板APIから最新のスレッドを取得し、表示する (★★ 修正済みバージョン ★★)
  */
 function loadLatestThreads() {
     const threadList = $('#latest-threads-list');
@@ -89,18 +89,17 @@ function loadLatestThreads() {
                 
                 const authorName = thread.anonymous ? '匿名' : thread.userName;
                 
+                // リンクの形式を "/thread?threadId=..." に修正
                 const threadItem = `
-                    <li class="list-group-item">
-                        <a href="/thread/${threadId}" class="text-decoration-none">
-                            <strong>${thread.title}</strong>
+                    <li class="list-group-item list-group-item-action">
+                        <a href="/thread?threadId=${threadId}" class="text-decoration-none text-dark stretched-link">
+                            <div class="d-flex w-100 justify-content-between">
+                                <h6 class="mb-1">${thread.title}</h6>
+                                <small class="text-muted">${timestamp}</small>
+                            </div>
+                            <p class="mb-1 text-muted small">${messagePreview}</p>
                         </a>
-                        <div class="text-muted small mt-1">
-                            ${messagePreview}
-                        </div>
-                        <div class="d-flex justify-content-between align-items-center mt-2">
-                            <span class="badge bg-info text-dark">${thread.replies ? thread.replies.length : 0} コメント</span>
-                            <span class="text-secondary small">投稿者: ${authorName} (${timestamp})</span>
-                        </div>
+                        <small class="text-muted">投稿者: ${authorName} <span class="badge bg-light text-dark ms-2">${thread.replies ? thread.replies.length : 0}件の返信</span></small>
                     </li>
                 `;
                 threadList.append(threadItem);

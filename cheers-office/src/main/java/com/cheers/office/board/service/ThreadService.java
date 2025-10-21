@@ -1,5 +1,6 @@
 package com.cheers.office.board.service;
 
+import java.io.IOException;
 import java.text.Normalizer;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
@@ -7,6 +8,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.NoSuchElementException;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -59,8 +61,8 @@ public class ThreadService {
 
     /** 🧵 掲示板作成 */
     public ThreadPost createThread(String title, String message, boolean anonymous,
-                                   String userId, String userName, String icon,
-                                   String imageBase64) {
+                                     String userId, String userName, String icon,
+                                     String imageBase64) {
         List<ThreadPost> all = repo.findAll();
 
         ThreadPost t = new ThreadPost();
@@ -69,6 +71,7 @@ public class ThreadService {
         t.message = message;
         t.timestamp = nowTimestamp();
         t.imageBase64 = imageBase64;
+        t.authorId = userId; // 投稿者のIDを保存
 
         if (anonymous) {
             t.anonymous = true;
@@ -97,6 +100,7 @@ public class ThreadService {
                 Reply r = new Reply();
                 r.replyId = UUID.randomUUID().toString();
                 r.message = message;
+                r.authorId = userId; // 投稿者のIDを保存
                 if (anonymous) {
                     r.anonymous = true;
                     r.userId = "anonymous";
@@ -110,7 +114,7 @@ public class ThreadService {
                 r.timestamp = nowTimestamp();
 
                 if (t.replies == null) t.replies = new ArrayList<>();
-                t.replies.add(r); // ✅ 下に追加
+                t.replies.add(r);
                 repo.saveAll(all);
                 return r;
             }
@@ -125,35 +129,62 @@ public class ThreadService {
                 .findFirst()
                 .orElse(null);
     }
+    
+    /**
+     * スレッドを削除します。
+     * @param threadId 削除するスレッドのID
+     * @param currentUserId 現在ログインしているユーザーのID
+     */
+    public void deleteThread(String threadId, String currentUserId) throws IOException {
+        List<ThreadPost> allThreads = repo.findAll();
+
+        Optional<ThreadPost> threadToDeleteOpt = allThreads.stream()
+            .filter(t -> t.threadId.equals(threadId))
+            .findFirst();
+
+        if (threadToDeleteOpt.isEmpty()) {
+            throw new IOException("削除対象のスレッドが見つかりません。");
+        }
+        
+        ThreadPost threadToDelete = threadToDeleteOpt.get();
+
+        // ▼▼▼ この部分を修正 ▼▼▼
+        // --- 権限チェック ---
+        String authorId = threadToDelete.authorId;
+        boolean hasPermission = false;
+
+        // 1. 新しいデータ形式 (authorId が存在する) の場合
+        if (authorId != null) {
+            if (authorId.equals(currentUserId)) {
+                hasPermission = true;
+            }
+        } 
+        // 2. 古いデータ形式 (authorId が null) の場合、userId で代用チェック
+        else {
+            // 匿名投稿ではなく、かつuserIdが一致する場合に権限ありとみなす
+            if (threadToDelete.userId != null && threadToDelete.userId.equals(currentUserId)) {
+                hasPermission = true;
+            }
+        }
+
+        // 最終的な権限チェック
+        if (!hasPermission) {
+            throw new IllegalStateException("自分のスレッドしか削除できません。");
+        }
+        // ▲▲▲ ここまで修正 ▲▲▲
+
+        // スレッドをリストから削除
+        allThreads.removeIf(t -> t.threadId.equals(threadId));
+
+        // 変更をリポジトリに書き戻す
+        repo.saveAll(allThreads);
+    }
 
     // ---------- Utility ----------
-    private String nowTimestamp() {
-        return LocalDateTime.now(JST).format(OUT_FMT);
-    }
-
-    private LocalDateTime parseTimestamp(String ts) {
-        try { return LocalDateTime.parse(ts, OUT_FMT); } catch (Exception e) { return null; }
-    }
-
-    private int compareTimestampDesc(String a, String b) {
-        LocalDateTime la = parseTimestamp(a), lb = parseTimestamp(b);
-        if (la == null) return 1;
-        if (lb == null) return -1;
-        return lb.compareTo(la);
-    }
-
-    private String normalizeKeyword(String s) {
-        if (s == null) return "";
-        return Normalizer.normalize(s, Normalizer.Form.NFKC).trim().toLowerCase();
-    }
-
-    private boolean containsIgnoreCase(String target, String needle) {
-        return target != null && target.toLowerCase().contains(needle);
-    }
-
-    private String normalizeDateLike(String kw) {
-        if (kw == null) return "";
-        return kw.replace("年", "/").replace("月", "/").replace("日", "");
-    }
+    private String nowTimestamp() { return LocalDateTime.now(JST).format(OUT_FMT); }
+    private LocalDateTime parseTimestamp(String ts) { try { return LocalDateTime.parse(ts, OUT_FMT); } catch (Exception e) { return null; } }
+    private int compareTimestampDesc(String a, String b) { LocalDateTime la = parseTimestamp(a), lb = parseTimestamp(b); if (la == null) return 1; if (lb == null) return -1; return lb.compareTo(la); }
+    private String normalizeKeyword(String s) { if (s == null) return ""; return Normalizer.normalize(s, Normalizer.Form.NFKC).trim().toLowerCase(); }
+    private boolean containsIgnoreCase(String target, String needle) { return target != null && target.toLowerCase().contains(needle); }
+    private String normalizeDateLike(String kw) { if (kw == null) return ""; return kw.replace("年", "/").replace("月", "/").replace("日", ""); }
 }
-

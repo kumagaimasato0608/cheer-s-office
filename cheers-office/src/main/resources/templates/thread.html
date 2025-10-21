@@ -2,388 +2,302 @@
 <html lang="ja" xmlns:th="http://www.thymeleaf.org">
 <head>
   <meta charset="UTF-8" />
+  <meta name="_csrf" th:content="${_csrf.token}"/>
+  <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
   <title>Cheers Office - 掲示板</title>
-  <!-- ✅ 共通CSS -->
   <link rel="stylesheet" th:href="@{/css/style.css}">
 
   <style>
-    /* === 掲示板ページ専用のスタイル === */
     body {
       font-family: "Zen Maru Gothic", "Noto Sans JP", sans-serif;
-      background: #f6f9fc;
+      background: #e6f0ff;
       margin: 0;
-      padding-top: 110px; /* 固定ヘッダー分の余白 */
+      overflow-x: hidden;
     }
-
     main {
       display: flex;
-      height: calc(100vh - 130px);
-      padding: 0 20px;
-      gap: 0;
+      height: calc(100vh - 120px);
+      margin-top: 120px;
+      padding: 15px;
+      gap: 15px;
     }
-
-    /* === 左スレッド一覧 === */
     .thread-list {
       width: 32%;
-      background: #ffffff;
-      border-radius: 10px 0 0 10px;
-      box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+      background: #fff;
+      border-radius: 10px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.08);
       padding: 15px;
       display: flex;
       flex-direction: column;
       height: 100%;
-      border-right: 1.5px solid #e5e5e5;
+      box-sizing: border-box;
     }
-
-    .thread-scroll {
-      flex: 1;
-      overflow-y: auto;
-      margin-bottom: 10px;
-    }
-
+    .thread-scroll { flex:1; overflow-y:auto; margin-bottom:10px; }
     .thread-item {
-      background: #fafafa;
-      border-radius: 8px;
-      padding: 10px;
-      margin-bottom: 10px;
-      cursor: pointer;
-      border: 1px solid #e0e0e0;
-      transition: 0.2s;
-      display: flex;
-      align-items: flex-start;
-      gap: 10px;
+      background:#fafafa; border-radius:8px; padding:10px; margin-bottom:10px;
+      cursor:pointer; border:1px solid #e0e0e0; transition:0.2s;
+      display:flex; align-items:flex-start; gap:10px;
     }
+    .thread-item:hover { background:#f0f6ff; border-color:#c2d8ff; }
+    .thread-item.active { background:#e6f0ff; border-color:#0d6efd; }
+    .thread-icon { width:40px; height:40px; border-radius:50%; object-fit:cover; flex-shrink:0; }
+    .thread-info { flex:1; }
+    .thread-title { font-weight:bold; color:#333; font-size:15px; }
+    .thread-meta { font-size:12px; color:#777; margin-top:2px; }
 
-    .thread-item:hover {
-      background: #f0f6ff;
-      border-color: #c2d8ff;
-    }
-
-    .thread-icon {
-      width: 40px;
-      height: 40px;
-      border-radius: 50%;
-      object-fit: cover;
-      flex-shrink: 0;
-    }
-
-    .thread-info { flex: 1; }
-    .thread-title { font-weight: bold; color: #333; font-size: 15px; }
-    .thread-meta { font-size: 12px; color: #777; margin-top: 2px; }
-
-    /* === 検索ボックス === */
     .search-box {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      border: 1px solid #ccc;
-      border-radius: 8px;
-      padding: 5px 8px;
-      margin-bottom: 10px;
+      display:flex; align-items:center; gap:8px;
+      border:1px solid #ccc; border-radius:8px;
+      padding:5px 8px; margin-bottom:4px;
     }
+    .search-box input { border:none; outline:none; flex:1; font-size:14px; }
+    .search-hint { text-align:center; font-size:11px; color:#777; margin-bottom:8px; }
 
-    .search-box input {
-      border: none;
-      outline: none;
-      flex: 1;
-      font-size: 14px;
+    .button-stack { display:flex; flex-direction:column; gap:10px; }
+    .create-btn,.delete-btn {
+      color:white; border:none; padding:10px; border-radius:8px;
+      font-weight:bold; cursor:pointer; transition:0.3s; width:100%;
     }
+    .create-btn { background:#0d6efd; }
+    .create-btn:hover { background:#0b5ed7; }
+    .delete-btn { background:#dc3545; }
+    .delete-btn:hover { background:#c82333; }
 
-    .search-box input::placeholder { color: #aaa; }
-
-    /* === 作成ボタン === */
-    .create-btn {
-      background: #0d6efd;
-      color: white;
-      border: none;
-      padding: 10px;
-      border-radius: 8px;
-      font-weight: bold;
-      cursor: pointer;
-      transition: 0.3s;
-      width: 100%;
-    }
-
-    .create-btn:hover { background: #0b5ed7; }
-
-    /* === 右スレッド詳細 === */
     .thread-detail {
-      flex: 1;
-      background: linear-gradient(180deg, #ffffff 0%, #fafcff 100%);
-      border-radius: 0 10px 10px 0;
-      box-shadow: 0 4px 15px rgba(0,0,0,0.05);
-      padding: 20px 30px;
-      overflow-y: auto;
-      margin: 0;
+      flex:1; background:#fff; border-radius:10px;
+      box-shadow:0 4px 15px rgba(0,0,0,0.08);
+      padding:20px 30px; overflow-y:auto; margin:0;
     }
-
     img.thread-image {
-      max-width: 360px;
-      width: 100%;
-      height: auto;
-      border-radius: 8px;
-      margin: 10px auto;
-      display: block;
-      object-fit: cover;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+      max-width:360px; width:100%; height:auto; border-radius:8px;
+      margin:10px auto; display:block; object-fit:cover;
+      box-shadow:0 2px 6px rgba(0,0,0,0.1);
     }
-
     .reply {
-      background: #f9f9f9;
-      border-radius: 8px;
-      padding: 10px;
-      margin: 8px 0;
-      border: 1px solid #e4e4e4;
+      background:#f9f9f9; border-radius:8px; padding:10px;
+      margin:8px 0; border:1px solid #e4e4e4;
     }
-
-    .reply-meta { font-size: 12px; color: #777; margin-top: 3px; }
-
+    .reply-meta { font-size:12px; color:#777; margin-top:3px; }
     textarea {
-      width: 100%;
-      min-height: 60px;
-      border-radius: 6px;
-      border: 1px solid #ccc;
-      padding: 5px;
-      margin-top: 6px;
+      width:100%; min-height:60px; border-radius:6px;
+      border:1px solid #ccc; padding:5px; margin-top:6px;
     }
-
     .btn-send {
-      background: #0d6efd;
-      color: white;
-      border: none;
-      padding: 6px 12px;
-      border-radius: 6px;
-      cursor: pointer;
-      margin-top: 6px;
+      background:#0d6efd; color:white; border:none;
+      padding:6px 12px; border-radius:6px; cursor:pointer; margin-top:6px;
     }
+    .anonymous-toggle { display:flex; align-items:center; gap:6px; margin-top:8px; }
 
-    .anonymous-toggle {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      margin-top: 8px;
+    .modal-backdrop {
+      display:none; position:fixed; top:0; left:0; width:100%; height:100%;
+      background:rgba(0,0,0,0.5); align-items:center; justify-content:center; z-index:1000;
     }
-
-    /* === モーダル === */
-    #modal {
-      display: none;
-      position: fixed;
-      top: 0; left: 0;
-      width: 100%; height: 100%;
-      background: rgba(0,0,0,0.5);
-      align-items: center;
-      justify-content: center;
-      z-index: 1000;
+    .modal-content {
+      background:white; padding:20px; border-radius:10px;
+      width:400px; box-shadow:0 2px 10px rgba(0,0,0,0.2);
     }
-
-    #modal .modal-content {
-      background: white;
-      padding: 20px;
-      border-radius: 10px;
-      width: 400px;
-      box-shadow: 0 2px 10px rgba(0,0,0,0.2);
-    }
-
-    .thread-list::-webkit-scrollbar { width: 8px; }
-    .thread-list::-webkit-scrollbar-thumb {
-      background: #ccc;
-      border-radius: 4px;
-    }
+    .modal-buttons { display:flex; justify-content:flex-end; gap:10px; margin-top:20px; }
+    .modal-btn { padding:8px 16px; border-radius:6px; border:none; font-weight:bold; color:#fff; cursor:pointer; }
+    .modal-btn.confirm { background:#dc3545; }
+    .modal-btn.cancel { background:#6c757d; }
   </style>
 </head>
 
 <body>
-  <!-- ✅ 共通ヘッダー -->
-  <div th:replace="~{common/header :: header}"></div>
+  <header th:replace="~{common/header :: header}"></header>
 
   <main>
-    <!-- 左側：スレッド一覧 -->
     <aside class="thread-list">
       <div class="search-box">
-        <span>🔍</span>
-        <input type="text" id="searchInput" placeholder="検索はこちら [Enter]" 
-               onkeydown="if(event.key==='Enter'){searchThreads();}">
+        <input type="text" id="searchInput" placeholder="日付、ユーザー名、タイトルで検索"
+               onkeydown="if(event.key==='Enter'){event.preventDefault(); searchThreads();}">
       </div>
+      <small class="search-hint">入力して[Enterキー]を押してください</small>
 
       <div class="thread-scroll" id="thread-list"></div>
 
-      <button class="create-btn" onclick="openNewThread()">＋ 新しい掲示板を立てる</button>
+      <div class="button-stack">
+        <button class="create-btn" onclick="openNewThread()">＋ 新しい掲示板を立てる</button>
+        <button class="delete-btn" onclick="openDeleteModal()">🗑️ 掲示板を削除</button>
+      </div>
     </aside>
 
-    <!-- 右側：スレッド詳細 -->
     <section class="thread-detail">
-      <div id="thread-detail"><p>スレッドを選択してください。</p></div>
+      <div id="thread-detail-content"><p>スレッドを選択してください。</p></div>
     </section>
   </main>
 
-  <!-- === モーダル === -->
-  <div id="modal">
+  <div id="createModal" class="modal-backdrop">
     <div class="modal-content">
       <h3>新しい掲示板を作成</h3>
-      <input type="text" id="newTitle" placeholder="タイトル" />
+      <input type="text" id="newTitle" placeholder="タイトル"
+             style="width:100%;margin-bottom:10px;padding:5px;"/>
       <textarea id="newMsg" placeholder="本文を入力..."></textarea>
-      <label>📷 画像を添付：<input type="file" id="newImage" accept="image/*"></label>
+      <label style="margin-top:10px;">📷 画像を添付：<input type="file" id="newImage" accept="image/*"></label>
       <div class="anonymous-toggle">
         <input type="checkbox" id="newAnon" />
         <label for="newAnon">匿名で投稿</label>
       </div>
       <div style="text-align:right;margin-top:10px;">
+        <button class="btn-send" style="background:#6c757d" onclick="closeModal('#createModal')">キャンセル</button>
         <button class="btn-send" id="createBtn" onclick="createThread()">作成</button>
-        <button class="btn-send" style="background:#6c757d" onclick="closeModal()">キャンセル</button>
       </div>
     </div>
   </div>
 
-  <!-- === スクリプト === -->
+  <div id="deleteModal" class="modal-backdrop">
+    <div class="modal-content">
+      <h3>🗑️ 掲示板 削除確認</h3>
+      <p>この掲示板を完全に削除します。返信もすべて削除され、元に戻すことはできません。</p>
+      <div class="modal-buttons">
+        <button class="modal-btn cancel" onclick="closeModal('#deleteModal')">キャンセル</button>
+        <button class="modal-btn confirm" id="confirmDeleteBtn" onclick="deleteThreadConfirm()">削除する</button>
+      </div>
+    </div>
+  </div>
+
   <script>
-    if (!window.threadLoaded) {
-      window.threadLoaded = true;
-      document.addEventListener("DOMContentLoaded", loadThreads);
-    }
-
-    async function loadThreads() {
-      const res = await fetch("/api/thread/list");
-      const threads = await res.json();
-      renderThreads(threads);
-    }
-
-    function renderThreads(threads) {
-      const listEl = document.getElementById("thread-list");
-      listEl.innerHTML = "";
-      threads.forEach(t => {
-        const div = document.createElement("div");
-        div.className = "thread-item";
-        const icon = t.anonymous ? "/images/default_icon.png" : (t.icon || "/images/default_icon.png");
-        div.innerHTML = `
-          <img src="${icon}" class="thread-icon">
-          <div class="thread-info">
-            <div class="thread-title">${t.title}</div>
-            <div class="thread-meta">${t.userName}・${t.timestamp}</div>
-          </div>
-        `;
-        div.onclick = () => showThread(t);
-        listEl.appendChild(div);
-      });
-    }
-
-    async function searchThreads() {
-      const kw = document.getElementById("searchInput").value;
-      const res = await fetch(`/api/thread/search?keyword=${encodeURIComponent(kw)}`);
-      const threads = await res.json();
-      renderThreads(threads);
-    }
-
-    function showThread(t) {
-      const detail = document.getElementById("thread-detail");
-      const icon = t.anonymous ? "/images/default_icon.png" : (t.icon || "/images/default_icon.png");
-      detail.innerHTML = `
-        <div class="thread-header">
-          <div style="display:flex;align-items:center;gap:10px;">
-            <img src="${icon}" class="thread-icon" style="width:50px;height:50px;">
-            <div>
-              <h2 style="margin:0;">${t.title}</h2>
-              <p class="thread-meta">${t.userName}・${t.timestamp}</p>
-            </div>
-          </div>
-          <p style="margin-top:10px;">${t.message}</p>
-          ${t.imageBase64 ? `<img class="thread-image" src="${t.imageBase64}" alt="image">` : ""}
-        </div>
-      `;
-
-      if (t.replies && t.replies.length > 0) {
-        t.replies.forEach(r => {
-          const replyIcon = r.anonymous ? "/images/default_icon.png" : (r.icon || "/images/default_icon.png");
-          detail.insertAdjacentHTML("beforeend", `
-            <div class="reply">
-              <div style="display:flex;align-items:flex-start;gap:10px;">
-                <img src="${replyIcon}" class="thread-icon" style="width:35px;height:35px;">
-                <div>
-                  <p>${r.message}</p>
-                  <p class="reply-meta">${r.userName}・${r.timestamp}</p>
-                </div>
-              </div>
-            </div>
-          `);
-        });
-      }
-
-      detail.insertAdjacentHTML("beforeend", `
-        <div class="form-section">
-          <h4>返信する</h4>
-          <div class="anonymous-toggle">
-            <input type="checkbox" id="replyAnon" />
-            <label for="replyAnon">匿名で返信</label>
-          </div>
-          <textarea id="replyMsg" placeholder="返信を入力..."></textarea>
-          <button class="btn-send" onclick="sendReply('${t.threadId}', this)">返信</button>
-        </div>
-      `);
-    }
-
-    function openNewThread() { document.getElementById("modal").style.display = "flex"; }
-    function closeModal() { document.getElementById("modal").style.display = "none"; }
-
-    async function createThread() {
-      const btn = document.getElementById("createBtn");
-      btn.disabled = true;
-      btn.textContent = "作成中...";
-      try {
-        const title = document.getElementById("newTitle").value;
-        const message = document.getElementById("newMsg").value;
-        const anonymous = document.getElementById("newAnon").checked;
-        const file = document.getElementById("newImage").files[0];
-        if (!title || !message) return alert("タイトルと本文を入力してください。");
-        let imageBase64 = "";
-        if (file) {
-          const reader = new FileReader();
-          reader.onload = async () => {
-            imageBase64 = reader.result;
-            await sendThread(title, message, anonymous, imageBase64);
-          };
-          reader.readAsDataURL(file);
-        } else {
-          await sendThread(title, message, anonymous, "");
-        }
-      } finally {
-        btn.disabled = false;
-        btn.textContent = "作成";
-      }
-    }
-
-    async function sendThread(title, message, anonymous, imageBase64) {
-      const res = await fetch("/api/thread/create", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ title, message, anonymous, imageBase64 })
-      });
-      const newThread = await res.json();
-      closeModal();
-      showThread(newThread);
+    let currentThreadId=null,currentUser=null;
+    document.addEventListener("DOMContentLoaded",async()=>{
+      try{const r=await fetch("/api/users/me");if(r.ok)currentUser=await r.json();}catch(e){console.warn("ユーザー情報取得失敗",e);}
       await loadThreads();
+      const id=new URLSearchParams(location.search).get('threadId');
+      if(id)await showThreadById(id);
+    });
+
+    async function loadThreads(){
+      try{
+        const r=await fetch("/api/thread/list");
+        if(!r.ok)throw new Error();
+        renderThreads(await r.json());
+      }catch(e){document.getElementById("thread-list").innerHTML="<p>読み込みに失敗しました。</p>";}
     }
 
-    async function sendReply(threadId, btn) {
-      btn.disabled = true;
-      btn.textContent = "返信中...";
-      try {
-        const msg = document.getElementById("replyMsg").value;
-        const anonymous = document.getElementById("replyAnon").checked;
-        if (!msg) return alert("返信を入力してください。");
+    function renderThreads(threads){
+      const list=document.getElementById("thread-list");
+      list.innerHTML="";
+      threads.forEach(t=>{
+        const d=document.createElement("div");
+        d.className="thread-item"; d.dataset.threadId=t.threadId;
+        const icon=t.anonymous?"/images/default_icon.png":(t.icon||"/images/default_icon.png");
+        d.innerHTML=`<img src="${icon}" class="thread-icon">
+          <div class="thread-info"><div class="thread-title">${t.title}</div>
+          <div class="thread-meta">${t.userName}・${t.timestamp}</div></div>`;
+        d.onclick=()=>{history.pushState({threadId:t.threadId},'',`?threadId=${t.threadId}`);showThread(t);};
+        list.appendChild(d);
+      });
+    }
 
-        await fetch(`/api/thread/${threadId}/reply`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ message: msg, anonymous })
+    async function searchThreads(){
+      const kw=document.getElementById("searchInput").value;
+      const r=await fetch(`/api/thread/search?keyword=${encodeURIComponent(kw)}`);
+      renderThreads(await r.json());
+      document.getElementById("thread-detail-content").innerHTML="<p>スレッドを選択してください。</p>";
+      currentThreadId=null;
+    }
+
+    async function showThreadById(id){
+      try{
+        const r=await fetch(`/api/thread/${id}`);
+        if(!r.ok)throw new Error();
+        showThread(await r.json());
+      }catch{document.getElementById("thread-detail-content").innerHTML="<p>読み込み失敗。</p>";}
+    }
+
+    function showThread(t){
+      currentThreadId=t.threadId;
+      document.querySelectorAll('.thread-item').forEach(i=>{
+        i.classList.toggle('active',i.dataset.threadId===t.threadId);
+      });
+      const d=document.getElementById("thread-detail-content");
+      const icon=t.anonymous?"/images/default_icon.png":(t.icon||"/images/default_icon.png");
+      d.innerHTML=`<div class="thread-header">
+        <div style="display:flex;align-items:center;gap:10px;">
+          <img src="${icon}" class="thread-icon" style="width:50px;height:50px;">
+          <div><h2 style="margin:0;">${t.title}</h2>
+          <p class="thread-meta">${t.userName}・${t.timestamp}</p></div></div>
+        <p style="white-space:pre-wrap;margin-top:10px;">${t.message}</p>
+        ${t.imageBase64?`<img class="thread-image" src="${t.imageBase64}">`:""}</div>`;
+      if(t.replies?.length){
+        t.replies.forEach(r=>{
+          const ic=r.anonymous?"/images/default_icon.png":(r.icon||"/images/default_icon.png");
+          d.insertAdjacentHTML("beforeend",`<div class="reply"><div style="display:flex;gap:10px;">
+            <img src="${ic}" class="thread-icon" style="width:35px;height:35px;">
+            <div><p style="white-space:pre-wrap;">${r.message}</p>
+            <p class="reply-meta">${r.userName}・${r.timestamp}</p></div></div></div>`);
         });
-
-        const res = await fetch(`/api/thread/${threadId}`);
-        const latest = await res.json();
-        showThread(latest);
-        await loadThreads();
-      } finally {
-        btn.disabled = false;
-        btn.textContent = "返信";
       }
+      d.insertAdjacentHTML("beforeend",`<div class="form-section" style="margin-top:20px;border-top:1px solid #eee;padding-top:15px;">
+        <h4>返信する</h4>
+        <textarea id="replyMsg" placeholder="返信を入力..."></textarea>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px;">
+          <div class="anonymous-toggle"><input type="checkbox" id="replyAnon"><label for="replyAnon">匿名で返信</label></div>
+          <button class="btn-send" onclick="sendReply('${t.threadId}',this)">返信</button>
+        </div></div>`);
+    }
+
+    function openNewThread(){document.getElementById("createModal").style.display="flex";}
+    function closeModal(id){document.querySelector(id).style.display="none";}
+    function openDeleteModal(id){
+      if(id)currentThreadId=id;
+      if(!currentThreadId){alert("削除するスレッドを選択してください。");return;}
+      document.getElementById("deleteModal").style.display="flex";
+    }
+
+    async function deleteThreadConfirm(){
+      if(!currentThreadId)return;
+      const b=document.getElementById("confirmDeleteBtn");
+      b.disabled=true;b.textContent="削除中...";
+      const t=document.querySelector('meta[name="_csrf"]').content,
+            h=document.querySelector('meta[name="_csrf_header"]').content;
+      try{
+        const r=await fetch(`/api/thread/${currentThreadId}`,{method:"DELETE",headers:{[h]:t}});
+        if(!r.ok)throw new Error(await r.text());
+        alert("削除しました。");
+        closeModal('#deleteModal');await loadThreads();
+        document.getElementById("thread-detail-content").innerHTML="<p>スレッドを選択してください。</p>";
+        history.pushState(null,'',location.pathname);currentThreadId=null;
+      }catch(e){alert("削除に失敗しました："+e.message);}
+      finally{b.disabled=false;b.textContent="削除する";}
+    }
+
+    async function createThread(){
+      const b=document.getElementById("createBtn");
+      b.disabled=true;b.textContent="作成中...";
+      try{
+        const title=newTitle.value,msg=newMsg.value,anon=newAnon.checked,file=newImage.files[0];
+        if(!title||!msg){alert("タイトルと本文を入力してください。");return;}
+        let img="";if(file){img=await new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>res(r.result);r.onerror=rej;r.readAsDataURL(file);});}
+        await sendThread(title,msg,anon,img);
+      }finally{
+        b.disabled=false;b.textContent="作成";
+        newTitle.value="";newMsg.value="";newAnon.checked=false;newImage.value="";
+      }
+    }
+
+    async function sendThread(title,msg,anon,img){
+      const t=document.querySelector('meta[name="_csrf"]').content,
+            h=document.querySelector('meta[name="_csrf_header"]').content;
+      const r=await fetch("/api/thread/create",{method:"POST",headers:{"Content-Type":"application/json",[h]:t},
+        body:JSON.stringify({title,message:msg,anonymous:anon,imageBase64:img})});
+      if(!r.ok)throw new Error("作成に失敗しました。");
+      const nt=await r.json();closeModal('#createModal');await loadThreads();
+      history.pushState({threadId:nt.threadId},'',`?threadId=${nt.threadId}`);showThread(nt);
+    }
+
+    async function sendReply(id,btn){
+      btn.disabled=true;btn.textContent="返信中...";
+      try{
+        const msg=replyMsg.value,anon=replyAnon.checked;
+        if(!msg){alert("返信を入力してください。");return;}
+        const t=document.querySelector('meta[name="_csrf"]').content,
+              h=document.querySelector('meta[name="_csrf_header"]').content;
+        const r=await fetch(`/api/thread/${id}/reply`,{method:"POST",headers:{"Content-Type":"application/json",[h]:t},
+          body:JSON.stringify({message:msg,anonymous:anon})});
+        if(!r.ok)throw new Error("返信に失敗しました。");
+        await showThreadById(id);await loadThreads();
+      }catch(e){alert(e.message);}
+      finally{btn.disabled=false;btn.textContent="返信";}
     }
   </script>
 </body>
