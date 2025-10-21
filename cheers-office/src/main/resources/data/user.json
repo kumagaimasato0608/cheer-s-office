@@ -32,4 +32,21 @@
   "workTime" : null,
   "workContent" : null,
   "lastPinTimestamp" : null
+}, {
+  "userId" : "1ed22d3c-1409-4ccc-b49c-eb552fb3106a",
+  "userName" : "a",
+  "mailAddress" : "a@a",
+  "password" : "$2a$10$o2kXs25jKBquT5gf5lqRou6c7XAbX7iC2O3Yh7pNC3f4KVz8FFe.S",
+  "group" : "未設定",
+  "myBoom" : null,
+  "hobby" : null,
+  "icon" : "/images/default_icon.png",
+  "statusMessage" : null,
+  "teamColor" : "blue",
+  "deploymentDestination" : null,
+  "deploymentArea" : null,
+  "commuteFrequency" : null,
+  "workTime" : null,
+  "workContent" : null,
+  "lastPinTimestamp" : null
 } ]

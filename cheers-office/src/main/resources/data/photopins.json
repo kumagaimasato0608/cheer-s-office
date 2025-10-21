@@ -90,12 +90,18 @@
     "uploadedBy" : "u001_auto",
     "uploadedDate" : "2025-10-21T14:46:47.5067887"
   } ],
-  "comments" : [ ],
+  "comments" : [ {
+    "commentId" : "bffbb49e-ca23-48ab-a015-9825dd6697cd",
+    "pinId" : "dd83301c-b39d-463e-8774-62c4c126c285",
+    "userId" : "1ed22d3c-1409-4ccc-b49c-eb552fb3106a",
+    "content" : "konnnitiha",
+    "timestamp" : "2025-10-21T15:06:50.3658335"
+  } ],
   "bonusPoints" : 0,
   "reactions" : {
-    "seen" : [ "5c418e93-b28e-42f6-80b7-ad5bf4adc080" ],
-    "want" : [ "5c418e93-b28e-42f6-80b7-ad5bf4adc080" ],
-    "like" : [ "5c418e93-b28e-42f6-80b7-ad5bf4adc080" ]
+    "seen" : [ "5c418e93-b28e-42f6-80b7-ad5bf4adc080", "1ed22d3c-1409-4ccc-b49c-eb552fb3106a" ],
+    "want" : [ "5c418e93-b28e-42f6-80b7-ad5bf4adc080", "1ed22d3c-1409-4ccc-b49c-eb552fb3106a" ],
+    "like" : [ "5c418e93-b28e-42f6-80b7-ad5bf4adc080", "1ed22d3c-1409-4ccc-b49c-eb552fb3106a" ]
   },
   "season" : "2025-10"
 } ]
