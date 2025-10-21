@@ -42,7 +42,7 @@ function loadUpcomingEvents() {
                  eventList.append('<p class="text-center text-muted small mt-3">カレンダーデータが読み込まれました。</p>');
             }
 
-            // NOTE: FullCalendarと本日の予定リストの実際の更新は、home.htmlのDOMContentLoaded内で行われます。
+            //  FullCalendarと本日の予定リストの実際の更新は、home.htmlのDOMContentLoaded内で行われます。
 
         },
         error: function(xhr) {

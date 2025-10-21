@@ -50,7 +50,7 @@ public class CalendarController {
     }
 
     /**
-     * 新しいイベントを保存/更新する（作成者IDを自動設定）
+     * 新しいイベントを保存/更新する（作成者IDと権限チェックを追加）
      */
     @PostMapping("/api/events")
     public ResponseEntity<CalendarEvent> createEvent(
@@ -61,11 +61,34 @@ public class CalendarController {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build(); 
         }
         
-        // 新規作成時（IDがnullまたは空の場合）のみ、作成者IDを設定する
-        if (event.getId() == null || event.getId().isEmpty()) {
-             event.setCreatedByUserId(userDetails.getUser().getUserId());
+        String currentUserId = userDetails.getUser().getUserId();
+        boolean isNew = (event.getId() == null || event.getId().isEmpty());
+
+        if (isNew) {
+             // 新規作成時: 作成者IDを設定
+             event.setCreatedByUserId(currentUserId);
+        } else {
+             // ★★★ 更新時: 既存のイベントを取得し、作成者でなければ更新を拒否する ★★★
+             Optional<CalendarEvent> existingEventOpt = eventRepository.findById(event.getId());
+
+             if (existingEventOpt.isPresent()) {
+                 CalendarEvent existingEvent = existingEventOpt.get();
+
+                 // 認可チェック: 作成者でない、かつ管理権限もない場合は更新不可
+                 if (!currentUserId.equals(existingEvent.getCreatedByUserId()) && !userDetails.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"))) {
+                      // 編集権限がない場合はFORBIDDENを返す
+                     return ResponseEntity.status(HttpStatus.FORBIDDEN).build(); 
+                 }
+                 
+                 // 作成者IDは既存のものを維持（誤って上書きされないように）
+                 event.setCreatedByUserId(existingEvent.getCreatedByUserId());
+             } else {
+                 // IDがあるが既存データが見つからない場合も、処理を続行せずエラー
+                 return ResponseEntity.notFound().build();
+             }
         }
 
+        // データを保存（IDがあれば更新、なければ新規作成）
         CalendarEvent savedEvent = eventRepository.save(event);
         
         // WebSocket通知: イベントが更新されたことをクライアントに通知
