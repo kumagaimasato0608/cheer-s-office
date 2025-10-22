@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="ja" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <meta name="_csrf" th:content="${_csrf.token}"/>
+    <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
+    <title>ユーザー一覧 - Cheers Office</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/axios@1.7.7/dist/axios.min.js"></script>
+    <link rel="stylesheet" href="/css/style.css">
+    
+    <style>
+        .page-content {
+            padding-top: 100px; /* ヘッダー固定を考慮 */
+            padding-bottom: 30px;
+        }
+        .user-icon-sm {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            object-fit: cover;
+            margin-right: 10px;
+        }
+        .accordion-button {
+            font-weight: bold;
+        }
+        .accordion-body ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        .accordion-body li {
+            padding: 5px 0;
+            border-bottom: 1px dotted #eee;
+            font-size: 0.95em;
+        }
+        .search-container {
+            max-width: 800px;
+            margin: 0 auto 30px;
+        }
+    </style>
+</head>
+<body>
+    <div th:replace="common/header :: header"></div>
+
+    <main class="container page-content">
+        <h2 class="mb-4 text-center">🏢 メンバープロフィール一覧</h2>
+
+        <div class="search-container">
+            <div class="input-group mb-3">
+                <input type="text" class="form-control" id="userSearchInput" placeholder="名前、メール、グループなどで検索...">
+                <button class="btn btn-primary" type="button" id="searchButton">検索</button>
+            </div>
+        </div>
+
+        <div id="userListAccordion" class="accordion" style="max-width: 800px; margin: 0 auto;">
+            <p class="text-center text-muted" id="loadingMessage">メンバー情報を読み込み中...</p>
+        </div>
+    </main>
+
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios@1.7.7/dist/axios.min.js"></script>
+    
+    <script th:inline="javascript">
+        // CSRFトークンをaxiosのデフォルトヘッダーに設定
+        const token = document.querySelector('meta[name="_csrf"]').getAttribute('content');
+        const header = document.querySelector('meta[name="_csrf_header"]').getAttribute('content');
+        axios.defaults.headers.common[header] = token;
+        
+        // ★★★ データを格納する変数を定義（これが mypage_list.js で参照される） ★★★
+        var initialAllUsersData = /*[[${allUsersJson}]]*/ []; 
+    </script>
+    
+    <script th:src="@{/js/mypage_list.js}"></script>
+</body>
+</html>

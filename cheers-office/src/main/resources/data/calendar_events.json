@@ -118,4 +118,14 @@
   "allDay" : false,
   "createdByUserId" : "u001_auto",
   "sharedWithUserIds" : [ ]
+}, {
+  "id" : "065afc49-60f3-4534-827a-d52666ad5423",
+  "title" : "事件",
+  "start" : "2025-10-15T04:15",
+  "end" : "2025-10-15T22:20",
+  "description" : "多分今日中に終わる\n",
+  "color" : null,
+  "allDay" : false,
+  "createdByUserId" : "u001_auto",
+  "sharedWithUserIds" : [ "5c418e93-b28e-42f6-80b7-ad5bf4adc080" ]
 } ]

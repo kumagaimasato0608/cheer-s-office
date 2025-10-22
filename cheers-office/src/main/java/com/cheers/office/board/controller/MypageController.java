@@ -1,5 +1,6 @@
-package com.cheers.office.board.controller; 
+package com.cheers.office.board.controller;
 
+import java.util.List; // ★★★ 追加 ★★★
 import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Value;
@@ -23,8 +24,8 @@ import com.cheers.office.board.model.User;
 import com.cheers.office.board.repository.UserRepository;
 import com.cheers.office.board.service.UserAccountService;
 
-import lombok.Data; // ★★★ Lombokのimportを追加 ★★★
-import lombok.EqualsAndHashCode; // ★★★ EqualsAndHashCodeのimportを追加 ★★★
+import lombok.Data;
+import lombok.EqualsAndHashCode; 
 
 @Controller
 public class MypageController {
@@ -52,6 +53,21 @@ public class MypageController {
         }
         return "mypage";
     }
+
+    // ★★★ 修正箇所: 全ユーザーデータを取得し、HTMLに渡す ★★★
+    @GetMapping("/mypage/list")
+    public String mypageList(Model model, @AuthenticationPrincipal CustomUserDetails customUserDetails) {
+        if (customUserDetails == null) {
+            return "redirect:/login";
+        }
+        
+        // UserRepositoryImplのfindAll()は、JSONファイルから最新データを読み込み直すよう修正済み
+        List<User> allUsers = userRepository.findAll();
+        model.addAttribute("allUsersJson", allUsers); // ユーザーリストをモデルに追加
+        
+        return "mypage_list"; 
+    }
+    // ★★★ 修正箇所ここまで ★★★
     
     @PostMapping("/mypage/update")
     public String updateProfile(@ModelAttribute("user") User formUser, 
@@ -151,7 +167,11 @@ public class MypageController {
             String newIconPath = userAccountService.saveProfileIcon(file, userId, profileUploadDir);
             
             User updatedUser = userAccountService.updateUserIcon(userId, newIconPath);
+            
+            // ★★★ キャッシュ更新は update/save の中で行われていることが前提 ★★★
+            
             userDetails.setUser(updatedUser); 
+            
             return ResponseEntity.ok(new IconResponseDto(true, "アイコンが更新されました。", newIconPath));
         } catch (Exception e) {
             System.err.println("Icon Upload Error for user " + userId + ": " + e.getMessage());
@@ -164,16 +184,17 @@ public class MypageController {
         if (userDetails != null) {
             String userId = userDetails.getUser().getUserId();
             userAccountService.updateUserTeamColor(userId, color);
+            
+            // ★★★ キャッシュ更新は updateUserTeamColor の中で行われていることが前提 ★★★
+            
             userDetails.getUser().setTeamColor(color);
         }
         return "redirect:/photopin";
     }
 
     // --- JSONレスポンス用内部クラス ---
-    // @Dataで equals/hashCode が生成されます。警告解消のため callSuper=false を追加します。
-    // 警告は通常このクラス定義行で発生します (行 179)
     @Data
-    @EqualsAndHashCode(callSuper=false) // ★★★ 警告解消のための修正 ★★★
+    @EqualsAndHashCode(callSuper=false) 
     private static class ResponseDto {
         public boolean success;
         public String message;
@@ -181,7 +202,7 @@ public class MypageController {
     }
 
     @Data
-    @EqualsAndHashCode(callSuper=true) // ★★★ ResponseDtoを継承しているため callSuper=true に修正 ★★★
+    @EqualsAndHashCode(callSuper=true) 
     private static class IconResponseDto extends ResponseDto {
         public String iconPath;
         public IconResponseDto(boolean success, String message, String iconPath) { 

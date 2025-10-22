@@ -1,24 +1,39 @@
 [ {
-  "message" : "お昼ご飯のおススメ教えてください",
+  "message" : "KPOPでもなんでも",
   "userId" : "u001_auto",
   "userName" : "自動登録ユーザー",
-  "icon" : "/images/profile/u001_auto.png",
+  "icon" : "/images/default_icon.png",
   "anonymous" : false,
-  "timestamp" : "2025/10/15 13:39",
-  "threadId" : "1bd20bc0-1b56-4a10-9174-03b97cb41ef6",
-  "title" : "お昼ご飯のおススメ教えて",
+  "timestamp" : "2025/10/21 17:07",
+  "threadId" : "914beb98-f4a0-4a59-8a63-593cdebde85d",
+  "title" : "流行りの曲を教えて",
   "imageBase64" : "",
-  "replies" : [ {
-    "message" : "マックが安くておすすめ",
-    "userId" : "870029bd-68ec-480c-923c-8fc4465a2669",
-    "userName" : "まさと",
-    "icon" : "/images/profile/870029bd-68ec-480c-923c-8fc4465a2669.png",
-    "anonymous" : false,
-    "timestamp" : "2025/10/15 13:40",
-    "replyId" : "f929f4c6-5752-4d25-b30f-a6c8651f438e",
-    "authorId" : null
-  } ],
-  "authorId" : null
+  "replies" : [ ],
+  "authorId" : "u001_auto"
+}, {
+  "message" : "憩いの場がほしい",
+  "userId" : "u001_auto",
+  "userName" : "自動登録ユーザー",
+  "icon" : "/images/default_icon.png",
+  "anonymous" : false,
+  "timestamp" : "2025/10/21 17:07",
+  "threadId" : "b15d4fc3-5130-4ed2-bb5b-1308ef8f4e9c",
+  "title" : "この辺のカフェを探しています",
+  "imageBase64" : "",
+  "replies" : [ ],
+  "authorId" : "u001_auto"
+}, {
+  "message" : "おすすめのスポットを教えてほしい",
+  "userId" : "u001_auto",
+  "userName" : "自動登録ユーザー",
+  "icon" : "/images/default_icon.png",
+  "anonymous" : false,
+  "timestamp" : "2025/10/21 17:05",
+  "threadId" : "bbe4e3ea-f79b-4bd8-9f9c-19ac07f98d1a",
+  "title" : "神谷町といえば？",
+  "imageBase64" : "",
+  "replies" : [ ],
+  "authorId" : "u001_auto"
 }, {
   "message" : "あ",
   "userId" : "anonymous",
@@ -49,40 +64,4 @@
     "authorId" : null
   } ],
   "authorId" : null
-}, {
-  "message" : "おすすめのスポットを教えてほしい",
-  "userId" : "u001_auto",
-  "userName" : "自動登録ユーザー",
-  "icon" : "/images/default_icon.png",
-  "anonymous" : false,
-  "timestamp" : "2025/10/21 17:05",
-  "threadId" : "bbe4e3ea-f79b-4bd8-9f9c-19ac07f98d1a",
-  "title" : "神谷町といえば？",
-  "imageBase64" : "",
-  "replies" : [ ],
-  "authorId" : "u001_auto"
-}, {
-  "message" : "KPOPでもなんでも",
-  "userId" : "u001_auto",
-  "userName" : "自動登録ユーザー",
-  "icon" : "/images/default_icon.png",
-  "anonymous" : false,
-  "timestamp" : "2025/10/21 17:07",
-  "threadId" : "914beb98-f4a0-4a59-8a63-593cdebde85d",
-  "title" : "流行りの曲を教えて",
-  "imageBase64" : "",
-  "replies" : [ ],
-  "authorId" : "u001_auto"
-}, {
-  "message" : "憩いの場がほしい",
-  "userId" : "u001_auto",
-  "userName" : "自動登録ユーザー",
-  "icon" : "/images/default_icon.png",
-  "anonymous" : false,
-  "timestamp" : "2025/10/21 17:07",
-  "threadId" : "b15d4fc3-5130-4ed2-bb5b-1308ef8f4e9c",
-  "title" : "この辺のカフェを探しています",
-  "imageBase64" : "",
-  "replies" : [ ],
-  "authorId" : "u001_auto"
 } ]
