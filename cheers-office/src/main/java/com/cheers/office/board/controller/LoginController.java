@@ -39,12 +39,12 @@ public class LoginController {
     }
 
 
-    @PostMapping("/register")
+    @PostMapping("/register") 
     public String registerUser(@RequestParam("userName") String userName,
-                               @RequestParam("mailAddress") String mailAddress,
-                               @RequestParam("password") String password,
-                               @RequestParam("confirmPassword") String confirmPassword,
-                               RedirectAttributes redirectAttributes) {
+                                 @RequestParam("mailAddress") String mailAddress,
+                                 @RequestParam("password") String password,
+                                 @RequestParam("confirmPassword") String confirmPassword,
+                                 RedirectAttributes redirectAttributes) {
         
         // 1. パスワードの文字数チェック
         if (password.length() < MIN_PASSWORD_LENGTH) {

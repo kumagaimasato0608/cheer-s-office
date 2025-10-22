@@ -3,67 +3,50 @@ package com.cheers.office.config;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
-import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
+// import org.springframework.security.web.util.matcher.AntPathRequestMatcher; // ★ 削除するインポート
 
 @Configuration
+@EnableWebSecurity
 public class SecurityConfig {
+
+    @Bean
+    public PasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder();
+    }
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-            // ------------------ CSRF設定 ------------------
-            .csrf(csrf -> csrf
-                .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
-                .ignoringRequestMatchers(
-                    "/api/**",          // REST API
-                    "/mypage/uploadIcon",
-                    "/api/chat/upload",
-                    "/ws/**"            // WebSocket
-                )
-            )
-
-            // ------------------ 認可設定 ------------------
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers(
-                    "/login", "/register", "/error",
-                    "/css/**", "/js/**",
-                    "/images/**", "/uploads/**",
-                    "/favicon.ico",
-                    "/ws/**"
-                ).permitAll()
+                // ログインページと登録ページはアクセスを許可
+                .requestMatchers("/login", "/register", "/css/**", "/js/**", "/images/**", "/webjars/**").permitAll()
+                // その他のリクエストは認証が必要
                 .anyRequest().authenticated()
             )
-
-            // ------------------ ログイン設定 ------------------
             .formLogin(form -> form
-                .loginPage("/login")
-                .loginProcessingUrl("/login")
-                .defaultSuccessUrl("/home", true)
-                .failureUrl("/login?error=true")
+                .loginPage("/login") 
+                .defaultSuccessUrl("/home", true) // ログイン成功後のリダイレクト先
+                .failureUrl("/login?error")
                 .permitAll()
             )
-
-            // ------------------ ログアウト設定 ------------------
             .logout(logout -> logout
-                .logoutUrl("/logout")
-                .logoutSuccessUrl("/login?logout=true")
-                .invalidateHttpSession(true)
+                // ★★★ 修正箇所: AntPathRequestMatcher の代わりにラムダ式を使用 ★★★
+                // 修正前: .logoutRequestMatcher(new AntPathRequestMatcher("/logout"))
+                .logoutRequestMatcher(request -> "/logout".equals(request.getRequestURI())) 
+                .logoutSuccessUrl("/login?logout") 
                 .deleteCookies("JSESSIONID")
+                .invalidateHttpSession(true)
                 .permitAll()
             )
-
-            // ------------------ 同一オリジンiframe許可 ------------------
-            .headers(headers -> headers.frameOptions(frame -> frame.sameOrigin()));
-
+            // WebSocketハンドシェイクパスのCSRF保護を無効化
+            .csrf(csrf -> csrf
+                .ignoringRequestMatchers("/ws/**") 
+            );
+        
         return http.build();
-    }
-
-    // ------------------ パスワード暗号化 ------------------
-    @Bean
-    public PasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder();
     }
 }

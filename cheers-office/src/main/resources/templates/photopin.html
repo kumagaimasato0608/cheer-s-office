@@ -12,6 +12,8 @@
 	    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 	    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 	    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+        
+        <script src="https://cdn.jsdelivr.net/npm/axios@1.7.7/dist/axios.min.js"></script>
 
 	    <link rel="stylesheet" href="/css/style.css">
     <style>
@@ -294,7 +296,7 @@
                               <p class="mb-4">月末のシーズン終了時、**最も広い陣地**を持つチームがチャンピオンです！</p>
                               
                               <div class="d-flex justify-content-around">
-                                  <div class="p-3 border rounded border-danger bg-light"><strong><span style="color:red;">🔴🔵🟡</span> 陣地獲得:</strong> チームカラーでマップを塗ろう！</div>
+                                  <div class="p-3 border rounded border-danger bg-light"><strong><span style="color:red;">🔴🚩</span> 陣地獲得:</strong> チームカラーでマップを塗ろう！</div>
                                   <div class="p-3 border rounded border-warning bg-light"><strong><span style="color:gold;">👑</span> シーズン制:</strong> **毎月1日**にスコアはリセットされます。</div>
                               </div>
                               <p class="text-danger mt-3">⚠️ **投稿は現在のシーズン（今月）のみ可能です。**</p>
@@ -352,63 +354,67 @@
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/sockjs-client/1.6.1/sockjs.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
   <script th:src="@{/js/common.js}"></script>
   
   <script th:inline="javascript">
+    // Thymeleaf変数
     var showColorModalFlag = /*[[${showColorModal} ?: false]]*/ false; 
+    
+    // CSRF/Axios設定
+    const token = document.querySelector('meta[name="_csrf"]').getAttribute('content');
+    const header = document.querySelector('meta[name="_csrf_header"]').getAttribute('content');
+    if (token && header) {
+        axios.defaults.headers.common[header] = token;
+    }
+    
+    // --- photopin.js が依存するヘルパー関数を定義 ---
+
+    // チュートリアルモーダルの初期表示ロジック (photopin.jsが呼び出す)
+    window.checkAndShowInitialTutorial = function() {
+        const tutorialModalEl = document.getElementById('tutorialModal');
+        if (tutorialModalEl) {
+             const tutorialModal = new bootstrap.Modal(tutorialModalEl);
+             const tutorialSeen = localStorage.getItem('pinItTutorialSeen');
+            
+             // チームカラー選択モーダルが開いておらず、チュートリアルが未完了の場合に表示
+             if (tutorialSeen !== 'true' && !showColorModalFlag) {
+                 tutorialModal.show();
+             }
+        }
+    }
+
+    // ローディングオーバーレイを非表示にする関数 (photopin.jsが呼び出す)
+    window.hideLoadingOverlay = function() {
+        const overlay = document.getElementById('loading-overlay');
+        if (overlay) {
+            // データの描画が完了したら、アニメーション後にオーバーレイを隠す
+            // 強制的に2秒ロード (ユーザー体験向上のため)
+            setTimeout(() => {
+                overlay.classList.add('hidden');
+                // クラスを追加するだけでは表示が変わらないため、display: none も適用
+                setTimeout(() => {
+                    overlay.style.display = 'none';
+                }, 500); 
+            }, 2000); 
+        }
+    };
+    
   </script>
 
   <script th:src="@{/js/photopin.js}"></script>
   
   <script>
-    // --- チュートリアルモーダル表示機能 ---
-
-    function showTutorialModal() {
-        const tutorialModalEl = document.getElementById('tutorialModal');
-        if (tutorialModalEl) {
-            const tutorialModal = new bootstrap.Modal(tutorialModalEl);
-            
-            // PinItを始めるボタンが押されたら、localStorageにフラグを立ててモーダルを閉じる
-            $('#tutorialFinishButton').off('click').on('click', function() {
-                localStorage.setItem('pinItTutorialSeen', 'true');
-                tutorialModal.hide();
-            });
-
-            // 初回表示フラグを確認
-            const tutorialSeen = localStorage.getItem('pinItTutorialSeen');
-            
-            // チームカラー選択モーダルが開いていなければ、チュートリアルを表示
-            if (tutorialSeen !== 'true' && !showColorModalFlag) {
-                 // データロード完了後に表示されるよう、フラグを立てる
-                 window.shouldShowTutorialOnLoad = true;
-            }
-        }
-    }
-
-    // ユーザーがクリックで表示できるように、windowスコープに関数を公開
-    window.openTutorial = function() {
-         // 強制的に再表示フラグを立てる必要はない（単に openTutorial を呼ぶだけでよい）
-         const tutorialModal = new bootstrap.Modal(document.getElementById('tutorialModal'));
-         tutorialModal.show();
-    } 
     
+    // --- DOMContentLoaded内の初期化ロジック (jQueryベースの処理をここに集約) ---
     
-    // WebSocket接続とスコア更新のロジック
     document.addEventListener('DOMContentLoaded', function() {
-        // ★ Bootstrapモーダルのインスタンス化
+        // ★ チームカラー選択モーダル設定
         const colorModalElement = document.getElementById('colorSelectionModal');
         const colorModal = new bootstrap.Modal(colorModalElement);
         
-        // ★ チームカラー選択モーダルの起動ロジック
-        if (showColorModalFlag) {
-            colorModal.show();
-        }
-
-        const scoreRedEl = document.getElementById('score-red');
-        const scoreBlueEl = document.getElementById('score-blue');
-        const scoreYellowEl = document.getElementById('score-yellow');
-
-        // チームカラー選択モーダル内のイベントハンドラを再適用
+        // チームカラー選択モーダル内のイベントハンドラ
         $('.color-option').on('click', function() { 
             $('.color-option').removeClass('selected'); 
             $(this).addClass('selected'); 
@@ -418,65 +424,21 @@
             else if (color.includes('255, 255, 0')) $('#selectedColorInput').val('yellow'); 
         });
 
-        // 💡 決定ボタンのクリックイベントハンドラを追加
+        // 💡 決定ボタンのクリックイベントハンドラ
         $('#submitColorButton').on('click', function() {
             if ($('#selectedColorInput').val()) {
-                // 選択された色があればフォームを送信
                 $('#colorForm').submit();
             } else {
                 alert('チームカラーを選択してください。');
             }
         });
         
-        // --- ローディング画面を隠す関数 ---
-        // photopin.js の fetchAllData() 呼び出し後にこの関数を呼ぶ必要があります。
-        window.hideLoadingOverlay = function() {
-            const overlay = document.getElementById('loading-overlay');
-            if (overlay) {
-                // データの描画が完了したら、アニメーション後にオーバーレイを隠す
-                // 強制的に2秒ロード
-                setTimeout(() => {
-                    overlay.classList.add('hidden');
-                }, 2000); 
-            }
-        };
-
-
-        // WebSocket接続の確立
-        const sock = new SockJS('/ws');
-        const stompClient = Stomp.over(sock);
-
-        stompClient.connect({}, function(frame) {
-            console.log('PinIt WebSocket Connected: ' + frame);
-
-            // スコア更新メッセージの購読
-            stompClient.subscribe('/topic/scores', function(scoreMessage) {
-                const scores = JSON.parse(scoreMessage.body);
-                console.log('スコア更新を受信:', scores);
-                
-                // 画面上のスコアを更新
-                if (scores.red !== undefined) {
-                    scoreRedEl.textContent = scores.red + ' ポイント';
-                }
-                if (scores.blue !== undefined) {
-                    scoreBlueEl.textContent = scores.blue + ' ポイント';
-                }
-                if (scores.yellow !== undefined) {
-                    scoreYellowEl.textContent = scores.yellow + ' ポイント';
-                }
-                
-                // PinIt JSのfetchAllDataをトリガーしてマップとサイドバーを再描画
-                if (typeof fetchAllData === 'function') {
-                    // スコア更新時にはローディング画面は再表示しない
-                    fetchAllData(window.currentSeason); 
-                }
-            });
-        });
-        
-        // チームカラー選択モーダルが開いていない、かつチュートリアルが未完了の場合に表示
-        if (!showColorModalFlag) {
-            showTutorialModal();
+        // ★ チームカラー選択モーダルの起動ロジック
+        if (showColorModalFlag) {
+            colorModal.show();
         }
+        
+        // photopin.js の `$(document).ready(...)` が発火し、アプリケーションが起動します。
     });
   </script>
 </body>

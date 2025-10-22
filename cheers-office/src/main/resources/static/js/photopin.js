@@ -16,13 +16,9 @@ $(document).ready(function() {
     const allUsers = {};
     let currentLocationMarker;
 	
-
     let gridState = {}; // 陣地の状態を保持するオブジェクト
     const gridCellLayers = {}; // 描画したマス目を保持するオブジェクト
-    // ★★★ 修正: 5m x 5m タイルを使用 ★★★
-    const CELL_SIZE_METERS = 5.0; 
-    const METERS_PER_DEGREE_LAT = 111320.0; // Javaと共通の定数
-    const MAX_TILE_STEPS = 10; // 50m / 5m = 10
+    
     let stompClient = null;
 
     const csrfToken = $("meta[name='_csrf']").attr("content");
@@ -42,39 +38,38 @@ $(document).ready(function() {
     };
 
 
-    // --- チュートリアルモーダル表示機能 (DOMContentLoadedの外で定義し、グローバルにアクセス可能にする) ★★★
-    // showColorModalFlag は photopin.html のインラインスクリプトで定義されている想定です。
-    function showTutorialModal() {
-        const tutorialModalEl = document.getElementById('tutorialModal');
-        if (tutorialModalEl) {
-            const tutorialModal = new bootstrap.Modal(tutorialModalEl);
-            
-            // PinItを始めるボタンが押されたら、localStorageにフラグを立ててモーダルを閉じる
-            $('#tutorialFinishButton').off('click').on('click', function() {
-                localStorage.setItem('pinItTutorialSeen', 'true');
-                tutorialModal.hide();
-            });
-
-            // 初回表示フラグを確認
-            const tutorialSeen = localStorage.getItem('pinItTutorialSeen');
-            
-            // チームカラー選択モーダルが開いていない、かつチュートリアルが未完了の場合に表示
-            // showColorModalFlag は photopin.html のインラインスクリプトから取得される
-            if (tutorialSeen !== 'true' && (typeof showColorModalFlag === 'undefined' || !showColorModalFlag)) {
-                 // ページロード時のデータ取得完了後に表示されるよう、フラグを立てる
-                 window.shouldShowTutorialOnLoad = true;
-            }
-        }
-    }
-    
     // ユーザーがクリックで表示できるように、windowスコープに関数を公開
     // サイドバーの '🔰 PinItの使い方ガイド' ボタンから呼ばれます
     window.openTutorial = function() {
-         // 強制的に再表示フラグを立てる
-         localStorage.setItem('pinItTutorialSeen', 'false'); 
-         const tutorialModal = new bootstrap.Modal(document.getElementById('tutorialModal'));
-         tutorialModal.show();
-    } 
+         const tutorialModalEl = document.getElementById('tutorialModal');
+         if (tutorialModalEl) {
+             const tutorialModal = new bootstrap.Modal(tutorialModalEl);
+             
+             // PinItを始めるボタンが押されたら、localStorageにフラグを立ててモーダルを閉じる
+             $('#tutorialFinishButton').off('click').on('click', function() {
+                 localStorage.setItem('pinItTutorialSeen', 'true');
+                 tutorialModal.hide();
+             });
+             
+             // 強制的に再表示フラグを立てて表示
+             localStorage.setItem('pinItTutorialSeen', 'false'); 
+             tutorialModal.show();
+         }
+    }
+    
+    // ページロード時の初回表示ロジックは initMap/fetchAllData の後に実行されるように統合
+    window.checkAndShowInitialTutorial = function() {
+        const tutorialModalEl = document.getElementById('tutorialModal');
+        if (tutorialModalEl) {
+             const tutorialModal = new bootstrap.Modal(tutorialModalEl);
+             const tutorialSeen = localStorage.getItem('pinItTutorialSeen');
+            
+             // showColorModalFlag は photopin.html のインラインスクリプトから取得される想定
+             if (tutorialSeen !== 'true' && (typeof showColorModalFlag === 'undefined' || !showColorModalFlag)) {
+                 tutorialModal.show();
+             }
+        }
+    }
 
 
     // --- 初期化処理 (省略) ---
@@ -129,11 +124,8 @@ $(document).ready(function() {
             }
             
             // ★★★ チュートリアル表示 (データロードが完了したことを確認) ★★★
-            if (window.shouldShowTutorialOnLoad) {
-                 const tutorialModal = new bootstrap.Modal(document.getElementById('tutorialModal'));
-                 tutorialModal.show();
-                 window.shouldShowTutorialOnLoad = false;
-            }
+            // checkAndShowInitialTutorialはDOMContentLoaded後に呼ばれるため、ここでは不要
+            // window.checkAndShowInitialTutorial();
 
 
         }).catch(error => {
@@ -325,7 +317,6 @@ $(document).ready(function() {
         $('#seasonSelector').on('change', function() { fetchAllData($(this).val()); });
     }
 
-    function handleSaveNewPin() { /* この関数はインラインロジックに置き換えられたため、未使用 */ }
     
     // --- 補助機能 ---
     
@@ -471,12 +462,16 @@ $(document).ready(function() {
         const teamColor = users[pin.createdBy]?.teamColor;
         if (!teamColor) return;
         const center = L.latLng(pin.location.latitude, pin.location.longitude);
+        
+        // ★★★ 修正: 定数をローカルで定義 (警告解消) ★★★
         const CELL_SIZE_METERS = 5.0; 
         const METERS_PER_DEGREE_LAT = 111320.0;
+        const maxSteps = 10; 
+
         const initialMetersPerLng = 40075000 * Math.cos(center.lat * Math.PI / 180) / 360;
         const latStepCenter = Math.round(center.lat * METERS_PER_DEGREE_LAT / CELL_SIZE_METERS);
         const lngStepCenter = Math.round(center.lng * initialMetersPerLng / CELL_SIZE_METERS);
-        const maxSteps = 10; 
+        
 
         for (let i = -maxSteps; i <= maxSteps; i++) {
             for (let j = -maxSteps; j <= maxSteps; j++) {
@@ -490,6 +485,8 @@ $(document).ready(function() {
 
     function drawGrid() {
         for (const cellId in gridCellLayers) { map.removeLayer(gridCellLayers[cellId]); delete gridCellLayers[cellId]; }
+        
+        // ★★★ 修正: 定数をローカルで定義 (警告解消) ★★★
         const METERS_PER_DEGREE_LAT = 111320.0;
         const CELL_SIZE_METERS = 5.0; 
         
@@ -545,9 +542,9 @@ $(document).ready(function() {
         }).done(function(updatedPin) {
             allPins[pinId] = updatedPin;
             showPinDetailModal(pinId);
-            fetchAllData(currentSeason); 
-        }).fail(function(response) {
-            alert("リアクションの更新に失敗しました。\n" + (response.responseText || ""));
+            // fetchAllData(currentSeason); // ★★★ 修正: 冗長なfetchAllDataの呼び出しを削除 (showPinDetailModalの後に実行されるWebSocketに任せる) ★★★ 
+        }).fail(function(xhr) {
+            alert("リアクションの更新に失敗しました。\n" + (xhr.responseText || ""));
         });
     }
 
@@ -588,9 +585,7 @@ $(document).ready(function() {
             console.log('✅ WebSocket接続成功: ' + frame);
             stompClient.subscribe('/topic/scores', function (message) {
                 const newScores = JSON.parse(message.body);
-                $('#score-red').text(newScores.red + ' ポイント');
-                $('#score-blue').text(newScores.blue + ' ポイント');
-                $('#score-yellow').text(newScores.yellow + ' ポイント');
+                // WebSocketからのスコア更新を受信したら、fetchAllDataを実行して地図/ランキングを更新
                 fetchAllData(currentSeason); 
             });
         });
@@ -602,5 +597,5 @@ $(document).ready(function() {
     setupEventHandlers();
     connectWebSocket();
     
-    // チュートリアル表示の初期化（DOMContentLoadedで実行される showTutorialModal() に依存）
+    // チュートリアル表示は photopin.js の実行が完了した後に DOMContentLoaded で行われます。
 });

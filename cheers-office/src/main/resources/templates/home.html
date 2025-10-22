@@ -9,11 +9,10 @@
     
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     
-    <link href='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/core/main.min.css' rel='stylesheet' />
-    <link href='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/daygrid/main.min.css' rel='stylesheet' />
-    <script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.js'></script>
-    <script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/locales/ja.global.min.js'></script> 
+    <link href='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/main.min.css' rel='stylesheet' />
     
+    <script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.js'></script>
+    <script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/locales-all.global.min.js'></script> 
     <script src="https://cdn.jsdelivr.net/npm/axios@1.7.7/dist/axios.min.js"></script>
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/sockjs-client/1.6.1/sockjs.min.js"></script>
@@ -528,6 +527,17 @@
             const deleteButton = document.getElementById('deleteEventButton');
             const saveButton = document.getElementById('saveEventButton');
             const form = document.getElementById('eventForm');
+            
+            // ★★★ 修正箇所: min/max 属性を強制的にクリアする処理 ★★★
+            const eventStartEl = document.getElementById('eventStart');
+            const eventEndEl = document.getElementById('eventEnd');
+            
+            // これらの属性を削除することで、ブラウザは時間を選択する際の制限を解除します。
+            eventStartEl.removeAttribute('min'); 
+            eventStartEl.removeAttribute('max');
+            eventEndEl.removeAttribute('min');
+            eventEndEl.removeAttribute('max');
+            // ★★★ 修正箇所ここまで ★★★
 
             form.reset();
             deleteButton.style.display = 'none';
@@ -666,7 +676,7 @@
             { result: "中吉", comment: "まずまずの日。日々の努力が実を結びそうです。", color: "#ffc107", weight: 20 },
             { result: "小吉", comment: "小さな幸せがありそう。身の回りに感謝しましょう。", color: "#198754", weight: 30 },
             { result: "吉", comment: "平穏な一日。無理をせず、現状維持を心がけて。", color: "#0dcaf0", weight: 20 },
-            { result: "末吉", comment: "油断大敵。午後に向けて運気が下がり気味かも。", color: "#6610f2", weight: 10 },
+            { result: "末吉", comment: "油断大敵.午後に向けて運気が下がり気味かも。", color: "#6610f2", weight: 10 },
             { result: "凶", comment: "今日は厄日かも。大人しく過ごすのが吉。早めに帰宅しましょう。", color: "#6c757d", weight: 5 }
         ];
 
@@ -889,6 +899,7 @@
 
             // --- FullCalendarの初期化ロジック ---
             calendar = new FullCalendar.Calendar(calendarEl, {
+                // index.global.min.js は DayGrid, TimeGrid などの基本プラグインを自動で含むため、plugins指定を削除
                 initialView: 'dayGridMonth',
                 locale: 'ja',
                 height: 600, // 高さを少し確保
@@ -979,10 +990,28 @@
                     $('#score-yellow').text(newScores.yellow.toLocaleString() + ' ポイント');
                 });
                 
-                // ★★★ カレンダー更新通知 ★★★
+                // ★★★ 修正: オンラインユーザーリスト購読 (DOM操作を強化) ★★★
+                stompClient.subscribe('/topic/onlineUsers', async function(userListMessage) {
+                    
+                    // 【修正点】: サーバーから最初のオンラインリストが来た時点で「読み込み中」状態を解除
+                    const listContainer = document.getElementById('onlineUsersList');
+                    // jQueryではなく標準DOM操作で、子要素の <p> タグを全て削除
+                    Array.from(listContainer.querySelectorAll('p')).forEach(p => p.remove()); 
+
+                    const onlineUserIds = JSON.parse(userListMessage.body);
+                    console.log('オンラインユーザーIDリストを受信:', onlineUserIds);
+                    
+                    // 受信したIDリストを使って、グローバルに保持している allUsers から詳細情報をフィルタリング
+                    const onlineUsers = allUsers.filter(user => onlineUserIds.includes(user.userId));
+                    
+                    // 抽出したオンラインユーザーの詳細情報を使って表示を更新
+                    renderOnlineUsers(onlineUsers);
+                });
+
+                
+                // カレンダー更新通知
                 stompClient.subscribe('/topic/calendar', function(eventMessage) {
                     console.log('カレンダー更新通知を受信');
-                    // 他の誰かがイベントを更新/作成/削除した
                     calendar.refetchEvents();
                 });
             });

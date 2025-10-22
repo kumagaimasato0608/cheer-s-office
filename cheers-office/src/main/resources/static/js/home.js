@@ -3,55 +3,17 @@
 // ページロード時の処理
 $(document).ready(function() {
     
-    // 🗓️ 直近のイベント取得を実行
-    loadUpcomingEvents(); 
+    // 🗓️ 直近のイベント取得は home.html 内の FullCalendar ロジックに任せるため削除
+    // loadUpcomingEvents(); 
     
     // 📰 最新スレッドの取得を実行
     loadLatestThreads(); 
     
-    // 🎮 スコアWebSocket接続を開始
-    connectScoreWebSocket(); 
+    // 🎮 スコアWebSocket接続は home.html 内のロジックに統合するため削除
+    // connectScoreWebSocket(); 
     
     // ... その他のホーム画面の初期化処理があればここに追加 ...
 });
-
-
-/**
- * 🗓️ カレンダーAPIから直近のイベントを取得し、「本日の予定」リスト（またはホーム画面のどこか）に表示する
- * (※ home.html内のFullCalendar統合ロジックと連携させる必要あり)
- */
-function loadUpcomingEvents() {
-    const eventList = $('#today-event-list'); // home.html内の本日の予定リストIDを想定
-    eventList.empty(); 
-    eventList.append('<p class="text-center text-muted small mt-3" id="loading-events">予定を読み込み中...</p>'); // home.htmlの構造に合わせる
-
-    $.ajax({
-        url: '/api/events',
-        method: 'GET',
-        success: function(events) {
-            // この関数は「本日の予定」のHTML構造に合わせた描画ロジックが必要だが、
-            // 現在のホーム画面ロジックは updateTodayScheduleList(allEvents) に依存しているため、
-            // ここではデータの取得成功のみを確認し、DOM操作は最小限に留める。
-
-            eventList.find('#loading-events').remove(); // "読み込み中..."を削除
-            
-            // イベントのソート・フィルタリングは home.html のインラインスクリプトに任せる
-            if (events.length === 0) {
-                 eventList.append('<p class="text-center text-muted small mt-3">イベント情報がありません。</p>');
-            } else {
-                 eventList.append('<p class="text-center text-muted small mt-3">カレンダーデータが読み込まれました。</p>');
-            }
-
-            //  FullCalendarと本日の予定リストの実際の更新は、home.htmlのDOMContentLoaded内で行われます。
-
-        },
-        error: function(xhr) {
-            console.error('イベントの取得に失敗しました:', xhr);
-            eventList.empty();
-            eventList.append('<p class="text-center text-danger small mt-3">イベントの読み込み中にエラーが発生しました。</p>');
-        }
-    });
-}
 
 
 /**
@@ -112,40 +74,4 @@ function loadLatestThreads() {
         }
     });
 }
-
-
-/**
- * 🎮 pinItのスコア更新をWebSocketで受信し、表示を更新する
- */
-function connectScoreWebSocket() {
-    // SockJSとStompが読み込まれている前提
-    if (typeof SockJS === 'undefined' || typeof Stomp === 'undefined') {
-        console.error("SockJSまたはStompライブラリが読み込まれていません。スコアのリアルタイム更新はできません。");
-        return;
-    }
-
-    const socket = new SockJS('/ws'); // WebSocketConfig.javaで定義されたエンドポイント
-    const stompClient = Stomp.over(socket);
-    stompClient.debug = null; // デバッグログを非表示に
-
-    stompClient.connect({}, function(frame) {
-        console.log('Connected to pinIt score WebSocket: ' + frame);
-
-        // スコアトピックを購読
-        stompClient.subscribe('/topic/scores', function(scoreUpdate) {
-            const scoreData = JSON.parse(scoreUpdate.body);
-            
-            // DTO (ScoreUpdateDto) のフィールド名に応じてスコアを更新
-            // toLocaleString() で3桁区切りを適用
-            $('#score-red').text(scoreData.red.toLocaleString() + ' ポイント');
-            $('#score-blue').text(scoreData.blue.toLocaleString() + ' ポイント');
-            $('#score-yellow').text(scoreData.yellow.toLocaleString() + ' ポイント');
-            
-            console.log('Score updated:', scoreData);
-        });
-    }, function(error) {
-        console.error('WebSocket connection error:', error);
-        // エラー時は静的メッセージを表示するなど
-        $('#realtime-score-list').html('<li class="list-group-item text-center text-danger">リアルタイム接続エラー。再読み込みしてください。</li>');
-    });
-}
+// connectScoreWebSocket() および loadUpcomingEvents() は home.html のインラインスクリプトに機能が統合されたため、ここでは定義を削除します。

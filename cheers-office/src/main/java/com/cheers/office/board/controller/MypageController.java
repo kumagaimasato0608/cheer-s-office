@@ -24,6 +24,7 @@ import com.cheers.office.board.repository.UserRepository;
 import com.cheers.office.board.service.UserAccountService;
 
 import lombok.Data; // ★★★ Lombokのimportを追加 ★★★
+import lombok.EqualsAndHashCode; // ★★★ EqualsAndHashCodeのimportを追加 ★★★
 
 @Controller
 public class MypageController {
@@ -54,8 +55,8 @@ public class MypageController {
     
     @PostMapping("/mypage/update")
     public String updateProfile(@ModelAttribute("user") User formUser, 
-                                @AuthenticationPrincipal CustomUserDetails customUserDetails, 
-                                RedirectAttributes redirectAttributes) {
+                                 @AuthenticationPrincipal CustomUserDetails customUserDetails, 
+                                 RedirectAttributes redirectAttributes) {
         
         if (customUserDetails == null) {
             redirectAttributes.addFlashAttribute("errorMessage", "セッションが無効です。再度ログインしてください。");
@@ -169,7 +170,10 @@ public class MypageController {
     }
 
     // --- JSONレスポンス用内部クラス ---
+    // @Dataで equals/hashCode が生成されます。警告解消のため callSuper=false を追加します。
+    // 警告は通常このクラス定義行で発生します (行 179)
     @Data
+    @EqualsAndHashCode(callSuper=false) // ★★★ 警告解消のための修正 ★★★
     private static class ResponseDto {
         public boolean success;
         public String message;
@@ -177,6 +181,7 @@ public class MypageController {
     }
 
     @Data
+    @EqualsAndHashCode(callSuper=true) // ★★★ ResponseDtoを継承しているため callSuper=true に修正 ★★★
     private static class IconResponseDto extends ResponseDto {
         public String iconPath;
         public IconResponseDto(boolean success, String message, String iconPath) { 

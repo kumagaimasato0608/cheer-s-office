@@ -49,4 +49,40 @@
     "authorId" : null
   } ],
   "authorId" : null
+}, {
+  "message" : "おすすめのスポットを教えてほしい",
+  "userId" : "u001_auto",
+  "userName" : "自動登録ユーザー",
+  "icon" : "/images/default_icon.png",
+  "anonymous" : false,
+  "timestamp" : "2025/10/21 17:05",
+  "threadId" : "bbe4e3ea-f79b-4bd8-9f9c-19ac07f98d1a",
+  "title" : "神谷町といえば？",
+  "imageBase64" : "",
+  "replies" : [ ],
+  "authorId" : "u001_auto"
+}, {
+  "message" : "KPOPでもなんでも",
+  "userId" : "u001_auto",
+  "userName" : "自動登録ユーザー",
+  "icon" : "/images/default_icon.png",
+  "anonymous" : false,
+  "timestamp" : "2025/10/21 17:07",
+  "threadId" : "914beb98-f4a0-4a59-8a63-593cdebde85d",
+  "title" : "流行りの曲を教えて",
+  "imageBase64" : "",
+  "replies" : [ ],
+  "authorId" : "u001_auto"
+}, {
+  "message" : "憩いの場がほしい",
+  "userId" : "u001_auto",
+  "userName" : "自動登録ユーザー",
+  "icon" : "/images/default_icon.png",
+  "anonymous" : false,
+  "timestamp" : "2025/10/21 17:07",
+  "threadId" : "b15d4fc3-5130-4ed2-bb5b-1308ef8f4e9c",
+  "title" : "この辺のカフェを探しています",
+  "imageBase64" : "",
+  "replies" : [ ],
+  "authorId" : "u001_auto"
 } ]
