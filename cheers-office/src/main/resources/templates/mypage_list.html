@@ -10,10 +10,20 @@
     <link rel="stylesheet" href="/css/style.css">
     
     <style>
+        /* ★★★ 修正箇所: body にパディングと背景色を設定 ★★★ */
+        body {
+            /* ページ全体にパディングを設定し、固定ヘッダー（約120px）の裏にコンテンツが隠れるのを防ぐ */
+            padding-top: 120px; 
+            margin: 0;
+            background-color: #e6f0ff; /* home.html の body と同じ背景色を設定 */
+        }
+        
         .page-content {
-            padding-top: 100px; /* ヘッダー固定を考慮 */
+            /* bodyのpadding-topで上部のスペースを確保したため、この要素の余分な padding-top を削除 */
+            padding-top: 30px; 
             padding-bottom: 30px;
         }
+        
         .user-icon-sm {
             width: 32px;
             height: 32px;
@@ -37,6 +47,7 @@
         .search-container {
             max-width: 800px;
             margin: 0 auto 30px;
+			
         }
     </style>
 </head>
@@ -44,6 +55,7 @@
     <div th:replace="common/header :: header"></div>
 
     <main class="container page-content">
+		
         <h2 class="mb-4 text-center">🏢 メンバープロフィール一覧</h2>
 
         <div class="search-container">
