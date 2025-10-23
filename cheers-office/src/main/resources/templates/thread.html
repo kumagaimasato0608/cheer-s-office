@@ -69,10 +69,16 @@
       box-shadow:0 4px 15px rgba(0,0,0,0.08);
       padding:20px 30px; overflow-y:auto; margin:0;
     }
+    /* ★ 修正: 画像表示部分 */
     img.thread-image {
-      max-width:360px; width:100%; height:auto; border-radius:8px;
-      margin:10px auto; display:block; object-fit:cover;
+      max-width:360px; /* 最大幅 */
+      max-height: 400px; /* ★ 最大高さを追加 */
+      width: auto; /* ★ width:100% から変更 */
+      height:auto;
+      border-radius:8px;
+      margin:10px auto; display:block; object-fit:contain; /* contain に変更 */
       box-shadow:0 2px 6px rgba(0,0,0,0.1);
+      cursor: pointer; /* ★ クリック可能に */
     }
     .reply {
       background:#f9f9f9; border-radius:8px; padding:10px;
@@ -81,7 +87,7 @@
     .reply-meta { font-size:12px; color:#777; margin-top:3px; }
     textarea {
       width:100%; min-height:60px; border-radius:6px;
-      border:1px solid #ccc; padding:5px; margin-top:6px;
+      border:1px solid #ccc; padding:5px; margin-top:6px; box-sizing: border-box; /* ★ 追加 */
     }
     .btn-send {
       background:#0d6efd; color:white; border:none;
@@ -132,9 +138,9 @@
     <div class="modal-content">
       <h3>新しい掲示板を作成</h3>
       <input type="text" id="newTitle" placeholder="タイトル"
-             style="width:100%;margin-bottom:10px;padding:5px;"/>
+             style="width:100%;margin-bottom:10px;padding:5px; box-sizing: border-box;"/>
       <textarea id="newMsg" placeholder="本文を入力..."></textarea>
-      <label style="margin-top:10px;">📷 画像を添付：<input type="file" id="newImage" accept="image/*"></label>
+      <label style="margin-top:10px; display: block;">📷 画像を添付：<input type="file" id="newImage" accept="image/*"></label>
       <div class="anonymous-toggle">
         <input type="checkbox" id="newAnon" />
         <label for="newAnon">匿名で投稿</label>
@@ -159,6 +165,9 @@
 
   <script>
     let currentThreadId=null,currentUser=null;
+    const csrfToken = document.querySelector('meta[name="_csrf"]').content; // ★ CSRFトークンを取得
+    const csrfHeader = document.querySelector('meta[name="_csrf_header"]').content; // ★ CSRFヘッダー名を取得
+
     document.addEventListener("DOMContentLoaded",async()=>{
       try{const r=await fetch("/api/users/me");if(r.ok)currentUser=await r.json();}catch(e){console.warn("ユーザー情報取得失敗",e);}
       await loadThreads();
@@ -177,13 +186,13 @@
     function renderThreads(threads){
       const list=document.getElementById("thread-list");
       list.innerHTML="";
-      threads.forEach(t=>{
+      (threads || []).forEach(t=>{ // ★ null チェック追加
         const d=document.createElement("div");
         d.className="thread-item"; d.dataset.threadId=t.threadId;
         const icon=t.anonymous?"/images/default_icon.png":(t.icon||"/images/default_icon.png");
         d.innerHTML=`<img src="${icon}" class="thread-icon">
-          <div class="thread-info"><div class="thread-title">${t.title}</div>
-          <div class="thread-meta">${t.userName}・${t.timestamp}</div></div>`;
+          <div class="thread-info"><div class="thread-title">${t.title || ''}</div>
+          <div class="thread-meta">${t.userName || '不明'}・${t.timestamp || ''}</div></div>`;
         d.onclick=()=>{history.pushState({threadId:t.threadId},'',`?threadId=${t.threadId}`);showThread(t);};
         list.appendChild(d);
       });
@@ -191,8 +200,13 @@
 
     async function searchThreads(){
       const kw=document.getElementById("searchInput").value;
-      const r=await fetch(`/api/thread/search?keyword=${encodeURIComponent(kw)}`);
-      renderThreads(await r.json());
+      try {
+        const r=await fetch(`/api/thread/search?keyword=${encodeURIComponent(kw)}`);
+        if(!r.ok) throw new Error('Search failed');
+        renderThreads(await r.json());
+      } catch(e) {
+        document.getElementById("thread-list").innerHTML="<p>検索に失敗しました。</p>";
+      }
       document.getElementById("thread-detail-content").innerHTML="<p>スレッドを選択してください。</p>";
       currentThreadId=null;
     }
@@ -206,26 +220,34 @@
     }
 
     function showThread(t){
+      if (!t) { // ★ null チェック追加
+         document.getElementById("thread-detail-content").innerHTML="<p>スレッド情報の読み込みに失敗しました。</p>";
+         return;
+      }
       currentThreadId=t.threadId;
       document.querySelectorAll('.thread-item').forEach(i=>{
         i.classList.toggle('active',i.dataset.threadId===t.threadId);
       });
       const d=document.getElementById("thread-detail-content");
       const icon=t.anonymous?"/images/default_icon.png":(t.icon||"/images/default_icon.png");
+      // ★ 修正: 画像表示を imageUrl に変更し、クリックで拡大表示
+      const imageHtml = t.imageUrl ? `<img class="thread-image" src="${t.imageUrl}" onclick="window.open('${t.imageUrl}')">` : "";
+
       d.innerHTML=`<div class="thread-header">
         <div style="display:flex;align-items:center;gap:10px;">
           <img src="${icon}" class="thread-icon" style="width:50px;height:50px;">
-          <div><h2 style="margin:0;">${t.title}</h2>
-          <p class="thread-meta">${t.userName}・${t.timestamp}</p></div></div>
-        <p style="white-space:pre-wrap;margin-top:10px;">${t.message}</p>
-        ${t.imageBase64?`<img class="thread-image" src="${t.imageBase64}">`:""}</div>`;
+          <div><h2 style="margin:0;">${t.title || ''}</h2>
+          <p class="thread-meta">${t.userName || '不明'}・${t.timestamp || ''}</p></div></div>
+        <p style="white-space:pre-wrap;margin-top:10px;">${t.message || ''}</p>
+        ${imageHtml}</div>`; // ★ 修正箇所
+
       if(t.replies?.length){
         t.replies.forEach(r=>{
           const ic=r.anonymous?"/images/default_icon.png":(r.icon||"/images/default_icon.png");
           d.insertAdjacentHTML("beforeend",`<div class="reply"><div style="display:flex;gap:10px;">
             <img src="${ic}" class="thread-icon" style="width:35px;height:35px;">
-            <div><p style="white-space:pre-wrap;">${r.message}</p>
-            <p class="reply-meta">${r.userName}・${r.timestamp}</p></div></div></div>`);
+            <div><p style="white-space:pre-wrap;">${r.message || ''}</p>
+            <p class="reply-meta">${r.userName || '不明'}・${r.timestamp || ''}</p></div></div></div>`);
         });
       }
       d.insertAdjacentHTML("beforeend",`<div class="form-section" style="margin-top:20px;border-top:1px solid #eee;padding-top:15px;">
@@ -242,62 +264,147 @@
     function openDeleteModal(id){
       if(id)currentThreadId=id;
       if(!currentThreadId){alert("削除するスレッドを選択してください。");return;}
+      // ★ 削除権限チェック (簡易版: サーバー側でもチェックする前提)
+      const threadData = findThreadDataById(currentThreadId); // 現在のスレッドデータを取得 (要実装 or findById 再利用)
+      if (threadData && currentUser && threadData.authorId !== currentUser.userId) {
+          alert("自分のスレッドしか削除できません。");
+          return;
+      }
       document.getElementById("deleteModal").style.display="flex";
+    }
+
+    // ★ 追加: currentThreadId からスレッドデータを取得するヘルパー (リスト再描画を避けるため)
+    function findThreadDataById(id) {
+        // この実装は、renderThreads で使っている元データ (fetch 結果) を保持しておく必要がある
+        // もし保持していない場合は、再度 /api/thread/{id} を fetch する
+        // ここでは簡易的に null を返す例
+        return null; // TODO: スレッドリストの元データを保持するように修正
     }
 
     async function deleteThreadConfirm(){
       if(!currentThreadId)return;
       const b=document.getElementById("confirmDeleteBtn");
       b.disabled=true;b.textContent="削除中...";
-      const t=document.querySelector('meta[name="_csrf"]').content,
-            h=document.querySelector('meta[name="_csrf_header"]').content;
       try{
-        const r=await fetch(`/api/thread/${currentThreadId}`,{method:"DELETE",headers:{[h]:t}});
-        if(!r.ok)throw new Error(await r.text());
+        const r=await fetch(`/api/thread/${currentThreadId}`,{
+            method:"DELETE",
+            headers:{[csrfHeader]:csrfToken} // ★ CSRFヘッダーを追加
+        });
+        if(!r.ok)throw new Error(await r.text() || '削除に失敗しました'); // エラーメッセージ取得
         alert("削除しました。");
         closeModal('#deleteModal');await loadThreads();
         document.getElementById("thread-detail-content").innerHTML="<p>スレッドを選択してください。</p>";
         history.pushState(null,'',location.pathname);currentThreadId=null;
-      }catch(e){alert("削除に失敗しました："+e.message);}
+      }catch(e){
+          console.error("Delete Error:", e);
+          alert("削除に失敗しました：" + (e.message || '不明なエラー')); // エラーメッセージ表示改善
+      }
       finally{b.disabled=false;b.textContent="削除する";}
     }
 
+    // ★★★ createThread 関数を修正 ★★★
     async function createThread(){
       const b=document.getElementById("createBtn");
-      b.disabled=true;b.textContent="作成中...";
-      try{
-        const title=newTitle.value,msg=newMsg.value,anon=newAnon.checked,file=newImage.files[0];
-        if(!title||!msg){alert("タイトルと本文を入力してください。");return;}
-        let img="";if(file){img=await new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>res(r.result);r.onerror=rej;r.readAsDataURL(file);});}
-        await sendThread(title,msg,anon,img);
-      }finally{
-        b.disabled=false;b.textContent="作成";
-        newTitle.value="";newMsg.value="";newAnon.checked=false;newImage.value="";
+      b.disabled=true; b.textContent="作成中...";
+      const title = document.getElementById("newTitle").value;
+      const msg = document.getElementById("newMsg").value;
+      const anon = document.getElementById("newAnon").checked;
+      const file = document.getElementById("newImage").files[0];
+
+      if (!title || !msg) {
+        alert("タイトルと本文を入力してください。");
+        b.disabled = false; b.textContent = "作成";
+        return;
+      }
+
+      try {
+        let imageUrl = null; // 画像URLを初期化
+
+        // 1. 画像ファイルがあれば、先にアップロードする
+        if (file) {
+          const formData = new FormData();
+          formData.append('file', file);
+
+          const uploadResponse = await fetch("/api/thread/upload", {
+            method: "POST",
+            headers: { [csrfHeader]: csrfToken }, // CSRFヘッダー
+            body: formData
+          });
+
+          if (!uploadResponse.ok) {
+            const errorData = await uploadResponse.json();
+            throw new Error(errorData.error || '画像アップロードに失敗しました。');
+          }
+          const uploadResult = await uploadResponse.json();
+          imageUrl = uploadResult.imageUrl; // アップロード結果からURLを取得
+        }
+
+        // 2. スレッド作成APIを呼び出す (imageUrlを含める)
+        await sendThread(title, msg, anon, imageUrl);
+
+      } catch(e) {
+         console.error("Create Thread Error:", e);
+         alert("作成に失敗しました: " + (e.message || '不明なエラー'));
+      } finally {
+        // モーダルを閉じてフォームをリセット
+        closeModal('#createModal');
+        document.getElementById("newTitle").value = "";
+        document.getElementById("newMsg").value = "";
+        document.getElementById("newAnon").checked = false;
+        document.getElementById("newImage").value = ""; // ファイル選択もリセット
+        b.disabled = false; b.textContent = "作成";
+        await loadThreads(); // リストを再読み込み
       }
     }
 
-    async function sendThread(title,msg,anon,img){
-      const t=document.querySelector('meta[name="_csrf"]').content,
-            h=document.querySelector('meta[name="_csrf_header"]').content;
-      const r=await fetch("/api/thread/create",{method:"POST",headers:{"Content-Type":"application/json",[h]:t},
-        body:JSON.stringify({title,message:msg,anonymous:anon,imageBase64:img})});
-      if(!r.ok)throw new Error("作成に失敗しました。");
-      const nt=await r.json();closeModal('#createModal');await loadThreads();
-      history.pushState({threadId:nt.threadId},'',`?threadId=${nt.threadId}`);showThread(nt);
+    // ★★★ sendThread 関数を修正 ★★★
+    async function sendThread(title, msg, anon, imgUrl){ // 引数を imgUrl に変更
+      const payload = {
+          title: title,
+          message: msg,
+          anonymous: anon,
+          imageUrl: imgUrl // imageBase64 の代わりに imageUrl を送信
+      };
+
+      const r = await fetch("/api/thread/create", {
+          method: "POST",
+          headers: {
+              "Content-Type": "application/json",
+              [csrfHeader]: csrfToken // CSRFヘッダー
+          },
+          body: JSON.stringify(payload)
+      });
+
+      if(!r.ok) throw new Error(await r.text() || "作成リクエストに失敗しました。");
+
+      const nt = await r.json();
+      // closeModal('#createModal'); // createThread 側で閉じるように変更
+      // await loadThreads(); // createThread 側で呼ぶように変更
+      history.pushState({threadId:nt.threadId},'',`?threadId=${nt.threadId}`);
+      showThread(nt); // 作成したスレッドをすぐに表示
     }
 
     async function sendReply(id,btn){
       btn.disabled=true;btn.textContent="返信中...";
       try{
-        const msg=replyMsg.value,anon=replyAnon.checked;
+        const msg=document.getElementById("replyMsg").value; // IDセレクタ修正
+        const anon=document.getElementById("replyAnon").checked; // IDセレクタ修正
         if(!msg){alert("返信を入力してください。");return;}
-        const t=document.querySelector('meta[name="_csrf"]').content,
-              h=document.querySelector('meta[name="_csrf_header"]').content;
-        const r=await fetch(`/api/thread/${id}/reply`,{method:"POST",headers:{"Content-Type":"application/json",[h]:t},
-          body:JSON.stringify({message:msg,anonymous:anon})});
-        if(!r.ok)throw new Error("返信に失敗しました。");
-        await showThreadById(id);await loadThreads();
-      }catch(e){alert(e.message);}
+
+        const r=await fetch(`/api/thread/${id}/reply`,{
+            method:"POST",
+            headers:{
+                "Content-Type":"application/json",
+                [csrfHeader]:csrfToken // ★ CSRFヘッダーを追加
+            },
+            body:JSON.stringify({message:msg,anonymous:anon})});
+        if(!r.ok)throw new Error(await r.text() || "返信に失敗しました。"); // エラーメッセージ取得
+        await showThreadById(id); // 詳細を再読み込みして返信を表示
+        // await loadThreads(); // リストの更新は通常不要
+      }catch(e){
+          console.error("Reply Error:", e);
+          alert("返信に失敗しました: " + (e.message || '不明なエラー'));
+      }
       finally{btn.disabled=false;btn.textContent="返信";}
     }
   </script>

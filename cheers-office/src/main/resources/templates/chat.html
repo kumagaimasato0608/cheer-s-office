@@ -2,6 +2,8 @@
 <html lang="ja" xmlns:th="http://www.thymeleaf.org">
 <head>
 <meta charset="UTF-8" />
+<meta name="_csrf" th:content="${_csrf.token}" />
+<meta name="_csrf_header" th:content="${_csrf.headerName}" />
 <title>Cheers Office - チャット</title>
 
 <link rel="stylesheet" th:href="@{/css/style.css}" />
@@ -130,8 +132,11 @@ main {
 
 .notification-badge {
   position: absolute;
-  top: 6px;
-  right: 8px;
+  /* top: 6px; */ /* ← 削除 */
+  /* right: 8px; */ /* ← 削除 */
+  top: 50%;      /* ★ 追加: 上下中央に配置 */
+  right: 20px;     /* ★ 変更: 右端からの距離を少し増やす (20px程度に調整) */
+  transform: translateY(-50%); /* ★ 追加: 上下中央揃えのための調整 */
   min-width: 18px;
   height: 18px;
   background-color: #dc3545;
@@ -139,7 +144,7 @@ main {
   color: white;
   font-size: 11px;
   font-weight: bold;
-  display: none;
+  display: none; /* 初期状態は非表示 */
   justify-content: center;
   align-items: center;
   line-height: 1;
@@ -147,7 +152,7 @@ main {
   box-sizing: border-box;
 }
 .notification-badge.visible {
-  display: inline-flex;
+  display: inline-flex; /* 表示状態 */
 }
 .chat-main {
   flex: 1;
@@ -618,7 +623,7 @@ function renderMessages(msgs) {
     let readStatusHtml = '';
     if (isMine && m.readBy && currentRoom) {
       const otherReadersCount = (m.readBy || []).filter(id => id !== me.id).length;
-      
+
       if ((currentRoom.members || []).length > 2 && otherReadersCount > 0) {
         readStatusHtml = `<span class="msg-read-status">既読 ${otherReadersCount}</span>`;
       } else if ((currentRoom.members || []).length === 2 && otherReadersCount > 0) {
@@ -657,16 +662,16 @@ function subscribeRoom(roomId) {
   if (sub) sub.unsubscribe();
   sub = stomp.subscribe(`/topic/chat/${roomId}`, msg => {
     const payload = JSON.parse(msg.body);
-    
+
     // --- 既読通知の処理 ---
     if (payload.type === 'READ_UPDATE') {
       const { messageId, readBy } = payload;
       const $msgWrapper = $(`.msg-wrapper[data-message-id="${messageId}"]`);
-      
+
       if ($msgWrapper.hasClass('me')) {
         const otherReadersCount = (readBy || []).filter(id => id !== me.id).length;
         let statusText = '';
-        
+
         if ((currentRoom.members || []).length > 2 && otherReadersCount > 0) {
           statusText = `既読 ${otherReadersCount}`;
         } else if ((currentRoom.members || []).length === 2 && otherReadersCount > 0) {
@@ -746,7 +751,7 @@ function connectWS(cb) {
 function selectRoomById(roomId) {
   const room = rooms.find(r => r.roomId === roomId);
   if(!room) return;
-  
+
   // 1. バッジを先に消す
   notificationCounts[roomId] = 0;
   currentRoom = room;
@@ -757,9 +762,9 @@ function selectRoomById(roomId) {
 
   // 2. メッセージをサーバーから読み込む
   loadMessages(roomId).then(loadedMessages => {
-    
+
     // ★ 修正: 既読にするメッセージIDをすべて保存する配列
-    const unreadMessageIds = []; 
+    const unreadMessageIds = [];
 
     // 3. 【自分用の修正】
     // 画面に表示する *前* に、未読メッセージをローカルデータ上で既読にする
@@ -769,33 +774,33 @@ function selectRoomById(roomId) {
                 msg.readBy = [];
             }
             msg.readBy.push(me.id); // ローカルの 'readBy' リストに自分を追加
-            
+
             // ★ 修正: 最後の1件だけでなく、すべての未読IDを保存
-            unreadMessageIds.push(msg.messageId); 
+            unreadMessageIds.push(msg.messageId);
         }
     });
 
     // 4. 既読に書き換えたデータで画面を描画する (自分の画面が正しくなる)
-    renderMessages(loadedMessages); 
-    
+    renderMessages(loadedMessages);
+
     // 5. WebSocketに接続
-    connectWS(() => { 
+    connectWS(() => {
       subscribeRoom(roomId);
-      
+
       // 6. ★ 修正: unreadMessageIds配列にIDが1件でもあれば
       if (unreadMessageIds.length > 0) {
-          
+
           // 6a. 【サーバー用の修正】
           // バックエンドのJSONファイルを *1回だけ* 更新
           stomp.send(`/app/chat/${roomId}/markAllAsRead`, {}, JSON.stringify({ userId: me.id }));
-          
+
           // 6b. 【相手用の修正】
           // 相手（送信者）に「既読」を伝えるため、
           // 既読にした *すべてのメッセージ* について 'read' リクエストを送信する
           unreadMessageIds.forEach(msgId => {
-             stomp.send(`/app/chat/${roomId}/read`, {}, JSON.stringify({ 
-                  messageId: msgId, 
-                  userId: me.id 
+             stomp.send(`/app/chat/${roomId}/read`, {}, JSON.stringify({
+                  messageId: msgId,
+                  userId: me.id
               }));
           });
       }
@@ -948,6 +953,21 @@ function resetGroupModal() {
 }
 
 $(async function init() {
+    // ★★★ この CSRF 設定コードを追加 ★★★
+    const token = $("meta[name='_csrf']").attr("content");
+    const header = $("meta[name='_csrf_header']").attr("content");
+    if (token && header) {
+        $.ajaxSetup({
+            beforeSend: function(xhr) {
+                // console.log("★ beforeSend が実行されました ★ ヘッダー:", header, "トークン:", token); // デバッグ用
+                xhr.setRequestHeader(header, token);
+            }
+        });
+        // console.log("CSRF setup complete. Header:", header, "Token:", token); // デバッグ用
+    } else {
+        console.error("CSRF token meta tags not found!");
+    }
+    // ★★★ ここまで追加 ★★★
     // --- イベントリスナー設定 ---
     $(document).on("click", ".room-item", function() { selectRoomById($(this).data("room-id")); });
     $(document).on("click", ".preview-remove", clearPreview);
@@ -961,7 +981,7 @@ $(async function init() {
     });
     $("#attachFileBtn").on("click", () => { if (!$("#attachFileBtn").prop("disabled")) $("#fileInput").click(); });
     $("#fileInput").on("change", function(e) { if (e.target.files.length > 0) setupPreview(e.target.files[0]); });
-    
+
     // ドラッグ＆ドロップ
     const $chatMain = $(".chat-main");
     $chatMain.on({
@@ -969,13 +989,13 @@ $(async function init() {
         "dragleave": (e) => { e.preventDefault(); e.stopPropagation(); $chatMain.removeClass("drag-over"); },
         "drop": (e) => { e.preventDefault(); e.stopPropagation(); $chatMain.removeClass("drag-over"); if (e.originalEvent.dataTransfer.files.length > 0) setupPreview(e.originalEvent.dataTransfer.files[0]); }
     });
-    
+
     // プロフィールモーダル
     $("#messages").on("click", ".msg-wrapper.other .msg-icon", function() {
         const userId = $(this).closest(".msg-wrapper").data("user-id");
         if (!userId) return;
 
-        $.getJSON(`/api/users/${userId}`).done(fullUser => {
+        $.getJSON(`/api/users/${userId}`).done(fullUser => { // GETリクエストなのでCSRF不要
             if (fullUser) {
                 $("#profileIcon").attr("src", fullUser.icon || DEFAULT_ICON);
                 $("#profileUsername").text(fullUser.userName || "不明");
@@ -1005,7 +1025,7 @@ $(async function init() {
     $("#openDeleteBtn").on("click", openDeleteModal);
     $("#cancelDeleteBtn").on("click", () => $("#deleteModal").hide());
     $("#confirmDeleteBtn").on("click", deleteRoomConfirm);
-    
+
     // グループ作成モーダル
     $("#createGroupBtn").on("click", function() {
         const groupName = $("#groupNameInput").val().trim();
@@ -1026,17 +1046,17 @@ $(async function init() {
             reader.readAsDataURL(e.target.files[0]);
         }
     });
-    
+
     // --- 初期データ読み込み ---
     try {
         await loadMe();
         await loadUsers();
-        
-        await $.getJSON("/api/rooms").then(res => {
+
+        await $.getJSON("/api/rooms").then(res => { // GETリクエストなのでCSRF不要
             rooms = (res || []).filter(r => (r.members || []).includes(me.id));
-            
+
             // 既読カウントの初期化
-            notificationCounts = {}; 
+            notificationCounts = {};
             rooms.forEach(room => {
                 if (room.unreadCount > 0) {
                     notificationCounts[room.roomId] = room.unreadCount;
@@ -1044,7 +1064,7 @@ $(async function init() {
             });
         });
 
-        renderRooms(); 
+        renderRooms();
         connectWS(); // WebSocketに接続（通知購読のため）
     } catch (e) {
         console.error("初期化に失敗しました:", e);

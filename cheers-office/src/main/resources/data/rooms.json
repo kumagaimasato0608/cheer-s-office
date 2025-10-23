@@ -1,19 +1,13 @@
 [ {
-  "roomId" : "g_6b17053e",
-  "roomName" : "ポケモン同好会",
-  "members" : [ "u001_auto", "870029bd-68ec-480c-923c-8fc4465a2669", "c2227a52-b7a0-463b-bbba-7a483368d3fc" ],
-  "createdAt" : "2025-10-20T17:17:31.219880300",
-  "icon" : "/images/groups/4e93c11c-1a2a-49cd-b312-7dd2a0aa9fb9.jpeg"
-}, {
-  "roomId" : "r_f47d3785",
-  "roomName" : "マサト",
-  "members" : [ "u001_auto", "5c418e93-b28e-42f6-80b7-ad5bf4adc080" ],
-  "createdAt" : "2025-10-21T15:01:54.008722400",
-  "icon" : null
-}, {
-  "roomId" : "r_df6eb755",
+  "roomId" : "r_5fb8f7a7",
   "roomName" : "自動登録ユーザー",
-  "members" : [ "1ed22d3c-1409-4ccc-b49c-eb552fb3106a", "u001_auto" ],
-  "createdAt" : "2025-10-21T15:05:04.801533500",
+  "members" : [ "349348bd-de12-4d75-9311-f2b09c107489", "u001_auto" ],
+  "createdAt" : "2025-10-23T16:44:15.774468500",
   "icon" : null
+}, {
+  "roomId" : "g_cda7f98f",
+  "roomName" : "a",
+  "members" : [ "d5982f9e-2beb-45a4-ba44-31b9e7a3512e", "u001_auto", "349348bd-de12-4d75-9311-f2b09c107489" ],
+  "createdAt" : "2025-10-23T16:50:08.419609700",
+  "icon" : "/images/groups/39136642-58f8-4984-a63d-691ff66fb2f9.png"
 } ]
