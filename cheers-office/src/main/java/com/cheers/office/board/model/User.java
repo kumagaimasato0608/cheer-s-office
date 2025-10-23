@@ -1,7 +1,7 @@
 package com.cheers.office.board.model;
 
 import java.io.Serializable;
-import java.time.LocalDateTime; // ★★★ このimport文を追加 ★★★
+import java.time.LocalDateTime;
 
 public class User implements Serializable { 
     private String userId;
@@ -21,6 +21,10 @@ public class User implements Serializable {
     private String commuteFrequency;
     private String workTime;
     private String workContent;
+    
+    // ★★★ 修正箇所: チュートリアル表示完了フラグを追加 ★★★
+    private boolean tutorialSeen; 
+    
     // ★★★ 新規追加フィールド ここまで ★★★
 
     // ★★★ 最後にピンを置いた日時を記録するフィールドを追加 ★★★
@@ -59,6 +63,10 @@ public class User implements Serializable {
     public void setWorkTime(String workTime) { this.workTime = workTime; }
     public String getWorkContent() { return workContent; }
     public void setWorkContent(String workContent) { this.workContent = workContent; }
+    
+    // ★★★ チュートリアル完了フラグ用のGetterとSetterを追加 ★★★
+    public boolean isTutorialSeen() { return tutorialSeen; }
+    public void setTutorialSeen(boolean tutorialSeen) { this.tutorialSeen = tutorialSeen; }
     
     // ★★★ lastPinTimestamp用のGetterとSetterを追加 ★★★
     public LocalDateTime getLastPinTimestamp() { return lastPinTimestamp; }

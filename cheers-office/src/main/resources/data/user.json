@@ -14,7 +14,8 @@
   "commuteFrequency" : "週５",
   "workTime" : "",
   "workContent" : "",
-  "lastPinTimestamp" : "2025-10-21T14:46:47.5433749"
+  "tutorialSeen" : false,
+  "lastPinTimestamp" : "2025-10-23T15:54:57.075989"
 }, {
   "userId" : "5c418e93-b28e-42f6-80b7-ad5bf4adc080",
   "userName" : "熊谷 真悟",
@@ -31,7 +32,8 @@
   "commuteFrequency" : "週３",
   "workTime" : "9:00~18:00",
   "workContent" : "ぱそこんかたかた",
-  "lastPinTimestamp" : null
+  "tutorialSeen" : false,
+  "lastPinTimestamp" : "2025-10-23T15:57:23.9682399"
 }, {
   "userId" : "1ed22d3c-1409-4ccc-b49c-eb552fb3106a",
   "userName" : "a",
@@ -48,6 +50,7 @@
   "commuteFrequency" : null,
   "workTime" : null,
   "workContent" : null,
+  "tutorialSeen" : false,
   "lastPinTimestamp" : "2025-10-21T16:14:42.9820723"
 }, {
   "userId" : "9406c860-e5cd-4510-a9f6-0e6ceeea504f",
@@ -65,7 +68,8 @@
   "commuteFrequency" : null,
   "workTime" : null,
   "workContent" : null,
-  "lastPinTimestamp" : null
+  "tutorialSeen" : false,
+  "lastPinTimestamp" : "2025-10-23T16:08:52.3870159"
 }, {
   "userId" : "05c30396-5db8-4d9b-8878-d340416ea420",
   "userName" : "s",
@@ -76,11 +80,30 @@
   "hobby" : null,
   "icon" : "/images/default_icon.png",
   "statusMessage" : null,
-  "teamColor" : null,
+  "teamColor" : "blue",
   "deploymentDestination" : null,
   "deploymentArea" : null,
   "commuteFrequency" : null,
   "workTime" : null,
   "workContent" : null,
+  "tutorialSeen" : false,
+  "lastPinTimestamp" : null
+}, {
+  "userId" : "50c7abdd-737e-49ab-8054-1b011eddca70",
+  "userName" : "k",
+  "mailAddress" : "k@k",
+  "password" : "$2a$10$UWyODG/Sh0fctsVVhcZOSuepSgeLVK08y.6Tu86/NemTJ/f5wLYP.",
+  "group" : "未設定",
+  "myBoom" : null,
+  "hobby" : null,
+  "icon" : "/images/default_icon.png",
+  "statusMessage" : null,
+  "teamColor" : "yellow",
+  "deploymentDestination" : null,
+  "deploymentArea" : null,
+  "commuteFrequency" : null,
+  "workTime" : null,
+  "workContent" : null,
+  "tutorialSeen" : false,
   "lastPinTimestamp" : null
 } ]

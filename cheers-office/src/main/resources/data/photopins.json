@@ -74,52 +74,63 @@
   },
   "season" : "2025-10"
 }, {
-  "pinId" : "dd83301c-b39d-463e-8774-62c4c126c285",
+  "pinId" : "bb80bea7-b2af-4442-b218-70600f81bc6b",
   "location" : {
-    "latitude" : 35.663459931305184,
-    "longitude" : 139.74638700059432
+    "latitude" : 35.66308275671679,
+    "longitude" : 139.74641788696155
   },
-  "title" : "神谷町",
-  "description" : "",
+  "title" : "あ",
+  "description" : "あ",
   "createdBy" : "u001_auto",
-  "createdDate" : "2025-10-21T14:46:47.5067887",
+  "createdDate" : "2025-10-23T15:54:57.0686207",
   "photos" : [ {
-    "photoId" : "d29c80ef-7519-4aa4-a135-c6592ea6d5f9",
-    "imageUrl" : "/images/photopins/dd83301c-b39d-463e-8774-62c4c126c285_cheers_office_logo.png",
+    "photoId" : "53560453-3656-4937-83a0-abe0af83c3e0",
+    "imageUrl" : "/images/photopins/bb80bea7-b2af-4442-b218-70600f81bc6b_スクリーンショット (1).png",
     "comment" : null,
     "uploadedBy" : "u001_auto",
-    "uploadedDate" : "2025-10-21T14:46:47.5067887"
+    "uploadedDate" : "2025-10-23T15:54:57.0686207"
   } ],
-  "comments" : [ {
-    "commentId" : "bffbb49e-ca23-48ab-a015-9825dd6697cd",
-    "pinId" : "dd83301c-b39d-463e-8774-62c4c126c285",
-    "userId" : "1ed22d3c-1409-4ccc-b49c-eb552fb3106a",
-    "content" : "konnnitiha",
-    "timestamp" : "2025-10-21T15:06:50.3658335"
-  } ],
+  "comments" : [ ],
   "bonusPoints" : 0,
-  "reactions" : {
-    "seen" : [ "5c418e93-b28e-42f6-80b7-ad5bf4adc080", "1ed22d3c-1409-4ccc-b49c-eb552fb3106a" ],
-    "want" : [ "5c418e93-b28e-42f6-80b7-ad5bf4adc080", "1ed22d3c-1409-4ccc-b49c-eb552fb3106a" ],
-    "like" : [ "5c418e93-b28e-42f6-80b7-ad5bf4adc080", "1ed22d3c-1409-4ccc-b49c-eb552fb3106a" ]
-  },
+  "reactions" : { },
   "season" : "2025-10"
 }, {
-  "pinId" : "dc044649-a844-4f54-8bf0-d4ba9e0b9e6f",
+  "pinId" : "67bc8152-eef0-41de-8416-2323ecc4be8f",
   "location" : {
-    "latitude" : 35.663459493132144,
-    "longitude" : 139.74642434034897
+    "latitude" : 35.66302073172072,
+    "longitude" : 139.74641955035415
   },
-  "title" : "ｔ",
-  "description" : "",
-  "createdBy" : "1ed22d3c-1409-4ccc-b49c-eb552fb3106a",
-  "createdDate" : "2025-10-21T16:14:42.9595275",
+  "title" : "あ",
+  "description" : "あ",
+  "createdBy" : "5c418e93-b28e-42f6-80b7-ad5bf4adc080",
+  "createdDate" : "2025-10-23T15:57:23.9600677",
   "photos" : [ {
-    "photoId" : "a579e69c-f60c-4b41-b3a0-db0c3d641633",
-    "imageUrl" : "/images/photopins/dc044649-a844-4f54-8bf0-d4ba9e0b9e6f_ダウンロード.webp",
+    "photoId" : "05e5917d-f22d-4224-a9ee-1a27fb1f3763",
+    "imageUrl" : "/images/photopins/67bc8152-eef0-41de-8416-2323ecc4be8f_スクリーンショット (1).png",
     "comment" : null,
-    "uploadedBy" : "1ed22d3c-1409-4ccc-b49c-eb552fb3106a",
-    "uploadedDate" : "2025-10-21T16:14:42.9595275"
+    "uploadedBy" : "5c418e93-b28e-42f6-80b7-ad5bf4adc080",
+    "uploadedDate" : "2025-10-23T15:57:23.9600677"
+  } ],
+  "comments" : [ ],
+  "bonusPoints" : 0,
+  "reactions" : { },
+  "season" : "2025-10"
+}, {
+  "pinId" : "331b0cf8-bf27-426a-b696-4012e3a19500",
+  "location" : {
+    "latitude" : 35.66308275671679,
+    "longitude" : 139.74641788696155
+  },
+  "title" : "a",
+  "description" : "a",
+  "createdBy" : "9406c860-e5cd-4510-a9f6-0e6ceeea504f",
+  "createdDate" : "2025-10-23T16:08:52.3797258",
+  "photos" : [ {
+    "photoId" : "7ff908ae-78ca-443d-be1d-07b987efc692",
+    "imageUrl" : "/images/photopins/331b0cf8-bf27-426a-b696-4012e3a19500_スクリーンショット 2025-10-20 162730.png",
+    "comment" : null,
+    "uploadedBy" : "9406c860-e5cd-4510-a9f6-0e6ceeea504f",
+    "uploadedDate" : "2025-10-23T16:08:52.3797258"
   } ],
   "comments" : [ ],
   "bonusPoints" : 0,

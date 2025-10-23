@@ -1,26 +1,35 @@
 <!DOCTYPE html>
 <html lang="ja" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
-	<head>
-	    <meta charset="UTF-8">
-	    <meta name="_csrf" th:content="${_csrf.token}"/>
-	    <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
-	    <title>PinIt from cheers office</title>
-	    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-	    
-	    <link rel="icon" type="image/png" href="/images/PinIt_logo.png">
-	    
-	    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-	    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-	    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
-        
-        <script src="https://cdn.jsdelivr.net/npm/axios@1.7.7/dist/axios.min.js"></script>
+<head>
+    <meta charset="UTF-8">
+    <meta name="_csrf" th:content="${_csrf.token}"/>
+    <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
+    <title>PinIt from cheers office</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <link rel="icon" type="image/png" href="/images/PinIt_logo.png">
+    
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    
+    <script src="https://cdn.jsdelivr.net/npm/axios@1.7.7/dist/axios.min.js"></script>
 
-	    <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="/css/style.css">
     <style>
         /* PinIt独自のスタイル */
-        .page-wrapper { padding-top: 115px; }
-        .main-content { padding: 20px; display: flex; gap: 20px; height: calc(100vh - 115px - 20px); }
-        .user-list-sidebar { width: 280px; flex-shrink: 0; background-color: #ffffff; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); padding: 15px; overflow-y: auto; height: 100%; }
+        body {
+             padding-top: 100px; /* 固定ヘッダーの高さ分、コンテンツを下にずらす */
+             margin: 0;
+             background-color: #f4f7f9;
+        }
+
+        .page-wrapper { 
+             padding-top: 20px; 
+        }
+
+        .main-content { padding: 20px; display: flex; gap: 20px; height: calc(100vh - 100px - 40px); }
+        .user-list-sidebar { width: 280px; flex-shrink: 0; background-color: #ffffff; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); padding: 15px; max-height: 100%; overflow-y: auto; }
         .user-list-sidebar h4, .user-list-sidebar h5 { margin-bottom: 15px; color: #0d6efd; border-bottom: 1px solid #eee; padding-bottom: 10px; font-size: 1.1em; }
         .user-icon { width: 32px; height: 32px; border-radius: 50%; object-fit: cover; }
         #map-container { position: relative; flex-grow: 1; height: 100%; box-shadow: 0 4px 15px rgba(0,0,0,0.05); border-radius: 8px; display: flex; flex-direction: column; }
@@ -380,6 +389,11 @@
             
              // チームカラー選択モーダルが開いておらず、チュートリアルが未完了の場合に表示
              if (tutorialSeen !== 'true' && !showColorModalFlag) {
+                 // PinItを始めるボタンが押されたら、localStorageにフラグを立ててモーダルを閉じる
+                 $('#tutorialFinishButton').off('click').on('click', function() {
+                     localStorage.setItem('pinItTutorialSeen', 'true');
+                     tutorialModal.hide();
+                 });
                  tutorialModal.show();
              }
         }

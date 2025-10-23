@@ -8,7 +8,16 @@
   "threadId" : "914beb98-f4a0-4a59-8a63-593cdebde85d",
   "title" : "流行りの曲を教えて",
   "imageBase64" : "",
-  "replies" : [ ],
+  "replies" : [ {
+    "message" : "しらないです！",
+    "userId" : "5c418e93-b28e-42f6-80b7-ad5bf4adc080",
+    "userName" : "熊谷 真悟",
+    "icon" : "/images/profile/5c418e93-b28e-42f6-80b7-ad5bf4adc080.png",
+    "anonymous" : false,
+    "timestamp" : "2025/10/23 11:45",
+    "replyId" : "7e249952-ba90-4e8b-8e56-74a20d5246b9",
+    "authorId" : "5c418e93-b28e-42f6-80b7-ad5bf4adc080"
+  } ],
   "authorId" : "u001_auto"
 }, {
   "message" : "憩いの場がほしい",
@@ -62,6 +71,48 @@
     "timestamp" : "2025/10/20 14:12",
     "replyId" : "261ce14c-97dd-4308-b39f-578f99f994bf",
     "authorId" : null
+  }, {
+    "message" : "すごいね",
+    "userId" : "anonymous",
+    "userName" : "匿名",
+    "icon" : "/images/default_icon.png",
+    "anonymous" : true,
+    "timestamp" : "2025/10/23 11:45",
+    "replyId" : "0c73aa67-22ec-421a-a644-cdda7fa53338",
+    "authorId" : "5c418e93-b28e-42f6-80b7-ad5bf4adc080"
+  }, {
+    "message" : "http://localhost:8080/images/profile/u001_auto.png",
+    "userId" : "u001_auto",
+    "userName" : "自動登録ユーザー",
+    "icon" : "/images/profile/u001_auto.png",
+    "anonymous" : false,
+    "timestamp" : "2025/10/23 14:14",
+    "replyId" : "83008c82-3e6f-4d93-8a26-a215402fdb62",
+    "authorId" : "u001_auto"
   } ],
   "authorId" : null
+}, {
+  "message" : "a",
+  "userId" : "u001_auto",
+  "userName" : "自動登録ユーザー",
+  "icon" : "/images/profile/u001_auto.png",
+  "anonymous" : false,
+  "timestamp" : "2025/10/23 15:19",
+  "threadId" : "d8cfc238-f79f-4b73-a0f3-dcbcce5ffa02",
+  "title" : "a",
+  "imageBase64" : "",
+  "replies" : [ ],
+  "authorId" : "u001_auto"
+}, {
+  "message" : "a",
+  "userId" : "u001_auto",
+  "userName" : "自動登録ユーザー",
+  "icon" : "/images/profile/u001_auto.png",
+  "anonymous" : false,
+  "timestamp" : "2025/10/23 15:19",
+  "threadId" : "d1f0c9ee-fa21-4ecc-90ce-28b4e0d972fa",
+  "title" : "a",
+  "imageBase64" : "",
+  "replies" : [ ],
+  "authorId" : "u001_auto"
 } ]

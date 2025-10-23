@@ -45,30 +45,40 @@ $(document).ready(function() {
          if (tutorialModalEl) {
              const tutorialModal = new bootstrap.Modal(tutorialModalEl);
              
-             // PinItを始めるボタンが押されたら、localStorageにフラグを立ててモーダルを閉じる
+             // PinItを始めるボタンが押されたら、サーバーに完了通知を送る (永続化)
              $('#tutorialFinishButton').off('click').on('click', function() {
-                 localStorage.setItem('pinItTutorialSeen', 'true');
+                 completeTutorialOnServer();
                  tutorialModal.hide();
              });
              
-             // 強制的に再表示フラグを立てて表示
-             localStorage.setItem('pinItTutorialSeen', 'false'); 
+             // チュートリアルモーダルを強制的に表示
              tutorialModal.show();
          }
     }
     
-    // ページロード時の初回表示ロジックは initMap/fetchAllData の後に実行されるように統合
+    // ★★★ 修正箇所: 自動表示ロジック (checkAndShowInitialTutorial) を削除 ★★★
+    // 完全に自動表示を防ぐため、この関数は不要になります。
+    // 代わりに、openTutorialの中でフラグを立てるロジックのみを有効にします。
     window.checkAndShowInitialTutorial = function() {
-        const tutorialModalEl = document.getElementById('tutorialModal');
-        if (tutorialModalEl) {
-             const tutorialModal = new bootstrap.Modal(tutorialModalEl);
-             const tutorialSeen = localStorage.getItem('pinItTutorialSeen');
-            
-             // showColorModalFlag は photopin.html のインラインスクリプトから取得される想定
-             if (tutorialSeen !== 'true' && (typeof showColorModalFlag === 'undefined' || !showColorModalFlag)) {
-                 tutorialModal.show();
-             }
-        }
+        // 何も実行しない (自動表示を停止)
+    }
+
+
+    /**
+     * サーバーにチュートリアル完了フラグを立てるAPIを呼び出す
+     */
+    function completeTutorialOnServer() {
+        // ★★★ User.tutorialSeen を true に設定 ★★★
+        axios.post('/api/user/completeTutorial')
+            .then(response => {
+                console.log('Tutorial completion saved to server.');
+                if (currentUser) {
+                    currentUser.tutorialSeen = true;
+                }
+            })
+            .catch(error => {
+                console.error('Failed to save tutorial completion:', error);
+            });
     }
 
 
@@ -97,22 +107,27 @@ $(document).ready(function() {
 
         Promise.all([
             $.get("/api/users/me"),
-            $.get("/api/users"),
-            $.get(`/api/photopins?season=${season}`)
+            $.get("/api/users"), // ★★★ ユーザー一覧データ取得 ★★★
+            $.get(`/api/photopins?season=${season}`) // ★★★ Pin一覧データ取得 ★★★
         ]).then(([currentUserData, allUsersData, allPinsData]) => {
+            
+            // ★★★ データの更新順序を厳密化 ★★★
             currentUser = currentUserData;
+            
+            // PinデータとUserデータをグローバル変数に格納 (最新の状態を保持)
             for(const key in allPins) delete allPins[key];
             for(const key in allUsers) delete allUsers[key];
             allPinsData.forEach(pin => { allPins[pin.pinId] = pin; });
             allUsersData.forEach(user => { allUsers[user.userId] = user; });
-
+            
+            // PinデータとUserデータが揃った状態で描画を実行
             // 1. 陣地計算
             buildInitialGridState(allPinsData, allUsers);
             
             // 2. 描画
             drawGrid();
             renderPins(allPinsData, allUsers);
-            renderRanking(allPinsData, allUsers);
+            renderRanking(allPinsData, allUsers); // ★★★ ユーザーデータとピンデータの両方を参照して実行 ★★★
             renderUserList(allPinsData, allUsers);
             
             // 3. スコア表示（WebSocketとは独立してローカルで計算）
@@ -124,8 +139,8 @@ $(document).ready(function() {
             }
             
             // ★★★ チュートリアル表示 (データロードが完了したことを確認) ★★★
-            // checkAndShowInitialTutorialはDOMContentLoaded後に呼ばれるため、ここでは不要
-            // window.checkAndShowInitialTutorial();
+            // 自動表示を停止したため、この関数は実行しません。
+            // window.checkAndShowInitialTutorial(); 
 
 
         }).catch(error => {
@@ -174,20 +189,41 @@ $(document).ready(function() {
     function createCustomIcon(color) { return L.icon({ iconUrl: `https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-${color}.png`, shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png', iconSize: [25, 41], iconAnchor: [12, 41], popupAnchor: [1, -34], shadowSize: [41, 41] }); }
 
     function renderRanking(pins, usersById) {
-        const pinCounts = pins.reduce((acc, pin) => { if(pin.createdBy) acc[pin.createdBy] = (acc[pin.createdBy] || 0) + 1; return acc; }, {});
-        const sortedUsers = Object.keys(pinCounts).sort((a, b) => pinCounts[b] - pinCounts[a]).slice(0, 3);
+        // ★★★ 修正箇所: ランキング計算ロジック ★★★
+        const pinCounts = pins.reduce((acc, pin) => { 
+             // PinのcreatedByフィールドをキーにPin数をカウント
+             if(pin.createdBy) acc[pin.createdBy] = (acc[pin.createdBy] || 0) + 1; 
+             return acc; 
+        }, {});
+        
+        // Pin数で降順ソートし、トップ3を取得
+        const sortedUserIds = Object.keys(pinCounts)
+            // ユーザー情報が存在し、かつピン数が1以上であることを確認
+            .filter(userId => usersById[userId] && pinCounts[userId] > 0)
+            .sort((a, b) => pinCounts[b] - pinCounts[a])
+            .slice(0, 3);
+            
         const $rankingList = $('#pinRankingList');
         $rankingList.empty();
-        if (sortedUsers.length === 0) { $rankingList.html('<p class="text-muted small">まだ投稿がありません。</p>'); return; }
-        sortedUsers.forEach((userId, index) => {
+        
+        if (sortedUserIds.length === 0) { 
+             $rankingList.html('<p class="text-muted small">まだ投稿がありません。</p>'); 
+             return; 
+        }
+        
+        sortedUserIds.forEach((userId, index) => {
             const user = usersById[userId];
-            if (!user || !user.teamColor) return; 
+            // userByIdが最新であることを前提に、ユーザー情報を取得 (既にフィルタリング済みのため、ここは安全)
+            if (!user) return; 
+            
             const rank = index + 1, rankClass = `rank-${rank}`, userColor = user.teamColor || 'grey';
             const crowns = '👑'.repeat(user.victoryCrowns || 0);
             const username = user.userName || '不明なユーザー';
             const iconUrl = (user.icon || '/images/default_icon.png') + '?t=' + new Date().getTime();
+            
             $rankingList.append(`<div class="ranking-item ${rankClass}"><span class="rank-badge">${rank}位</span><img src="${iconUrl}" alt="icon" class="user-icon me-2"><span style="color: ${userColor}; font-weight: bold;">${crowns} ${escapeHTML(username)}</span><span class="ms-auto">${pinCounts[userId]} pins</span></div>`);
         });
+        // ★★★ 修正箇所ここまで ★★★
     }
 
     function renderUserList(pins, usersById) {
@@ -290,7 +326,7 @@ $(document).ready(function() {
             }).done(function() { 
                 $('#createPinModal').modal('hide');
                 alert('新しいピンを作成しました！');
-                fetchAllData(currentSeason); 
+                // Pin追加成功後、WebSocketがfetchAllDataをトリガーするはず。
             }).fail(function(response) {
                 alert("ピンの作成に失敗しました。\n" + (response.responseText || ""));
             });
@@ -308,7 +344,7 @@ $(document).ready(function() {
              }).done(function() {
                  $('#pinDetailModal').modal('hide');
                  alert('ピンを削除しました。');
-                 fetchAllData(currentSeason); 
+                 // Pin削除成功後、WebSocketがfetchAllDataをトリガーするはず。
              }).fail(function(response) {
                  alert('ピンの削除に失敗しました。');
              });
@@ -542,7 +578,8 @@ $(document).ready(function() {
         }).done(function(updatedPin) {
             allPins[pinId] = updatedPin;
             showPinDetailModal(pinId);
-            // fetchAllData(currentSeason); // ★★★ 修正: 冗長なfetchAllDataの呼び出しを削除 (showPinDetailModalの後に実行されるWebSocketに任せる) ★★★ 
+            // PinのリアクションはランキングのPin数に影響しないが、スコア更新（陣地計算）を再トリガーする
+            // PhotoPinControllerで修正済み: WebSocketがスコア更新通知を出し、fetchAllDataを呼び出す
         }).fail(function(xhr) {
             alert("リアクションの更新に失敗しました。\n" + (xhr.responseText || ""));
         });
@@ -584,8 +621,8 @@ $(document).ready(function() {
         stompClient.connect({}, function (frame) {
             console.log('✅ WebSocket接続成功: ' + frame);
             stompClient.subscribe('/topic/scores', function (message) {
-                const newScores = JSON.parse(message.body);
-                // WebSocketからのスコア更新を受信したら、fetchAllDataを実行して地図/ランキングを更新
+                // Pin追加・削除・スコア更新の通知を受信したら、全データを再取得・再描画
+                // これにより、ランキング、ピン、陣地が更新されます。
                 fetchAllData(currentSeason); 
             });
         });
@@ -597,5 +634,5 @@ $(document).ready(function() {
     setupEventHandlers();
     connectWebSocket();
     
-    // チュートリアル表示は photopin.js の実行が完了した後に DOMContentLoaded で行われます。
+    // チュートリアル表示の初期化（DOMContentLoadedで実行される showTutorialModal() に依存）
 });

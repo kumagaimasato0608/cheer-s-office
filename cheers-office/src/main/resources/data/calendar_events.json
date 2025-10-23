@@ -128,4 +128,14 @@
   "allDay" : false,
   "createdByUserId" : "u001_auto",
   "sharedWithUserIds" : [ "5c418e93-b28e-42f6-80b7-ad5bf4adc080" ]
+}, {
+  "id" : "c4286802-b8ae-4f8d-ab5c-6a77c7730d74",
+  "title" : "テスト",
+  "start" : "2025-10-23T00:30",
+  "end" : "2025-10-23T14:30",
+  "description" : "",
+  "color" : null,
+  "allDay" : false,
+  "createdByUserId" : "u001_auto",
+  "sharedWithUserIds" : [ ]
 } ]
