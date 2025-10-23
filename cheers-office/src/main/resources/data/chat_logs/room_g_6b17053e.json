@@ -1,0 +1,34 @@
+[ {
+  "roomId" : "g_6b17053e",
+  "userId" : "u001_auto",
+  "userName" : "自動登録ユーザー",
+  "type" : "TEXT",
+  "content" : "www",
+  "caption" : null,
+  "timestamp" : "2025-10-23T14:43:55.074229800",
+  "icon" : "/images/default_icon.png",
+  "messageId" : "fe3849d3-947a-4311-93a4-5f895fda1c26",
+  "readBy" : [ "u001_auto" ]
+}, {
+  "roomId" : "g_6b17053e",
+  "userId" : "u001_auto",
+  "userName" : "自動登録ユーザー",
+  "type" : "TEXT",
+  "content" : ";;",
+  "caption" : null,
+  "timestamp" : "2025-10-23T14:46:09.916292100",
+  "icon" : "/images/default_icon.png",
+  "messageId" : "8e1ab557-e36e-44c9-b1eb-dcb1cdb43dd5",
+  "readBy" : [ "u001_auto" ]
+}, {
+  "roomId" : "g_6b17053e",
+  "userId" : "u001_auto",
+  "userName" : "自動登録ユーザー",
+  "type" : "TEXT",
+  "content" : ";;",
+  "caption" : null,
+  "timestamp" : "2025-10-23T14:46:12.860504300",
+  "icon" : "/images/default_icon.png",
+  "messageId" : "c6b4bcc5-e2e2-4010-80cb-46454a8994d0",
+  "readBy" : [ "u001_auto" ]
+} ]
