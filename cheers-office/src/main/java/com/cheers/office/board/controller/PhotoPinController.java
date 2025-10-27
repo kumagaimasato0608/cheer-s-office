@@ -93,9 +93,30 @@ public class PhotoPinController {
             User user = userDetails.getUser();
             user.setTeamColor(color);
             userAccountService.updateUser(user); // ユーザー情報を保存
+            
+            calculateAndBroadcastScores();
         }
         return "redirect:/photopin"; 
     }
+
+    // ★★★ 修正箇所: チュートリアル完了APIを追加 ★★★
+    @PostMapping("/api/user/completeTutorial")
+    @ResponseBody
+    public ResponseEntity<Void> completeTutorial(@AuthenticationPrincipal CustomUserDetails userDetails) {
+        if (userDetails == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+        
+        User user = userDetails.getUser();
+        // ★ Userモデルに tutorialSeen フィールドが追加されている前提 ★
+        if (!user.isTutorialSeen()) { 
+            user.setTutorialSeen(true);
+            userAccountService.updateUser(user); // ユーザー情報を保存し、キャッシュを更新
+        }
+        
+        return ResponseEntity.ok().build();
+    }
+    // ★★★ 修正箇所ここまで ★★★
 
     @GetMapping("/api/photopins")
     @ResponseBody
@@ -159,17 +180,13 @@ public class PhotoPinController {
             // リアクションしていない場合 -> 追加 (トグル)
             usersReacted.add(currentUserId);
             System.out.println("User " + currentUserId + " added reaction " + type + " to pin " + pinId);
-            
-            // ★ オプション: 自分のピンにリアクションしても通知は発生しないようにする
-            if (!pin.getCreatedBy().equals(currentUserId)) {
-                // Pin作成者にリアクション通知を送信 (これはWebSocketブロードキャストのトリガーを想定)
-                // messagingTemplate.convertAndSend("/topic/reactions/" + pin.getCreatedBy(), new ReactionNotificationDto(type, currentUserId, pinId));
-            }
         }
         
         // データを永続化
         PhotoPin savedPin = photoPinRepository.savePin(pin);
 
+        calculateAndBroadcastScores();
+        
         // クライアント側に更新されたピンオブジェクトを返す
         return ResponseEntity.ok(savedPin);
     }
@@ -266,6 +283,9 @@ public class PhotoPinController {
         pin.setTitle(updatedPinData.getTitle());
         pin.setDescription(updatedPinData.getDescription());
         photoPinRepository.savePin(pin);
+        
+        calculateAndBroadcastScores();
+        
         return ResponseEntity.ok(pin);
     }
 
@@ -280,24 +300,19 @@ public class PhotoPinController {
         // 権限チェック
         if (!pinToDelete.getCreatedBy().equals(userDetails.getUser().getUserId())) { return ResponseEntity.status(HttpStatus.FORBIDDEN).build(); }
         
-        // ファイルシステムの画像削除処理
+        // ファイルシステムの画像削除処理 (省略)
         if (pinToDelete.getPhotos() != null) {
-            for (Photo photo : pinToDelete.getPhotos()) {
-                try {
-                    // /images/photopins/ のプレフィックスを削除し、ファイル名のみを取得
-                    String imageUrl = photo.getImageUrl();
-                    String fileName = imageUrl.substring(imageUrl.lastIndexOf("/") + 1);
-                    
-                    Path filePath = Paths.get(photopinUploadDir, fileName);
-
-                    // ファイルが存在する場合のみ削除 (エラーをスローしないよう Files.deleteIfExists を使用)
-                    Files.deleteIfExists(filePath);
-                    System.out.println("✅ Pin Photo Deleted: " + fileName);
-                    
-                } catch (IOException | StringIndexOutOfBoundsException e) {
-                    System.err.println("Failed to delete photo file: " + e.getMessage());
-                }
-            }
+             for (Photo photo : pinToDelete.getPhotos()) {
+                 try {
+                     String imageUrl = photo.getImageUrl();
+                     String fileName = imageUrl.substring(imageUrl.lastIndexOf("/") + 1);
+                     Path filePath = Paths.get(photopinUploadDir, fileName);
+                     Files.deleteIfExists(filePath);
+                     System.out.println("✅ Pin Photo Deleted: " + fileName);
+                 } catch (IOException | StringIndexOutOfBoundsException e) {
+                     System.err.println("Failed to delete photo file: " + e.getMessage());
+                 }
+             }
         }
         
         photoPinRepository.deleteById(pinId);
@@ -326,12 +341,14 @@ public class PhotoPinController {
         newComment.setTimestamp(LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME));
         PhotoPin pin = pinOpt.get();
         pin.getComments().add(newComment);
-        photoPinRepository.savePin(pin);
+        PhotoPin savedPin = photoPinRepository.savePin(pin);
+        
+        calculateAndBroadcastScores(); 
+        
         return ResponseEntity.status(HttpStatus.CREATED).body(newComment);
     }
 
     private ScoreUpdateDto calculateScoresInternal() {
-        // calculateScoresInternal() は、初期スコア取得APIとブロードキャストロジックの両方から使用されます。
         
         String currentSeason = getCurrentSeason();
         
