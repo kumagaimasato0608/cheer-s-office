@@ -20,60 +20,49 @@ public class UserRepositoryImpl implements UserRepository {
 
     private final ObjectMapper objectMapper;
     private final File userFile;
-    // CopyOnWriteArrayListはスレッドセーフなキャッシュとして維持します
-    private final CopyOnWriteArrayList<User> users; 
+    private final CopyOnWriteArrayList<User> users;
 
-    public UserRepositoryImpl(ObjectMapper objectMapper, @Value("${app.user-file-path:src/main/resources/data/users.json}") String userFilePath) {
+    public UserRepositoryImpl(ObjectMapper objectMapper, 
+            @Value("${app.user-file-path}") String userFilePath) {
         this.objectMapper = objectMapper;
         this.userFile = new File(userFilePath);
         this.users = new CopyOnWriteArrayList<>();
-        // 起動時の初期ロードは維持
-        loadUsers(); 
+        loadUsers(); // 起動時にロード
     }
 
-    /**
-     * JSONファイルからユーザーデータを読み込み、メモリ上のキャッシュを更新する
-     * (このメソッドは、findAll()とsave()の両方から呼ばれ、キャッシュを最新の状態に保つ)
-     */
     private synchronized void loadUsers() {
         if (userFile.exists() && userFile.length() > 0) {
             try {
-                // ファイルからデータを読み込む
                 List<User> loadedUsers = objectMapper.readValue(userFile, new TypeReference<List<User>>() {});
-                
-                // ★★★ キャッシュをクリアし、新しいデータで上書き ★★★
-                this.users.clear();
-                this.users.addAll(loadedUsers);
+                users.clear();
+                users.addAll(loadedUsers);
             } catch (IOException e) {
                 e.printStackTrace();
             }
         }
     }
 
-    /**
-     * メモリ上のデータをJSONファイルに書き出す
-     */
     private void saveUsersToFile() {
         try {
+            // フォルダが存在しない場合は作成
+            File parentDir = userFile.getParentFile();
+            if (parentDir != null && !parentDir.exists()) {
+                parentDir.mkdirs();
+            }
             objectMapper.writerWithDefaultPrettyPrinter().writeValue(userFile, users);
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
 
-    /**
-     * ★★★ 修正箇所: ユーザー一覧ページに入るたびにキャッシュを読み込み直す ★★★
-     */
     @Override
     public List<User> findAll() {
-        // ページにアクセスされるたび（/api/usersが呼ばれるたび）にファイルを読み込み直す
-        loadUsers(); 
+        loadUsers();
         return new ArrayList<>(users);
     }
 
     @Override
     public Optional<User> findById(String userId) {
-        // findAll()で最新データがロードされているため、キャッシュから参照
         return users.stream()
                 .filter(user -> user.getUserId().equals(userId))
                 .findFirst();
@@ -81,7 +70,6 @@ public class UserRepositoryImpl implements UserRepository {
 
     @Override
     public Optional<User> findByMailAddress(String mailAddress) {
-        // findAll()で最新データがロードされているため、キャッシュから参照
         return users.stream()
                 .filter(user -> user.getMailAddress() != null && user.getMailAddress().equals(mailAddress))
                 .findFirst();
@@ -99,12 +87,8 @@ public class UserRepositoryImpl implements UserRepository {
         } else {
             users.add(user);
         }
-        
-        // ファイルへの保存（マイページからの更新）
-        saveUsersToFile(); 
-        
-        // ★★★ 修正箇所: save後もキャッシュは最新なので特別な操作は不要 (ただし、findAllで再ロードされる) ★★★
-        
+
+        saveUsersToFile();
         return user;
     }
 
@@ -116,7 +100,6 @@ public class UserRepositoryImpl implements UserRepository {
 
     @Override
     public User update(User user) {
-        // saveメソッドが更新処理も兼ねているので、そのまま呼び出す
         return save(user);
     }
 }

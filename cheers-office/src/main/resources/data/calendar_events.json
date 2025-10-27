@@ -1,1 +1,21 @@
-[]
+[ {
+  "id" : "d50c8477-9b12-4485-8c34-28bc4866cc3e",
+  "title" : "会議",
+  "start" : "2025-10-24T09:00",
+  "end" : null,
+  "description" : "進捗会議",
+  "color" : null,
+  "allDay" : false,
+  "createdByUserId" : "u001_auto",
+  "sharedWithUserIds" : [ "28cba8b6-445d-4f49-b253-184aaadc4f7b", "c92626a3-a33b-4e37-b43e-f4b667f0bee7" ]
+}, {
+  "id" : "053b5f39-9346-4fde-b7b4-900276f51e07",
+  "title" : "会議",
+  "start" : "2025-10-25T09:00",
+  "end" : null,
+  "description" : "進捗会議",
+  "color" : null,
+  "allDay" : true,
+  "createdByUserId" : "28cba8b6-445d-4f49-b253-184aaadc4f7b",
+  "sharedWithUserIds" : [ "u001_auto", "c92626a3-a33b-4e37-b43e-f4b667f0bee7" ]
+} ]

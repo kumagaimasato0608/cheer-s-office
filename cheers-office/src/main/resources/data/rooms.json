@@ -1,1 +1,19 @@
-[]
+[ {
+  "roomId" : "r_183ed4cc",
+  "roomName" : "izumi",
+  "members" : [ "u001_auto", "28cba8b6-445d-4f49-b253-184aaadc4f7b" ],
+  "createdAt" : "2025-10-23T16:24:19.602998600",
+  "icon" : null
+}, {
+  "roomId" : "r_ebc24e01",
+  "roomName" : "自動登録ユーザー",
+  "members" : [ "c92626a3-a33b-4e37-b43e-f4b667f0bee7", "u001_auto" ],
+  "createdAt" : "2025-10-23T17:11:47.740437300",
+  "icon" : null
+}, {
+  "roomId" : "g_17fee88d",
+  "roomName" : "a",
+  "members" : [ "c92626a3-a33b-4e37-b43e-f4b667f0bee7", "u001_auto", "28cba8b6-445d-4f49-b253-184aaadc4f7b" ],
+  "createdAt" : "2025-10-23T17:15:56.793189",
+  "icon" : "/images/groups/default-group-icon.png"
+} ]

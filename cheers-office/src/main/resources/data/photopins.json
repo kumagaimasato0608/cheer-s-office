@@ -96,6 +96,12 @@
     "userId" : "1ed22d3c-1409-4ccc-b49c-eb552fb3106a",
     "content" : "konnnitiha",
     "timestamp" : "2025-10-21T15:06:50.3658335"
+  }, {
+    "commentId" : "035c7423-1ad1-460f-8c96-3c8abeaab75b",
+    "pinId" : "dd83301c-b39d-463e-8774-62c4c126c285",
+    "userId" : "u001_auto",
+    "content" : "あ",
+    "timestamp" : "2025-10-24T11:45:11.2012176"
   } ],
   "bonusPoints" : 0,
   "reactions" : {

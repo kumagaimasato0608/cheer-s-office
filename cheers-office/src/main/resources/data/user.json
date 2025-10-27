@@ -15,4 +15,38 @@
   "workTime" : "",
   "workContent" : "",
   "lastPinTimestamp" : "2025-10-21T14:46:47.5433749"
+}, {
+  "userId" : "28cba8b6-445d-4f49-b253-184aaadc4f7b",
+  "userName" : "izumi",
+  "mailAddress" : "231010izumi@tid.ac.jp",
+  "password" : "$2a$10$kywj4.1paCNaK.7BKCcXnOvww9LyqpAgzeK0/vv77IHUiiFWlSGDW",
+  "group" : "未設定",
+  "myBoom" : "",
+  "hobby" : "",
+  "icon" : "/images/default_icon.png",
+  "statusMessage" : "",
+  "teamColor" : "blue",
+  "deploymentDestination" : "",
+  "deploymentArea" : "",
+  "commuteFrequency" : "",
+  "workTime" : "",
+  "workContent" : "",
+  "lastPinTimestamp" : null
+}, {
+  "userId" : "c92626a3-a33b-4e37-b43e-f4b667f0bee7",
+  "userName" : "siro",
+  "mailAddress" : "231010izumi@tid.ac.jo",
+  "password" : "$2a$10$8L07/C3wH1mzbVvENWOZgucSroeGMF8pCk9jO.hwIoygcXU0nQ84.",
+  "group" : "未設定",
+  "myBoom" : "",
+  "hobby" : "",
+  "icon" : "/images/profile/c92626a3-a33b-4e37-b43e-f4b667f0bee7.png",
+  "statusMessage" : "",
+  "teamColor" : null,
+  "deploymentDestination" : "",
+  "deploymentArea" : "",
+  "commuteFrequency" : "",
+  "workTime" : "",
+  "workContent" : "",
+  "lastPinTimestamp" : null
 } ]

@@ -1,1 +1,43 @@
-[]
+[ {
+  "message" : "ああ",
+  "userId" : "anonymous",
+  "userName" : "匿名",
+  "icon" : "/images/default_icon.png",
+  "anonymous" : true,
+  "timestamp" : "2025/10/23 17:09",
+  "threadId" : "197304cb-a308-41e3-a44e-60fb0806d308",
+  "title" : "あ",
+  "imageUrl" : "/images/thread/cbeac5ea-0e9b-4b0f-9383-add0ee9e551c.jpeg",
+  "replies" : [ ],
+  "authorId" : "u001_auto"
+}, {
+  "message" : "a",
+  "userId" : "u001_auto",
+  "userName" : "自動登録ユーザー",
+  "icon" : "/images/profile/u001_auto.png",
+  "anonymous" : false,
+  "timestamp" : "2025/10/24 09:12",
+  "threadId" : "5633f76b-0bf3-46df-9208-2670e5d2f7c5",
+  "title" : "a",
+  "imageUrl" : "/images/thread/3a838966-255e-4e37-a2aa-488c2fb63b88.png",
+  "replies" : [ {
+    "message" : "s\n\n\n",
+    "userId" : "u001_auto",
+    "userName" : "自動登録ユーザー",
+    "icon" : "/images/profile/u001_auto.png",
+    "anonymous" : false,
+    "timestamp" : "2025/10/24 09:13",
+    "replyId" : "b253df30-9c27-4d32-98a4-8b6b5f713c4b",
+    "authorId" : "u001_auto"
+  }, {
+    "message" : "あ",
+    "userId" : "28cba8b6-445d-4f49-b253-184aaadc4f7b",
+    "userName" : "izumi",
+    "icon" : "/images/default_icon.png",
+    "anonymous" : false,
+    "timestamp" : "2025/10/24 09:59",
+    "replyId" : "06e2ccec-c3f0-4661-8075-e35b020a93f3",
+    "authorId" : "28cba8b6-445d-4f49-b253-184aaadc4f7b"
+  } ],
+  "authorId" : "u001_auto"
+} ]
