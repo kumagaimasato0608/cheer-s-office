@@ -1,0 +1,116 @@
+/* ------------------------------------------------------------------ */
+/* 1. マイページ編集画面のページ本体のスタイル */
+/* ------------------------------------------------------------------ */
+body { 
+    font-family: 'Arial', sans-serif;
+    background-color: #e6f0ff;
+    /* ヘッダーの高さ分だけコンテンツを下に下げる */
+    padding-top: 120px; 
+    margin: 0;
+}
+.mypage-container { 
+    background-color: #ffffff; 
+    padding: 30px 40px;
+    border-radius: 10px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1); 
+    width: 100%; 
+    max-width: 800px;
+    margin: 20px auto;
+}
+h1 { 
+    color: #333; text-align: center; margin-bottom: 30px; 
+    font-size: 2.2em; border-bottom: 2px solid #007bff; padding-bottom: 10px; 
+}
+h2 {
+    font-size: 1.5em; 
+    color: #17a2b8;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 5px;
+    margin-top: 30px;
+    margin-bottom: 20px;
+}
+.form-group { margin-bottom: 20px; text-align: left; }
+label { display: block; margin-bottom: 8px; font-weight: bold; color: #555; font-size: 1.1em; }
+
+input[type="text"], input[type="email"], textarea { 
+    width: 100%; padding: 12px; border: 1px solid rgb(0, 128, 255);
+    border-radius: 6px; box-sizing: border-box; font-size: 1em;
+}
+input[disabled] { background-color: #e9ecef; }
+
+.btn-update { 
+    width: 100%; padding: 15px; border: none; border-radius: 6px; 
+    background-color: #007bff; color: white; font-size: 1.2em; 
+    font-weight: bold; cursor: pointer; margin-top: 20px;
+}
+.profile-icon-container {
+    width: 120px; height: 120px; border-radius: 50%; 
+    overflow: hidden; margin: 0 auto 20px auto; border: 3px solid #007bff;
+}
+.profile-icon {
+    width: 100%; height: 100%; object-fit: cover; 
+}
+
+/* ------------------------------------------------------------------ */
+/* 2. ヘッダー要素のスタイル (head.htmlで定義されているクラスを補完) */
+/* ------------------------------------------------------------------ */
+
+/* ヘッダーのレイアウトはhead.htmlで定義されていますが、ここでは固定ヘッダーとして機能させるために必要です */
+.app-header {
+    position: fixed; 
+    top: 0;
+    left: 0;
+    width: 100%;
+    z-index: 1000; 
+    box-sizing: border-box;
+}
+
+/* ------------------------------------------------------------------ */
+/* 3. クロスボタン（btn-cross）のスタイル定義 */
+/* ------------------------------------------------------------------ */
+
+/* クロスボタンの基本スタイル */
+.btn-cross {
+  display: inline-block;
+  position: relative;
+  padding: 0.25em 1em;
+  border-top: solid 2px black;
+  border-bottom: solid 2px black;
+  text-decoration: none;
+  font-weight: bold;
+  color: #03A9F4;
+}
+
+/* 縦線の擬似要素 */
+.btn-cross:before, .btn-cross:after {
+  content: '';
+  position: absolute;
+  top: -7px;
+  width: 2px;
+  height: calc(100% + 14px); 
+  height: -webkit-calc(100% + 14px); 
+  background-color: black;
+  transition: .3s;
+  z-index: 1;
+}
+
+.btn-cross:before { left: 7px; }
+.btn-cross:after { right: 7px; }
+
+/* ホバー時のアニメーション */
+.btn-cross:hover:before {
+  top: 0px; 
+  left: 0; 
+  height: 100%;
+}
+.btn-cross:hover:after {
+  top: 0px;
+  right: 0;
+  height: 100%;
+}
+
+/* テキストが線の手前に来るように */
+.btn-cross span {
+    position: relative;
+    z-index: 2; 
+}

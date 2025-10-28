@@ -12,7 +12,7 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class PhotoPin {
+public class Pinit {
     private String pinId;         // ピンの一意識別子
     private Location location;    // ピンの地理座標 (緯度・経度)
     private String title;         // ピンのタイトル
@@ -32,7 +32,7 @@ public class PhotoPin {
 
     // Lombokの@Dataがゲッター/セッターを自動生成しますが、
     // 明示的に初期化を保証するコンストラクタも保持
-    public PhotoPin(String pinId, Location location, String title, String description, String createdBy, String createdDate) {
+    public Pinit(String pinId, Location location, String title, String description, String createdBy, String createdDate) {
         this.pinId = pinId;
         this.location = location;
         this.title = title;

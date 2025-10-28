@@ -11,35 +11,35 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Repository;
 
-import com.cheers.office.board.model.PhotoPin;
+import com.cheers.office.board.model.Pinit;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 
 @Repository
-public class JsonFilePhotopinRepositoryImpl implements PhotoPinRepository {
+public class JsonFilePinitRepositoryImpl implements PinitRepository {
 
     private final ObjectMapper objectMapper;
-    private final File photoPinFile;
-    private final CopyOnWriteArrayList<PhotoPin> photoPins;
+    private final File PinitFile;
+    private final CopyOnWriteArrayList<Pinit> Pinits;
 
-    public JsonFilePhotopinRepositoryImpl(ObjectMapper objectMapper, @Value("${app.photopin-file-path:src/main/resources/data/photopins.json}") String photoPinFilePath) {
+    public JsonFilePinitRepositoryImpl(ObjectMapper objectMapper, @Value("${app.Pinit-file-path:src/main/resources/data/photopins.json}") String PinitFilePath) {
         this.objectMapper = objectMapper.registerModule(new JavaTimeModule());
-        this.photoPinFile = new File(photoPinFilePath);
-        this.photoPins = new CopyOnWriteArrayList<>();
+        this.PinitFile = new File(PinitFilePath);
+        this.Pinits = new CopyOnWriteArrayList<>();
         
-        if (!this.photoPinFile.getParentFile().exists()) {
-            this.photoPinFile.getParentFile().mkdirs();
+        if (!this.PinitFile.getParentFile().exists()) {
+            this.PinitFile.getParentFile().mkdirs();
         }
         loadPhotoPins();
     }
 
     private void loadPhotoPins() {
-        if (photoPinFile.exists() && photoPinFile.length() > 0) {
+        if (PinitFile.exists() && PinitFile.length() > 0) {
             try {
-                List<PhotoPin> loadedPins = objectMapper.readValue(photoPinFile, new TypeReference<List<PhotoPin>>() {});
-                this.photoPins.clear();
-                this.photoPins.addAll(loadedPins);
+                List<Pinit> loadedPins = objectMapper.readValue(PinitFile, new TypeReference<List<Pinit>>() {});
+                this.Pinits.clear();
+                this.Pinits.addAll(loadedPins);
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -48,7 +48,7 @@ public class JsonFilePhotopinRepositoryImpl implements PhotoPinRepository {
 
     private void savePhotoPinsToFile() {
         try {
-            objectMapper.writerWithDefaultPrettyPrinter().writeValue(photoPinFile, photoPins);
+            objectMapper.writerWithDefaultPrettyPrinter().writeValue(PinitFile, Pinits);
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -56,32 +56,32 @@ public class JsonFilePhotopinRepositoryImpl implements PhotoPinRepository {
 
     @Override
     // ★★★ メソッド名を findAllPins から findAll に修正 ★★★
-    public List<PhotoPin> findAll() {
-        return new ArrayList<>(photoPins);
+    public List<Pinit> findAll() {
+        return new ArrayList<>(Pinits);
     }
 
     @Override
     // ★★★ メソッド名を findPinById から findById に修正 ★★★
-    public Optional<PhotoPin> findById(String pinId) {
-        return photoPins.stream()
+    public Optional<Pinit> findById(String pinId) {
+        return Pinits.stream()
                 .filter(pin -> pin.getPinId().equals(pinId))
                 .findFirst();
     }
 
     @Override
-    public PhotoPin savePin(PhotoPin pin) {
+    public Pinit savePin(Pinit pin) {
         if (pin.getPinId() == null || pin.getPinId().isEmpty()) {
             pin.setPinId(UUID.randomUUID().toString());
         }
         
         // findById に修正したメソッドを呼び出す
-        Optional<PhotoPin> existingPin = findById(pin.getPinId());
+        Optional<Pinit> existingPin = findById(pin.getPinId());
         
         if (existingPin.isPresent()) {
-            int index = photoPins.indexOf(existingPin.get());
-            photoPins.set(index, pin);
+            int index = Pinits.indexOf(existingPin.get());
+            Pinits.set(index, pin);
         } else {
-            photoPins.add(pin);
+            Pinits.add(pin);
         }
         
         savePhotoPinsToFile();
@@ -91,7 +91,7 @@ public class JsonFilePhotopinRepositoryImpl implements PhotoPinRepository {
     @Override
     // ★★★ メソッド名を deletePin から deleteById に修正 ★★★
     public void deleteById(String pinId) {
-        photoPins.removeIf(pin -> pin.getPinId().equals(pinId));
+        Pinits.removeIf(pin -> pin.getPinId().equals(pinId));
         savePhotoPinsToFile();
     }
 }

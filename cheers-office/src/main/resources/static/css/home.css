@@ -1,0 +1,176 @@
+/* === ページ全体の基本設定 === */
+body {
+	position: relative;
+	background-color: #e6f0ff; 
+	font-family: "Segoe UI", "Noto Sans JP", sans-serif;
+	margin: 0;
+}
+
+/* === ヘッダー === */
+.app-header {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    z-index: 1000;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    background-color: #ffffff;
+}
+.header-top-tier {
+    background-color: #f8f9fa;
+    padding: 10px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #dee2e6;
+}
+.app-title { font-size: 1.5em; font-weight: bold; color: #007bff; }
+.header-nav { padding: 5px 20px; }
+.nav-list { list-style: none; margin: 0; padding: 0; display: flex; align-items: center; }
+.nav-item { padding: 5px 15px; }
+.nav-link { 
+    display: flex; 
+    flex-direction: column; 
+    align-items: center; 
+    text-decoration: none; 
+    color: #333; 
+    font-size: 0.9em; 
+    font-weight: bold; 
+    padding: 8px 15px; 
+}
+.nav-link:hover { color: #007bff; }
+
+/* ★ 追加: ログインユーザー名とログアウトボタンのコンテナ */
+.user-info-container {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+.logged-in-user {
+    font-weight: bold;
+    color: #333;
+    font-size: 0.95em;
+}
+
+.logout-item { margin-left: auto; }
+.logout-button { background-color: #007bff; color: white; border: none; padding: 8px 20px; border-radius: 20px; font-weight: bold; cursor: pointer; font-size: 0.9em; }
+.logout-button:hover { background-color: #0056b3; }
+
+.header-toggle-button {
+    background-color: #6c757d;
+    color: white;
+    border: none;
+    padding: 8px 18px; 
+    font-size: 0.9em;  
+    border-radius: 5px;
+    font-weight: bold;
+    display: none;
+}
+
+/* === 共通コンテンツコンテナ === */
+.page-container {
+    max-width: 1200px;
+    margin: 20px auto; 
+    padding: 30px 40px;
+    background-color: #ffffff;
+    border-radius: 10px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+.page-wrapper {
+    padding: 20px;
+}
+
+/* === カレンダー調整 === */
+#calendar-section {
+    padding: 0 15px;
+    position: relative; 
+    max-height: 700px; 
+}
+.fc-toolbar-title { font-size: 1.5em; }
+.fc-daygrid-event { 
+    white-space: normal; 
+    overflow: hidden; 
+    text-overflow: ellipsis;
+}
+.fc-toolbar-chunk:nth-child(1) .fc-today-button,
+.fc-toolbar-chunk:nth-child(3) { 
+    display: none !important;
+}
+.fc-day-selected {
+    background-color: #e0f7fa !important;
+    border: 2px solid #00bcd4 !important;
+}
+
+/* ★ モーダル内のスクロール修正 */
+#eventModal .modal-body {
+    max-height: 70vh; 
+    overflow-y: auto; 
+}
+input[type="datetime-local"] {
+    padding-right: 5px; 
+}
+
+/* === 本日の予定リスト === */
+#today-schedule-section {
+    padding: 15px 0;
+}
+.today-event-item {
+    padding: 8px 15px;
+    border-bottom: 1px solid #eee;
+    display: flex;
+    align-items: center;
+}
+.today-event-item:last-child {
+    border-bottom: none;
+}
+.event-time {
+    font-weight: bold;
+    color: #007bff;
+    margin-right: 15px;
+    width: 80px;
+    flex-shrink: 0;
+}
+.event-title {
+    flex-grow: 1;
+}
+
+/* === オンラインユーザー表示用スタイル === */
+.online-user-item {
+    display: flex;
+    align-items: center;
+    padding: 8px 0;
+    border-bottom: 1px solid #eee;
+}
+.online-user-item:last-child {
+    border-bottom: none;
+}
+.online-status-dot {
+    width: 10px;
+    height: 10px;
+    background-color: #28a745; /* green */
+    border-radius: 50%;
+    margin-right: 10px;
+    flex-shrink: 0;
+}
+.online-user-name {
+    font-weight: 500;
+}
+
+/* === おみくじスタイル === */
+.omikuji-result {
+    font-size: 2.5em;
+    font-weight: bold;
+    margin: 15px 0 10px;
+}
+.omikuji-comment {
+    font-size: 0.95em;
+    color: #555;
+    margin-bottom: 15px;
+}
+/* ★★★ 通知バッジスタイル ★★★ */
+.notification-bar {
+    /* JSで display: flex に切り替えます */
+    display: none; 
+    font-weight: bold;
+    cursor: pointer;
+}

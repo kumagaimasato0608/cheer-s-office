@@ -189,7 +189,7 @@ public class MypageController {
             
             userDetails.getUser().setTeamColor(color);
         }
-        return "redirect:/photopin";
+        return "redirect:/Pinit";
     }
 
     // --- JSONレスポンス用内部クラス ---
