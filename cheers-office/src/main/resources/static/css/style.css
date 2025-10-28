@@ -4,6 +4,7 @@
 
 /* === ページ全体の基本設定 === */
 body {
+    /* 以前の修正で追加された padding-top: 120px; は削除しました */
     position: relative;
     background-color: #e6f0ff; 
     font-family: "Segoe UI", "Noto Sans JP", sans-serif;
@@ -12,6 +13,7 @@ body {
 
 /* === ヘッダー === */
 .app-header {
+    /* position: fixed; で画面上部に固定 */
     position: fixed;
     top: 0;
     left: 0;
@@ -67,10 +69,11 @@ body {
     display: none;
 }
 
-/* === コンテンツコンテナの基本 === */
+/* === 共通コンテンツコンテナの基本 === */
 .page-container {
     max-width: 1200px;
-    margin: 20px auto;
+    /* bodyのpadding-topを削除したため、個別CSSまたはHTML側で上部の余白を確保してください */
+    margin: 20px auto; 
     padding: 30px 40px;
     background-color: #ffffff;
     border-radius: 10px;

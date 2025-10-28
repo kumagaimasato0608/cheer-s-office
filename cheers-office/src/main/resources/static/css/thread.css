@@ -2,7 +2,12 @@ body {
     font-family: "Zen Maru Gothic", "Noto Sans JP", sans-serif;
     background: #e6f0ff;
     margin: 0;
+    /* bodyの横スクロールは隠したまま */
     overflow-x: hidden;
+    /* bodyの縦スクロールは、各 main 要素が画面に収まる前提で、hiddenのままにしますが、
+       もし全体スクロールが必要な場合は auto に変更が必要です。
+       ここでは、main 要素内でスクロールを制御します。*/
+    overflow-y: hidden; 
 }
 main {
     display: flex;
@@ -10,6 +15,8 @@ main {
     margin-top: 120px;
     padding: 15px;
     gap: 15px;
+    /* main 要素自体は overflow: hidden; のままにして、内部の thread-list と thread-detail に制御を任せます */
+    overflow: hidden; 
 }
 .thread-list {
     width: 32%;
@@ -21,8 +28,15 @@ main {
     flex-direction: column;
     height: 100%;
     box-sizing: border-box;
+    /* スクロールは thread-scroll に任せるため、hidden のまま */
+    overflow-y: hidden; 
 }
-.thread-scroll { flex:1; overflow-y:auto; margin-bottom:10px; }
+.thread-scroll { 
+    flex:1; 
+    /* ★修正: コンテンツがあふれた場合のみ縦スクロールバーを表示（標準動作）★ */
+    overflow-y: auto; 
+    margin-bottom:10px; 
+}
 .thread-item {
     background:#fafafa; border-radius:8px; padding:10px; margin-bottom:10px;
     cursor:pointer; border:1px solid #e0e0e0; transition:0.2s;
@@ -56,7 +70,10 @@ main {
 .thread-detail {
     flex:1; background:#fff; border-radius:10px;
     box-shadow:0 4px 15px rgba(0,0,0,0.08);
-    padding:20px 30px; overflow-y:auto; margin:0;
+    padding:20px 30px; 
+    /* ★修正: コンテンツがあふれた場合のみ縦スクロールバーを表示（標準動作）★ */
+    overflow-y:auto; 
+    margin:0;
 }
 /* ★ 修正: 画像表示部分 */
 img.thread-image {
