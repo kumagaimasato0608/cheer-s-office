@@ -42,16 +42,16 @@ import com.cheers.office.board.model.Comment;
 import com.cheers.office.board.model.CustomUserDetails;
 import com.cheers.office.board.model.Location;
 import com.cheers.office.board.model.Photo;
-import com.cheers.office.board.model.PhotoPin;
+import com.cheers.office.board.model.Pinit;
 import com.cheers.office.board.model.User;
-import com.cheers.office.board.repository.PhotoPinRepository;
+import com.cheers.office.board.repository.PinitRepository;
 import com.cheers.office.board.repository.UserRepository;
 import com.cheers.office.board.service.UserAccountService;
 
 @Controller
-public class PhotoPinController {
+public class PinitController {
 
-    private final PhotoPinRepository photoPinRepository;
+    private final PinitRepository PinitRepository;
     private final UserAccountService userAccountService;
     private final SimpMessagingTemplate messagingTemplate;
     private final UserRepository userRepository;
@@ -62,14 +62,14 @@ public class PhotoPinController {
         new BonusZone("東京スカイツリー", 35.710063, 139.8107, 200, 500)
     );
 
-    @Value("${app.upload-dir.photopin:src/main/resources/static/images/photopins}")
+    @Value("${app.upload-dir.Pinit:src/main/resources/static/images/photopins}")
     private String photopinUploadDir;
 
-    public PhotoPinController(PhotoPinRepository photoPinRepository, 
+    public PinitController(PinitRepository PinitRepository, 
                               UserAccountService userAccountService, 
                               SimpMessagingTemplate messagingTemplate,
                               UserRepository userRepository) {
-        this.photoPinRepository = photoPinRepository;
+        this.PinitRepository = PinitRepository;
         this.userAccountService = userAccountService;
         this.messagingTemplate = messagingTemplate;
         this.userRepository = userRepository;
@@ -79,15 +79,15 @@ public class PhotoPinController {
         return YearMonth.now().toString();
     }
     
-    @GetMapping("/photopin")
+    @GetMapping("/Pinit")
     public String showPhotoPinPage(Model model, @AuthenticationPrincipal CustomUserDetails userDetails) { 
         if (userDetails != null && (userDetails.getUser().getTeamColor() == null || userDetails.getUser().getTeamColor().isEmpty())) { 
             model.addAttribute("showColorModal", true); 
         } 
-        return "photopin"; 
+        return "Pinit"; 
     }
     
-    @PostMapping("/photopin/save-color")
+    @PostMapping("/Pinit/save-color")
     public String saveTeamColor(@RequestParam("color") String color, @AuthenticationPrincipal CustomUserDetails userDetails) {
         if (userDetails != null && color != null && !color.isEmpty()) {
             User user = userDetails.getUser();
@@ -96,7 +96,7 @@ public class PhotoPinController {
             
             calculateAndBroadcastScores();
         }
-        return "redirect:/photopin"; 
+        return "redirect:/Pinit"; 
     }
 
     // ★★★ 修正箇所: チュートリアル完了APIを追加 ★★★
@@ -120,9 +120,9 @@ public class PhotoPinController {
 
     @GetMapping("/api/photopins")
     @ResponseBody
-    public ResponseEntity<List<PhotoPin>> getAllPhotoPins(@RequestParam(required = false) String season) {
+    public ResponseEntity<List<Pinit>> getAllPhotoPins(@RequestParam(required = false) String season) {
         String targetSeason = (season != null && !season.isEmpty()) ? season : getCurrentSeason();
-        List<PhotoPin> pinsForSeason = photoPinRepository.findAll().stream()
+        List<Pinit> pinsForSeason = PinitRepository.findAll().stream()
                 .filter(pin -> targetSeason.equals(pin.getSeason()))
                 .collect(Collectors.toList());
         return ResponseEntity.ok(pinsForSeason);
@@ -131,8 +131,8 @@ public class PhotoPinController {
     @GetMapping("/api/photopins/seasons")
     @ResponseBody
     public ResponseEntity<Set<String>> getAvailableSeasons() {
-        Set<String> seasons = photoPinRepository.findAll().stream()
-                .map(PhotoPin::getSeason)
+        Set<String> seasons = PinitRepository.findAll().stream()
+                .map(Pinit::getSeason)
                 .filter(s -> s != null && !s.isEmpty())
                 .collect(Collectors.toSet());
         return ResponseEntity.ok(seasons);
@@ -156,13 +156,13 @@ public class PhotoPinController {
         }
         
         String currentUserId = userDetails.getUser().getUserId();
-        Optional<PhotoPin> pinOpt = photoPinRepository.findById(pinId);
+        Optional<Pinit> pinOpt = PinitRepository.findById(pinId);
 
         if (pinOpt.isEmpty()) {
             return ResponseEntity.notFound().build();
         }
         
-        PhotoPin pin = pinOpt.get();
+        Pinit pin = pinOpt.get();
         
         // Pinモデルに reactions マップが存在しない場合は初期化
         if (pin.getReactions() == null) {
@@ -183,7 +183,7 @@ public class PhotoPinController {
         }
         
         // データを永続化
-        PhotoPin savedPin = photoPinRepository.savePin(pin);
+        Pinit savedPin = PinitRepository.savePin(pin);
 
         calculateAndBroadcastScores();
         
@@ -215,17 +215,17 @@ public class PhotoPinController {
             }
         }
 
-        List<PhotoPin> myPins = photoPinRepository.findAll().stream()
+        List<Pinit> myPins = PinitRepository.findAll().stream()
                 .filter(pin -> currentSeason.equals(pin.getSeason()) && currentUserId.equals(pin.getCreatedBy()))
                 .collect(Collectors.toList());
-        for (PhotoPin myPin : myPins) {
+        for (Pinit myPin : myPins) {
             double dist = distance(latitude, longitude, myPin.getLocation().getLatitude(), myPin.getLocation().getLongitude());
             if (dist < 100) {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("自分の他のピンから100m以内に新しいピンを置くことはできません。");
             }
         }
         
-        PhotoPin newPin = new PhotoPin();
+        Pinit newPin = new Pinit();
         newPin.setPinId(UUID.randomUUID().toString());
         newPin.setTitle(title);
         newPin.setDescription(description);
@@ -254,7 +254,7 @@ public class PhotoPinController {
             newPhoto.setUploadedBy(currentUserId);
             newPhoto.setUploadedDate(newPin.getCreatedDate());
             newPin.getPhotos().add(newPhoto);
-            PhotoPin savedPin = photoPinRepository.savePin(newPin);
+            Pinit savedPin = PinitRepository.savePin(newPin);
             
             customUserDetails.getUser().setLastPinTimestamp(LocalDateTime.now());
             userAccountService.updateUser(customUserDetails.getUser());
@@ -268,21 +268,21 @@ public class PhotoPinController {
         }
     }
 
-    private Optional<PhotoPin> findPinByIdForCurrentSeason(String pinId) {
-        return photoPinRepository.findById(pinId)
+    private Optional<Pinit> findPinByIdForCurrentSeason(String pinId) {
+        return PinitRepository.findById(pinId)
             .filter(pin -> getCurrentSeason().equals(pin.getSeason()));
     }
     
     @PutMapping("/api/photopins/{pinId}")
     @ResponseBody
-    public ResponseEntity<PhotoPin> updatePin(@PathVariable String pinId, @RequestBody PhotoPin updatedPinData, @AuthenticationPrincipal CustomUserDetails userDetails) {
-        Optional<PhotoPin> pinOpt = findPinByIdForCurrentSeason(pinId);
+    public ResponseEntity<Pinit> updatePin(@PathVariable String pinId, @RequestBody Pinit updatedPinData, @AuthenticationPrincipal CustomUserDetails userDetails) {
+        Optional<Pinit> pinOpt = findPinByIdForCurrentSeason(pinId);
         if (pinOpt.isEmpty()) { return ResponseEntity.notFound().build(); }
-        PhotoPin pin = pinOpt.get();
+        Pinit pin = pinOpt.get();
         if (!pin.getCreatedBy().equals(userDetails.getUser().getUserId())) { return ResponseEntity.status(HttpStatus.FORBIDDEN).build(); }
         pin.setTitle(updatedPinData.getTitle());
         pin.setDescription(updatedPinData.getDescription());
-        photoPinRepository.savePin(pin);
+        PinitRepository.savePin(pin);
         
         calculateAndBroadcastScores();
         
@@ -292,10 +292,10 @@ public class PhotoPinController {
     @DeleteMapping("/api/photopins/{pinId}")
     @ResponseBody
     public ResponseEntity<Void> deletePin(@PathVariable String pinId, @AuthenticationPrincipal CustomUserDetails userDetails) {
-        Optional<PhotoPin> pinOpt = findPinByIdForCurrentSeason(pinId);
+        Optional<Pinit> pinOpt = findPinByIdForCurrentSeason(pinId);
         if (pinOpt.isEmpty()) { return ResponseEntity.notFound().build(); }
         
-        PhotoPin pinToDelete = pinOpt.get();
+        Pinit pinToDelete = pinOpt.get();
 
         // 権限チェック
         if (!pinToDelete.getCreatedBy().equals(userDetails.getUser().getUserId())) { return ResponseEntity.status(HttpStatus.FORBIDDEN).build(); }
@@ -315,7 +315,7 @@ public class PhotoPinController {
              }
         }
         
-        photoPinRepository.deleteById(pinId);
+        PinitRepository.deleteById(pinId);
         
         calculateAndBroadcastScores();
         
@@ -325,7 +325,7 @@ public class PhotoPinController {
     @GetMapping("/api/photopins/{pinId}/comments")
     @ResponseBody
     public ResponseEntity<List<Comment>> getComments(@PathVariable String pinId) {
-        Optional<PhotoPin> pinOpt = photoPinRepository.findById(pinId);
+        Optional<Pinit> pinOpt = PinitRepository.findById(pinId);
         if (pinOpt.isPresent()) { return ResponseEntity.ok(pinOpt.get().getComments()); }
         return ResponseEntity.ok(Collections.emptyList());
     }
@@ -333,15 +333,15 @@ public class PhotoPinController {
     @PostMapping("/api/photopins/{pinId}/comments")
     @ResponseBody
     public ResponseEntity<Comment> addComment(@PathVariable String pinId, @RequestBody Comment newComment, @AuthenticationPrincipal CustomUserDetails userDetails) {
-        Optional<PhotoPin> pinOpt = findPinByIdForCurrentSeason(pinId);
+        Optional<Pinit> pinOpt = findPinByIdForCurrentSeason(pinId);
         if (pinOpt.isEmpty()) { return ResponseEntity.notFound().build(); }
         newComment.setCommentId(UUID.randomUUID().toString());
         newComment.setPinId(pinId);
         newComment.setUserId(userDetails.getUser().getUserId());
         newComment.setTimestamp(LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME));
-        PhotoPin pin = pinOpt.get();
+        Pinit pin = pinOpt.get();
         pin.getComments().add(newComment);
-        PhotoPin savedPin = photoPinRepository.savePin(pin);
+        Pinit savedPin = PinitRepository.savePin(pin);
         
         calculateAndBroadcastScores(); 
         
@@ -356,9 +356,9 @@ public class PhotoPinController {
             .filter(user -> user.getTeamColor() != null) 
             .collect(Collectors.toMap(User::getUserId, User::getTeamColor, (c1, c2) -> c1));
 
-        List<PhotoPin> pins = photoPinRepository.findAll().stream()
+        List<Pinit> pins = PinitRepository.findAll().stream()
             .filter(pin -> currentSeason.equals(pin.getSeason()))
-            .sorted(Comparator.comparing(PhotoPin::getCreatedDate))
+            .sorted(Comparator.comparing(Pinit::getCreatedDate))
             .collect(Collectors.toList());
         Map<String, String> gridState = new HashMap<>();
         
@@ -369,7 +369,7 @@ public class PhotoPinController {
 
         final double METERS_PER_DEGREE_LAT = 111320.0; 
         
-        for (PhotoPin pin : pins) {
+        for (Pinit pin : pins) {
             String teamColor = userTeamColorMap.get(pin.getCreatedBy());
             if (teamColor == null) continue; 
             

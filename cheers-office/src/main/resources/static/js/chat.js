@@ -1,127 +1,3 @@
-<!DOCTYPE html>
-<html lang="ja" xmlns:th="http://www.thymeleaf.org">
-<head>
-<meta charset="UTF-8" />
-<meta name="_csrf" th:content="${_csrf.token}" />
-<meta name="_csrf_header" th:content="${_csrf.headerName}" />
-<title>Cheers Office - チャット</title>
-
-<link rel="stylesheet" th:href="@{/css/style.css}" />
-<link rel="stylesheet" th:href="@{/css/chat.css}" />
-
-<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/sockjs-client/dist/sockjs.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/stompjs/lib/stomp.min.js"></script>
-</head>
-<body>
-<div th:replace="~{common/header :: header}"></div>
-
-<main id="chatRoot" th:inline="none">
-<aside class="room-list">
-    <div class="search-box">
-      <span></span>
-      <input
-        type="text"
-        id="roomSearchInput"
-        placeholder="ユーザー名、グループ名で検索"
-        onkeydown="if(event.key==='Enter'){event.preventDefault(); searchRooms();}">
-    </div>
-    <small class="search-hint">入力して[Enterキー]を押してください</small>
-    <div id="roomList"></div>
-
-    <div class="button-stack">
-        <div class="create-room" id="openCreateBtn">＋ 新規チャット</div>
-        <div class="delete-room" id="openDeleteBtn">🗑️ チャット削除</div>
-    </div>
-</aside>
-
-<section class="chat-main">
-<div class="chat-header"><span id="headerTitle">ルーム未選択</span></div>
-<div class="messages" id="messages"></div>
-
-<div class="input-area" id="inputArea">
-<div id="previewArea" class="image-preview-area"></div>
-<div class="input-controls">
-<input type="file" id="fileInput" accept="image/*" style="display: none;" />
-<textarea id="messageInput" placeholder="メッセージを入力..." rows="1"></textarea>
-<button id="attachFileBtn" class="attach-btn" title="画像を添付">🖼️</button>
-<button id="sendBtn" class="send-btn" disabled>送信</button>
-</div>
-</div>
-</section>
-
-<div class="modal-backdrop" id="createModal">
-<div class="modal-content">
-<h3>👥 チャット相手を選択</h3>
-<div id="userList"></div>
-<div class="modal-buttons">
-<button class="modal-btn create" id="createRoomBtn">作成</button>
-<button class="modal-btn cancel" id="cancelCreateBtn">キャンセル</button>
-</div>
-</div>
-</div>
-
-<div class="modal-backdrop" id="groupModal">
-<div class="modal-content">
-<h3>👑 グループ作成</h3>
-<div class="group-icon-area">
-<img src="/images/groups/default-group-icon.png" id="groupIconPreview" class="group-icon-preview" />
-<label for="groupIconInput" class="group-icon-label">アイコンを選択</label>
-<input type="file" id="groupIconInput" accept="image/*" style="display: none;" />
-</div>
-<input type="text" id="groupNameInput" class="group-name-input" placeholder="グループ名を入力" />
-<div class="selected-members-area">
-<h4 class="members-title">メンバー</h4>
-<div id="selectedMemberList" class="members-list"></div>
-</div>
-
-<div class="modal-buttons">
-<button class="modal-btn create" id="createGroupBtn">作成</button>
-<button class="modal-btn cancel" id="cancelGroupBtn">キャンセル</button>
-</div>
-</div>
-</div>
-
-<div class="modal-backdrop" id="deleteModal">
-<div class="modal-content">
-<h3>🗑️ チャット削除確認</h3>
-<p>このチャットを完全に削除します。履歴も復元できません。</p>
-<div class="modal-buttons">
-<button class="modal-btn cancel" id="cancelDeleteBtn">キャンセル</button>
-<button class="modal-btn create" id="confirmDeleteBtn">削除する</button>
-</div>
-</div>
-</div>
-
-<div class="modal-backdrop" id="profileModal">
-<div class="modal-content profile-modal-content">
-<div class="profile-header">
-<img src="/images/default_icon.png" class="profile-icon" id="profileIcon" />
-<h3 class="profile-username" id="profileUsername"></h3>
-<p class="profile-status-message" id="profileStatus"></p>
-</div>
-<div class="profile-body">
-<div class="profile-info-row">
-<span class="profile-info-label">所属</span>
-<span class="profile-info-value" id="profileGroup"></span>
-</div>
-<div class="profile-info-row">
-<span class="profile-info-label">趣味</span>
-<span class="profile-info-value" id="profileHobby"></span>
-</div>
-<div class="profile-info-row">
-<span class="profile-info-label">マイブーム</span>
-<span class="profile-info-value" id="profileMyBoom"></span>
-</div>
-</div>
-<div class="profile-modal-buttons">
-<button class="modal-btn cancel" id="closeProfileBtn">閉じる</button>
-</div>
-</div>
-</div>
-</main>
-
-<script>
 let me = { id: "", name: "" };
 let users = [];
 let rooms = [];
@@ -137,7 +13,19 @@ const DEFAULT_GROUP_ICON = "/images/groups/default-group-icon.png";
 function jstTime(iso) { try { return new Date(iso).toLocaleTimeString("ja-JP", { hour: "2-digit", minute: "2-digit" }); } catch (e) { return ""; }};
 function scrollToBottom() { const box = $("#messages")[0]; if (box) box.scrollTop = box.scrollHeight; };
 function getOtherId(room) { return (room.members || []).find(id => id !== me.id); }
-function findUser(id) { return users.find(u => u.userId === id); }
+function findUser(id) { 
+    // me.id と一致する場合は me オブジェクトを返す
+    // users配列にはme自身の情報も含まれている前提
+    const user = users.find(u => u.userId === id);
+    if (id === me.id) {
+        return { 
+            userId: me.id, 
+            userName: me.name, 
+            icon: user?.icon || DEFAULT_ICON 
+        };
+    }
+    return user; 
+}
 function getOtherUser(room) { return findUser(getOtherId(room)); }
 function getOtherUserName(room) { return (getOtherUser(room)?.userName) || "チャット"; }
 function getOtherUserIcon(room) { return (getOtherUser(room)?.icon) || DEFAULT_ICON; }
@@ -179,8 +67,9 @@ function renderHeader() {
   if (isGroupChat) {
     const memberNames = (currentRoom.members || [])
       .map(id => {
-        const user = (id === me.id) ? me : findUser(id);
-        return user ? (user.name || user.userName) : null;
+        // findUserを介してユーザー名を取得 (findUserはmeも含むように改善済み)
+        const user = findUser(id); 
+        return user ? (user.userName) : null;
       })
       .filter(name => name);
 
@@ -208,7 +97,8 @@ function renderMessages(msgs) {
 
     const isMine = (m.userId === me.id);
     const wrapperClass = isMine ? "me" : "other";
-    const user = findUser(m.userId) || { userName: m.userName, icon: m.icon };
+    // 常にfindUserを使って、完全なユーザー情報を取得するように改善
+    const user = findUser(m.userId) || { userName: m.userName, icon: m.icon }; 
 
     let readStatusHtml = '';
     if (isMine && m.readBy && currentRoom) {
@@ -303,6 +193,7 @@ function subscribeRoom(roomId) {
     $("#messages").append(html);
     scrollToBottom();
 
+    // 新しいメッセージが自分のもの出ない場合、既読通知を送信
     if (!isMine && document.visibilityState === 'visible') {
       stomp.send(`/app/chat/${roomId}/read`, {}, JSON.stringify({ messageId: payload.messageId, userId: me.id }));
     }
@@ -310,7 +201,10 @@ function subscribeRoom(roomId) {
 }
 
 function loadMe() { return $.getJSON("/api/users/me").then(res => { me.id = res.userId; me.name = res.userName; }); }
-function loadUsers() { return $.getJSON("/api/users").then(res => { users = (res || []).filter(u => u.userId !== me.id); }); }
+function loadUsers() { 
+    // ★ ユーザーリストには自分自身も含まれていると想定し、フィルタリングを外す
+    return $.getJSON("/api/users").then(res => { users = (res || []); }); 
+}
 function loadMessages(roomId) { return $.getJSON(`/api/chat/${roomId}`); }
 
 function connectWS(cb) {
@@ -337,7 +231,7 @@ function connectWS(cb) {
   });
 }
 
-// ▼▼▼ ★★★ ここが修正された関数です ★★★ ▼▼▼
+// ★★★ メッセージ送信がされない問題に対応するため、既読処理をシンプル化 ★★★
 function selectRoomById(roomId) {
   const room = rooms.find(r => r.roomId === roomId);
   if(!room) return;
@@ -352,52 +246,32 @@ function selectRoomById(roomId) {
 
   // 2. メッセージをサーバーから読み込む
   loadMessages(roomId).then(loadedMessages => {
+    
+    // 【重要】未読メッセージがあるか確認する
+    let hasUnreadMessages = (loadedMessages || []).some(msg => 
+        msg.userId !== me.id && !(msg.readBy || []).includes(me.id)
+    );
 
-    // ★ 修正: 既読にするメッセージIDをすべて保存する配列
-    const unreadMessageIds = [];
-
-    // 3. 【自分用の修正】
-    // 画面に表示する *前* に、未読メッセージをローカルデータ上で既読にする
-    (loadedMessages || []).forEach(msg => {
-        if (msg.userId !== me.id && !(msg.readBy || []).includes(me.id)) {
-            if (!msg.readBy) {
-                msg.readBy = [];
-            }
-            msg.readBy.push(me.id); // ローカルの 'readBy' リストに自分を追加
-
-            // ★ 修正: 最後の1件だけでなく、すべての未読IDを保存
-            unreadMessageIds.push(msg.messageId);
-        }
-    });
-
-    // 4. 既読に書き換えたデータで画面を描画する (自分の画面が正しくなる)
+    // 3. 画面描画
     renderMessages(loadedMessages);
 
-    // 5. WebSocketに接続
+    // 4. WebSocketに接続
     connectWS(() => {
       subscribeRoom(roomId);
 
-      // 6. ★ 修正: unreadMessageIds配列にIDが1件でもあれば
-      if (unreadMessageIds.length > 0) {
-
-          // 6a. 【サーバー用の修正】
-          // バックエンドのJSONファイルを *1回だけ* 更新
+      // 5. 【最適化】未読メッセージがある場合、サーバーに対して「全て既読にした」ことを伝える
+      if (hasUnreadMessages) {
+          // /markAllAsRead のみを使用してサーバーのJSONファイルを更新し、
+          // サーバーにホーム画面の通知ブロードキャスト(ChatControllerの修正済み部分)を依頼する
           stomp.send(`/app/chat/${roomId}/markAllAsRead`, {}, JSON.stringify({ userId: me.id }));
-
-          // 6b. 【相手用の修正】
-          // 相手（送信者）に「既読」を伝えるため、
-          // 既読にした *すべてのメッセージ* について 'read' リクエストを送信する
-          unreadMessageIds.forEach(msgId => {
-             stomp.send(`/app/chat/${roomId}/read`, {}, JSON.stringify({
-                  messageId: msgId,
-                  userId: me.id
-              }));
-          });
+          
+          // ★ 以前あった個別の /app/chat/{roomId}/read リクエストのループは削除 ★
+          // これにより、メッセージ送信失敗の原因となり得た競合や過負荷を避けます。
       }
     });
   });
 }
-// ▲▲▲ ★★★ 修正箇所はここまでです ★★★ ▲▲▲
+// ▲▲▲ 最適化された selectRoomById 関数 ▲▲▲
 
 function sendMessage() {
   if(!currentRoom || !stomp || !stomp.connected) return;
@@ -407,9 +281,20 @@ function sendMessage() {
   else sendTextMessage(text);
 }
 
+// ★★★ 修正: 自分のアイコンを確実にペイロードに含める ★★★
 function sendTextMessage(text) {
-  const meUser = findUser(me.id) || me;
-  const payload = { roomId: currentRoom.roomId, userId: me.id, userName: me.name, type: "TEXT", content: text, timestamp: new Date().toISOString(), icon: meUser.icon || DEFAULT_ICON };
+  // findUserを介して自分の完全なユーザー情報を取得
+  const meUser = findUser(me.id); 
+  
+  const payload = { 
+      roomId: currentRoom.roomId, 
+      userId: me.id, 
+      userName: me.name, 
+      type: "TEXT", 
+      content: text, 
+      timestamp: new Date().toISOString(), 
+      icon: meUser?.icon || DEFAULT_ICON // 取得できたアイコンを使用
+  };
   stomp.send(`/app/chat/${payload.roomId}`, {}, JSON.stringify(payload));
   $("#messageInput").val("").css("height", "44px");
 }
@@ -421,8 +306,17 @@ function uploadAndSendMessage(file, caption) {
   $.ajax({ url: "/api/chat/upload", method: "POST", data: formData, processData: false, contentType: false })
     .done(res => {
       if(res && res.imageUrl) {
-        const meUser = findUser(me.id) || me;
-        const payload = { roomId: currentRoom.roomId, userId: me.id, userName: me.name, type: "IMAGE", content: res.imageUrl, caption: caption, timestamp: new Date().toISOString(), icon: meUser.icon || DEFAULT_ICON };
+        const meUser = findUser(me.id);
+        const payload = { 
+            roomId: currentRoom.roomId, 
+            userId: me.id, 
+            userName: me.name, 
+            type: "IMAGE", 
+            content: res.imageUrl, 
+            caption: caption, 
+            timestamp: new Date().toISOString(), 
+            icon: meUser?.icon || DEFAULT_ICON 
+        };
         stomp.send(`/app/chat/${payload.roomId}`, {}, JSON.stringify(payload));
         clearPreview();
         $("#messageInput").val("").css("height", "44px");
@@ -450,7 +344,8 @@ function clearPreview() {
 
 function openCreateModal() {
   const $ul = $("#userList").empty();
-  users.forEach(u => $ul.append(
+  // ユーザーリストから自分を除外して表示
+  users.filter(u => u.userId !== me.id).forEach(u => $ul.append( 
     `<div class="user-row">
       <img src="${u.icon || DEFAULT_ICON}" class="user-icon" />
       <label><input type="checkbox" name="targetUser" value="${u.userId}" />${escapeHtml(u.userName)}</label>
@@ -468,9 +363,9 @@ function createRoom() {
     window.selectedGroupMembers = [me.id, ...selectedUsers];
     const $memberList = $("#selectedMemberList").empty();
     window.selectedGroupMembers.forEach(id => {
-      const user = (id === me.id) ? me : findUser(id);
+      const user = findUser(id); // findUser (meを含む) を使用
       if (user) {
-        const userName = (id === me.id) ? user.name : user.userName;
+        const userName = user.userName;
         const userIcon = user.icon || DEFAULT_ICON;
         $memberList.append(
           `<div class="member-item">
@@ -543,21 +438,19 @@ function resetGroupModal() {
 }
 
 $(async function init() {
-    // ★★★ この CSRF 設定コードを追加 ★★★
+    // CSRFトークンをaxiosのデフォルトヘッダーに設定
     const token = $("meta[name='_csrf']").attr("content");
     const header = $("meta[name='_csrf_header']").attr("content");
     if (token && header) {
         $.ajaxSetup({
             beforeSend: function(xhr) {
-                // console.log("★ beforeSend が実行されました ★ ヘッダー:", header, "トークン:", token); // デバッグ用
                 xhr.setRequestHeader(header, token);
             }
         });
-        // console.log("CSRF setup complete. Header:", header, "Token:", token); // デバッグ用
     } else {
         console.error("CSRF token meta tags not found!");
     }
-    // ★★★ ここまで追加 ★★★
+    
     // --- イベントリスナー設定 ---
     $(document).on("click", ".room-item", function() { selectRoomById($(this).data("room-id")); });
     $(document).on("click", ".preview-remove", clearPreview);
@@ -683,6 +576,3 @@ function searchRooms() {
     }
   }
 }
-</script>
-</body>
-</html>

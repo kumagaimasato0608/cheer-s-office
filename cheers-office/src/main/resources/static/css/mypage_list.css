@@ -1,0 +1,39 @@
+/* ★★★ 修正箇所: body にパディングと背景色を設定 ★★★ */
+body {
+    /* ページ全体にパディングを設定し、固定ヘッダー（約120px）の裏にコンテンツが隠れるのを防ぐ */
+    padding-top: 120px; 
+    margin: 0;
+    background-color: #e6f0ff; /* home.html の body と同じ背景色を設定 */
+}
+
+.page-content {
+    /* bodyのpadding-topで上部のスペースを確保したため、この要素の余分な padding-top を削除 */
+    padding-top: 30px; 
+    padding-bottom: 30px;
+}
+
+.user-icon-sm {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    object-fit: cover;
+    margin-right: 10px;
+}
+.accordion-button {
+    font-weight: bold;
+}
+.accordion-body ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+.accordion-body li {
+    padding: 5px 0;
+    border-bottom: 1px dotted #eee;
+    font-size: 0.95em;
+}
+.search-container {
+    max-width: 800px;
+    margin: 0 auto 30px;
+    
+}

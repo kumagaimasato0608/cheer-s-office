@@ -1,5 +1,5 @@
 /**
- * Cheers Office - PhotoPin Map Logic (jQuery Version)
+ * Cheers Office - Pinit Map Logic (jQuery Version)
  * 全機能統合 最終版
  */
 $(document).ready(function() {

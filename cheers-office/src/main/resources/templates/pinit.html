@@ -16,102 +16,9 @@
     <script src="https://cdn.jsdelivr.net/npm/axios@1.7.7/dist/axios.min.js"></script>
 
     <link rel="stylesheet" href="/css/style.css">
-    <style>
-        /* PinIt独自のスタイル */
-        body {
-             padding-top: 100px; /* 固定ヘッダーの高さ分、コンテンツを下にずらす */
-             margin: 0;
-             background-color: #f4f7f9;
-        }
-
-        .page-wrapper { 
-             padding-top: 20px; 
-        }
-
-        .main-content { padding: 20px; display: flex; gap: 20px; height: calc(100vh - 100px - 40px); }
-        .user-list-sidebar { width: 280px; flex-shrink: 0; background-color: #ffffff; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); padding: 15px; max-height: 100%; overflow-y: auto; }
-        .user-list-sidebar h4, .user-list-sidebar h5 { margin-bottom: 15px; color: #0d6efd; border-bottom: 1px solid #eee; padding-bottom: 10px; font-size: 1.1em; }
-        .user-icon { width: 32px; height: 32px; border-radius: 50%; object-fit: cover; }
-        #map-container { position: relative; flex-grow: 1; height: 100%; box-shadow: 0 4px 15px rgba(0,0,0,0.05); border-radius: 8px; display: flex; flex-direction: column; }
-        #mapid { flex-grow: 1; border-radius: 8px; }
-        #map-overlay-controls { position: absolute; top: 10px; left: 50px; z-index: 1000; display: flex; gap: 10px; background-color: rgba(255, 255, 255, 0.8); padding: 8px; border-radius: 5px; box-shadow: 0 1px 5px rgba(0,0,0,0.4); }
-        #map-overlay-controls #location-search { width: 300px; }
-        .ranking-item { display: flex; align-items: center; padding: 8px; margin-bottom: 5px; border-radius: 5px; border: 2px solid; }
-        .rank-1 { border-color: #FFD700; background-color: #FFFACD; } .rank-2 { border-color: #C0C0C0; background-color: #F5F5F5; } .rank-3 { border-color: #CD7F32; background-color: #FFE4B5; }
-        .rank-badge { font-weight: bold; margin-right: 10px; }
-        .pin-popup-content { text-align: center; width: 200px; }
-        .pin-popup-content h5 { margin: 5px 0; font-size: 1.1em; }
-        .pin-popup-content img { max-width: 100%; height: auto; border-radius: 5px; margin-top: 5px; }
-        .color-option { width: 100px; height: 100px; border-radius: 50%; margin: 20px; cursor: pointer; border: 5px solid transparent; transition: border-color 0.2s; }
-        .color-option.selected { border-color: #0d6efd; }
-
-		.leaflet-control.custom-button-control { box-shadow: 0 1px 5px rgba(0,0,0,0.2); border-radius: 20px; }
-		.leaflet-control.custom-button-control a { background-color: #fff; padding: 8px 15px; text-decoration: none; color: #333; font-size: 0.9em; font-weight: bold; display: flex; align-items: center; justify-content: center; white-space: nowrap; }
-		.leaflet-control.custom-button-control a:hover { background-color: #f4f4f4; border-radius: 20px; }
-		
-        .comment-item { display: flex; align-items: flex-start; padding: 8px; border-bottom: 1px solid #eee; }
-		.comment-item img { width: 32px; height: 32px; border-radius: 50%; margin-right: 10px; }
-		.comment-item-content { flex-grow: 1; }
-		.comment-item-user { font-weight: bold; font-size: 0.9em; }
-		.comment-item-text { font-size: 0.95em; color: #555; }
-		
-		/* ★★★ ローディングオーバーレイのスタイル追加 (省略) ★★★ */
-        #loading-overlay {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: #e6f0ff; z-index: 2000; display: flex; flex-direction: column; justify-content: center; align-items: center; opacity: 1; transition: opacity 0.5s ease-out;
-        }
-        #loading-overlay.hidden { opacity: 0; pointer-events: none; }
-        .loading-content { text-align: center; }
-        .loading-content img, .modal-logo-pin { max-width: 200px; height: auto; margin-bottom: 20px; animation: pulse 1.5s infinite; }
-        .modal-logo-pin { max-width: 40px; margin-bottom: 0; margin-right: 10px; animation: none; }
-        .loading-content h1 { color: #dc3545; font-size: 3em; font-weight: bold; margin-bottom: 10px; }
-        .loading-content p { color: #007bff; font-size: 1.2em; }
-        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.05); } 100% { transform: scale(1); } }
-        
-        /* ★★★ リアクションバーのスタイル ★★★ */
-        .reaction-bar {
-            display: flex;
-            gap: 10px;
-            padding: 10px 0;
-            border-top: 1px solid #eee;
-            border-bottom: 1px solid #eee;
-            margin-bottom: 15px;
-        }
-        .reaction-button {
-            padding: 5px 12px;
-            border-radius: 20px;
-            background-color: #f8f9fa;
-            border: 1px solid #ced4da;
-            cursor: pointer;
-            transition: background-color 0.2s;
-            font-size: 0.9em;
-            display: flex;
-            align-items: center;
-            position: relative;
-        }
-        .reaction-button:hover { background-color: #e9ecef; }
-        .reaction-button.active {
-            background-color: #0d6efd;
-            color: white;
-            border-color: #0d6efd;
-        }
-        .reaction-count { 
-            margin-left: 5px; 
-            font-weight: bold; 
-        }
-        .reaction-user-link {
-            font-size: 0.9em;
-            cursor: pointer;
-            text-decoration: underline;
-        }
-        /* ★★★ 初心者ボタンのスタイル ★★★ */
-        #openTutorialButton {
-            width: 100%;
-            margin-bottom: 15px;
-            font-weight: bold;
-            font-size: 1em;
-        }
-
-    </style>
+    
+    <link rel="stylesheet" href="/css/pinit.css">
+    
 </head>
 <body>
   <div th:replace="common/header :: header"></div>
@@ -132,7 +39,7 @@
       <aside class="user-list-sidebar">
         
         <button class="btn btn-info btn-sm" id="openTutorialButton" onclick="window.openTutorial()">
-            <span style="font-size: 1.2em;">🔰</span> PinItの使い方ガイド
+            <span style="font-size: 1.2em;"></span> PinItの使い方ガイド
         </button>
 
         <div class="mb-3">
@@ -242,7 +149,7 @@
               </div>
               <div class="modal-body">
                   <p>あなたが配置するピンは、ここで選択した色で表示されます。</p>
-                  <form th:action="@{/photopin/save-color}" method="post" id="colorForm">
+                  <form th:action="@{/Pinit/save-color}" method="post" id="colorForm">
                       <input type="hidden" name="color" id="selectedColorInput">
                       <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
                       <div class="d-flex justify-content-center">
@@ -306,7 +213,7 @@
                               
                               <div class="d-flex justify-content-around">
                                   <div class="p-3 border rounded border-danger bg-light"><strong><span style="color:red;">🔴🚩</span> 陣地獲得:</strong> チームカラーでマップを塗ろう！</div>
-                                  <div class="p-3 border rounded border-warning bg-light"><strong><span style="color:gold;">👑</span> シーズン制:</strong> **毎月1日**にスコアはリセットされます。</div>
+                                  <div class="p-3 border rounded border-warning bg-light"><strong><span style="color:gold;"></span> シーズン制:</strong> **毎月1日**にスコアはリセットされます。</div>
                               </div>
                               <p class="text-danger mt-3">⚠️ **投稿は現在のシーズン（今月）のみ可能です。**</p>
                           </div>
@@ -378,9 +285,9 @@
         axios.defaults.headers.common[header] = token;
     }
     
-    // --- photopin.js が依存するヘルパー関数を定義 ---
+    // --- Pinit.js が依存するヘルパー関数を定義 ---
 
-    // チュートリアルモーダルの初期表示ロジック (photopin.jsが呼び出す)
+    // チュートリアルモーダルの初期表示ロジック (Pinit.jsが呼び出す)
     window.checkAndShowInitialTutorial = function() {
         const tutorialModalEl = document.getElementById('tutorialModal');
         if (tutorialModalEl) {
@@ -399,7 +306,7 @@
         }
     }
 
-    // ローディングオーバーレイを非表示にする関数 (photopin.jsが呼び出す)
+    // ローディングオーバーレイを非表示にする関数 (Pinit.jsが呼び出す)
     window.hideLoadingOverlay = function() {
         const overlay = document.getElementById('loading-overlay');
         if (overlay) {
@@ -417,7 +324,7 @@
     
   </script>
 
-  <script th:src="@{/js/photopin.js}"></script>
+  <script th:src="@{/js/Pinit.js}"></script>
   
   <script>
     
@@ -452,7 +359,7 @@
             colorModal.show();
         }
         
-        // photopin.js の `$(document).ready(...)` が発火し、アプリケーションが起動します。
+        // Pinit.js の `$(document).ready(...)` が発火し、アプリケーションが起動します。
     });
   </script>
 </body>

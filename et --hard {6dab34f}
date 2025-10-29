@@ -1,0 +1,52 @@
+[33mde7bf10[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmaster[m[33m)[m HEAD@{0}: commit: 変更
+[33m14faef9[m HEAD@{1}: commit: Merge branch 'test' of https://github.com/kumagaimasato0608/-.git
+[33m51dae29[m HEAD@{2}: commit: あ
+[33m6dab34f[m[33m ([m[1;31morigin/master[m[33m)[m HEAD@{3}: commit: ファビコンの追加
+[33m368e406[m HEAD@{4}: commit: Merge branch 'master' of https://github.com/kumagaimasato0608/-.git
+[33me31d31f[m HEAD@{5}: commit: saisinn
+[33m0b0bf78[m HEAD@{6}: commit: rannkinngu
+[33m6afc0f3[m HEAD@{7}: commit: 最終更新
+[33macf3929[m HEAD@{8}: commit: 変更！
+[33m6edc513[m HEAD@{9}: commit: チューとリアルの変更
+[33m05f1f91[m HEAD@{10}: commit: 更新
+[33m67ff1a1[m HEAD@{11}: commit: 表記をきれいにしました
+[33mc4acc74[m HEAD@{12}: commit: 最終更新
+[33maaa912c[m HEAD@{13}: merge branch 'master' of https://github.com/kumagaimasato0608/-.git: Fast-forward
+[33m0005a20[m HEAD@{14}: commit: 10/21更新
+[33m78c543a[m HEAD@{15}: commit: kousinn
+[33m8504dc7[m HEAD@{16}: commit: 追加
+[33mc08e557[m HEAD@{17}: commit: ファビコン追加
+[33mf921b7e[m HEAD@{18}: commit: 最終調整
+[33m376a11a[m HEAD@{19}: commit: 10/20最終版
+[33m28ae329[m HEAD@{20}: commit: 更新
+[33m4d62707[m HEAD@{21}: commit: 更新
+[33m65dca65[m HEAD@{22}: merge branch 'master' of https://github.com/kumagaimasato0608/-.git: Fast-forward
+[33mbfa0b1f[m HEAD@{23}: commit: 本日の最終版
+[33me4614bf[m HEAD@{24}: commit: mibaenohennka
+[33ma8ebb37[m HEAD@{25}: merge branch 'master' of https://github.com/kumagaimasato0608/-.git: Fast-forward
+[33m1433c9a[m HEAD@{26}: commit: 更新
+[33mb8d3147[m HEAD@{27}: commit: 削除できました
+[33mea83903[m HEAD@{28}: commit: 更新
+[33m9954d60[m HEAD@{29}: commit: css
+[33mbaf10eb[m HEAD@{30}: commit: css
+[33m44c1bfa[m HEAD@{31}: merge branch 'master' of https://github.com/kumagaimasato0608/-.git: Fast-forward
+[33m1ca5eaa[m HEAD@{32}: commit: 最新版
+[33m4855618[m HEAD@{33}: commit: kousinn
+[33m34601e2[m HEAD@{34}: commit: 完全版フォトピン
+[33m79113a6[m HEAD@{35}: commit: こうしん
+[33m6747463[m HEAD@{36}: merge branch 'master' of https://github.com/kumagaimasato0608/-.git: Fast-forward
+[33m6f85b2c[m HEAD@{37}: commit: a
+[33mc0ba988[m HEAD@{38}: commit: フォトピンぴん追加と参照できるようにした
+[33m1a93e61[m HEAD@{39}: commit: フォトピンの最低限が完成しました
+[33m0a27c2b[m HEAD@{40}: commit: ホームページ＋フォトピンに遷移ができました
+[33m811b210[m HEAD@{41}: commit: 今回パスワード変更を別途ページに追加しました
+[33m455f2d8[m HEAD@{42}: reset: moving to origin/master
+[33m0f8e1df[m[33m ([m[1;31morigin/main[m[33m, [m[1;31morigin/cheers-2[m[33m, [m[1;31morigin/HEAD[m[33m)[m HEAD@{43}: reset: moving to origin/main
+[33m455f2d8[m HEAD@{44}: commit: マイページでもjsonが使えるようにした
+[33m4ff8771[m HEAD@{45}: commit: 各それぞれのコントローラーを追加しました
+[33ma800fb0[m HEAD@{46}: commit: 再更新
+[33mddf12a4[m HEAD@{47}: commit: 画面レイアウトを合わせました
+[33ma9549c1[m HEAD@{48}: commit: Json起動確認済み
+[33m02bd044[m HEAD@{49}: commit: ログインを一時的にできるようにしました
+[33m7708c86[m HEAD@{50}: commit: 更新いたしました
+[33m1df7735[m HEAD@{51}: commit (initial): Initial commit
