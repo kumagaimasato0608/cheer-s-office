@@ -1,1 +1,13 @@
-[]
+[ {
+  "message" : "おいしいところ教えて",
+  "userId" : "3a27bce7-4e60-48e0-b965-fe3724b5f564",
+  "userName" : "masato",
+  "icon" : "/images/default_icon.png",
+  "anonymous" : false,
+  "timestamp" : "2025/10/29 15:51",
+  "threadId" : "25d80e67-dc4b-4a26-ba21-019a201a24b1",
+  "title" : "ohirugohann ",
+  "imageUrl" : null,
+  "replies" : [ ],
+  "authorId" : "3a27bce7-4e60-48e0-b965-fe3724b5f564"
+} ]

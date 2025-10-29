@@ -3,21 +3,15 @@
 // ページロード時の処理
 $(document).ready(function() {
     
-    // 🗓️ 直近のイベント取得は home.html 内の FullCalendar ロジックに任せるため削除
-    // loadUpcomingEvents(); 
-    
     // 📰 最新スレッドの取得を実行
     loadLatestThreads(); 
-    
-    // 🎮 スコアWebSocket接続は home.html 内のロジックに統合するため削除
-    // connectScoreWebSocket(); 
     
     // ... その他のホーム画面の初期化処理があればここに追加 ...
 });
 
 
 /**
- * 📰 掲示板APIから最新のスレッドを取得し、表示する (★★ 修正済みバージョン ★★)
+ * 📰 掲示板APIから最新のスレッドを取得し、表示する
  */
 function loadLatestThreads() {
     const threadList = $('#latest-threads-list');
@@ -74,4 +68,36 @@ function loadLatestThreads() {
         }
     });
 }
+
+/**
+ * チャット未読件数を取得し、通知バー（カード）の表示を更新する
+ * (home.htmlのインラインスクリプトから移動)
+ */
+function updateUnseenChatNotification() {
+    // Axiosを使用（home.htmlでグローバルに設定されているCSRFトークンを利用）
+    axios.get('/api/rooms')
+        .then(response => {
+            const rooms = response.data || []; 
+            const unseenCount = rooms.reduce((sum, room) => sum + (room.unreadCount || 0), 0); 
+            
+            // 通知カードのIDを使用
+            const $notificationBar = $('#chatNotificationBarCard'); 
+            const $unseenChatCount = $('#unseenChatCount');
+            
+            if (unseenCount > 0) {
+                $unseenChatCount.text(unseenCount);
+                // d-noneクラスを削除して表示（home.htmlで追加したCSSを考慮）
+                $notificationBar.removeClass('d-none').css('display', 'flex'); 
+            } else {
+                // d-noneクラスを追加して非表示
+                $notificationBar.addClass('d-none').css('display', 'none'); 
+            }
+        })
+        .catch(error => {
+            console.error("未読チャット件数の取得に失敗しました", error);
+            // エラー時も非表示にする
+            $('#chatNotificationBarCard').addClass('d-none').css('display', 'none');
+        });
+}
+
 // connectScoreWebSocket() および loadUpcomingEvents() は home.html のインラインスクリプトに機能が統合されたため、ここでは定義を削除します。

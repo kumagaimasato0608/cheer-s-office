@@ -29,10 +29,6 @@
 
     <main class="container mt-5" style="padding-top: 100px;"> 
         
-        <div id="chatNotificationBar" class="notification-bar alert alert-danger d-flex justify-content-between align-items-center mb-4" role="alert">
-            <span id="chatNotificationMessage">チャットで新しいメッセージが <span id="unseenChatCount">0</span> 件届いています！</span>
-            <a th:href="@{/chat/rooms}" class="btn btn-sm btn-danger">チャットを確認する</a>
-        </div>
         <div class="row mb-4">
             <div class="col-12">
                 <div class="card shadow-sm">
@@ -84,6 +80,12 @@
 
             <div class="col-lg-4">
                 
+                <div id="chatNotificationBarCard" class="card shadow-sm mb-4 d-none">
+                    <div class="card-body p-3 d-flex justify-content-between align-items-center alert-danger" style="border-radius: 0.375rem;">
+                        <span id="chatNotificationMessage" style="color: #842029;">チャットで新しいメッセージが <span id="unseenChatCount">0</span> 件届いています！</span>
+                        <a th:href="@{/chat/rooms}" class="btn btn-sm btn-danger ms-2">チャットを確認する</a>
+                    </div>
+                </div>
                 <div class="card shadow-sm mb-4">
                     <div class="card-header bg-danger text-white">
                         <h5 class="mb-0">🎮 PinItチームスコア</h5>
@@ -228,7 +230,7 @@
         let calendar = null;
         let currentUserId = null; 
         
-        // ★★★ 修正点: 共有機能のためにグローバルスコープに移動 ★★★
+        // ★★★ 共有機能のためにグローバルスコープに移動 ★★★
         let allUsers = []; 
         let usersById = {}; 
         
@@ -607,29 +609,27 @@
             });
         }
         
+        // ★★★ 修正済み: 通知バーのIDを #chatNotificationBarCard に変更 ★★★
 		function updateUnseenChatNotification() {
 		            axios.get('/api/rooms')
 		                .then(response => {
-		                    // ★ 修正点: response.data (APIからの応答データ) を 'rooms' として扱う
 		                    const rooms = response.data || []; 
-		                    
-		                    // rooms 配列を走査して、各 room の unreadCount を合計する
 		                    const unseenCount = rooms.reduce((sum, room) => sum + (room.unreadCount || 0), 0); 
 		                    
-		                    const $notificationBar = $('#chatNotificationBar');
+		                    const $notificationBar = $('#chatNotificationBarCard'); // 修正箇所
 		                    const $unseenChatCount = $('#unseenChatCount');
 		                    
 		                    if (unseenCount > 0) {
 		                        $unseenChatCount.text(unseenCount);
-		                        $notificationBar.css('display', 'flex'); 
+		                        $notificationBar.removeClass('d-none').css('display', 'flex'); // 修正箇所
 		                    } else {
-		                        $notificationBar.css('display', 'none'); 
+		                        $notificationBar.addClass('d-none').css('display', 'none'); // 修正箇所
 		                    }
 		                })
 		                .catch(error => {
 		                    console.error("未読チャット件数の取得に失敗しました", error);
 							// エラーが発生した場合は通知バーを隠す
-							$('#chatNotificationBar').css('display', 'none');
+							$('#chatNotificationBarCard').addClass('d-none').css('display', 'none'); // 修正箇所
 		                });
 		        }
         
@@ -663,7 +663,7 @@
             const userNameEl = document.getElementById('loggedInUserName'); // ユーザー名表示要素
             const seasonRemainingDaysEl = document.getElementById('seasonRemainingDays'); // シーズン残り日数要素
             
-            // ★★★ 修正点: let を削除 (グローバル変数を使用) ★★★
+            // ★★★ let を削除 (グローバル変数を使用) ★★★
             allUsers = []; 
             usersById = {}; 
             

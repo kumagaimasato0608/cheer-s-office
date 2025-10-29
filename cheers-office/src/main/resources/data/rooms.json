@@ -10,4 +10,10 @@
   "members" : [ "d5982f9e-2beb-45a4-ba44-31b9e7a3512e", "u001_auto", "349348bd-de12-4d75-9311-f2b09c107489" ],
   "createdAt" : "2025-10-23T16:50:08.419609700",
   "icon" : "/images/groups/39136642-58f8-4984-a63d-691ff66fb2f9.png"
+}, {
+  "roomId" : "r_0ae45f55",
+  "roomName" : "自動登録ユーザー",
+  "members" : [ "3a27bce7-4e60-48e0-b965-fe3724b5f564", "u001_auto" ],
+  "createdAt" : "2025-10-29T15:50:28.603913300",
+  "icon" : null
 } ]
