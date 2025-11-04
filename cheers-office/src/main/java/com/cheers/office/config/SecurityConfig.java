@@ -7,7 +7,6 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
-// import org.springframework.security.web.util.matcher.AntPathRequestMatcher; // ★ 削除するインポート
 
 @Configuration
 @EnableWebSecurity
@@ -22,31 +21,34 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
             .authorizeHttpRequests(auth -> auth
-                // ログインページと登録ページはアクセスを許可
-                .requestMatchers("/login", "/register", "/css/**", "/js/**", "/images/**", "/webjars/**").permitAll()
-                // その他のリクエストは認証が必要
+                // ログイン・登録・静的リソース・WebSocket関連は全て許可
+                .requestMatchers(
+                    "/login", "/register",
+                    "/css/**", "/js/**", "/images/**", "/webjars/**",
+                    "/ws/**", "/topic/**"
+                ).permitAll()
                 .anyRequest().authenticated()
             )
             .formLogin(form -> form
-                .loginPage("/login") 
-                .defaultSuccessUrl("/home", true) // ログイン成功後のリダイレクト先
+                .loginPage("/login")
+                .defaultSuccessUrl("/home", true)
                 .failureUrl("/login?error")
                 .permitAll()
             )
             .logout(logout -> logout
-                // ★★★ 修正箇所: AntPathRequestMatcher の代わりにラムダ式を使用 ★★★
-                // 修正前: .logoutRequestMatcher(new AntPathRequestMatcher("/logout"))
-                .logoutRequestMatcher(request -> "/logout".equals(request.getRequestURI())) 
-                .logoutSuccessUrl("/login?logout") 
+                .logoutRequestMatcher(request -> "/logout".equals(request.getRequestURI()))
+                .logoutSuccessUrl("/login?logout")
                 .deleteCookies("JSESSIONID")
                 .invalidateHttpSession(true)
                 .permitAll()
             )
-            // WebSocketハンドシェイクパスのCSRF保護を無効化
+            // ✅ WebSocketハンドシェイクやSTOMP通信のCSRF保護を除外
             .csrf(csrf -> csrf
-                .ignoringRequestMatchers("/ws/**") 
-            );
-        
+                .ignoringRequestMatchers("/ws/**", "/topic/**", "/app/**")
+            )
+            // ✅ ★ これが「WebSocketでログイン情報を維持」する最重要設定！
+            .securityContext(context -> context.requireExplicitSave(false));
+
         return http.build();
     }
 }

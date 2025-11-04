@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.time.LocalDateTime;
 import java.time.YearMonth;
 import java.time.format.DateTimeFormatter;
@@ -14,6 +15,7 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
@@ -33,6 +35,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RequestPart; // ★ これを追加
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -48,183 +51,193 @@ import com.cheers.office.board.repository.PinitRepository;
 import com.cheers.office.board.repository.UserRepository;
 import com.cheers.office.board.service.UserAccountService;
 
+/**
+ * ===============================================================
+ * 📍 PinIt コントローラ（フォトピン機能）
+ * ---------------------------------------------------------------
+ * ・ピン投稿・削除・コメント・リアクション・スコア管理
+ * ・Tomcat 再起動後も JSON 永続化でデータ保持
+ * ・WebSocket でスコアリアルタイム更新
+ * ===============================================================
+ */
 @Controller
 public class PinitController {
 
-    private final PinitRepository PinitRepository;
+    private final PinitRepository pinitRepository;
     private final UserAccountService userAccountService;
     private final SimpMessagingTemplate messagingTemplate;
     private final UserRepository userRepository;
 
+    // 📍 ボーナスゾーン設定
     private final List<BonusZone> bonusZones = List.of(
-        new BonusZone("東京タワー", 35.658581, 139.745433, 200, 500),
-        new BonusZone("皇居", 35.685175, 139.7528, 500, 1000),
-        new BonusZone("東京スカイツリー", 35.710063, 139.8107, 200, 500)
+            new BonusZone("東京タワー", 35.658581, 139.745433, 200, 500),
+            new BonusZone("皇居", 35.685175, 139.7528, 500, 1000),
+            new BonusZone("東京スカイツリー", 35.710063, 139.8107, 200, 500)
     );
 
-    @Value("${app.upload-dir.Pinit:src/main/resources/static/images/photopins}")
+    // ✅ 修正版: photopin の upload パスを EC2 環境に対応
+    @Value("${app.upload-dir.photopin:/home/ec2-user/cheers-data/images/photopins}")
     private String photopinUploadDir;
 
-    public PinitController(PinitRepository PinitRepository, 
-                              UserAccountService userAccountService, 
-                              SimpMessagingTemplate messagingTemplate,
-                              UserRepository userRepository) {
-        this.PinitRepository = PinitRepository;
+    public PinitController(
+            PinitRepository pinitRepository,
+            UserAccountService userAccountService,
+            SimpMessagingTemplate messagingTemplate,
+            UserRepository userRepository) {
+        this.pinitRepository = pinitRepository;
         this.userAccountService = userAccountService;
         this.messagingTemplate = messagingTemplate;
         this.userRepository = userRepository;
     }
 
+    // 現在のシーズン (例: 2025-10)
     private String getCurrentSeason() {
         return YearMonth.now().toString();
     }
-    
+
+    // === ページ表示 ===
     @GetMapping("/Pinit")
-    public String showPhotoPinPage(Model model, @AuthenticationPrincipal CustomUserDetails userDetails) { 
-        if (userDetails != null && (userDetails.getUser().getTeamColor() == null || userDetails.getUser().getTeamColor().isEmpty())) { 
-            model.addAttribute("showColorModal", true); 
-        } 
-        return "Pinit"; 
+    public String showPhotoPinPage(Model model, @AuthenticationPrincipal CustomUserDetails userDetails) {
+        if (userDetails != null &&
+                (userDetails.getUser().getTeamColor() == null || userDetails.getUser().getTeamColor().isEmpty())) {
+            model.addAttribute("showColorModal", true);
+        }
+        return "pinit";
     }
-    
+
+    // === チームカラー設定 ===
     @PostMapping("/Pinit/save-color")
-    public String saveTeamColor(@RequestParam("color") String color, @AuthenticationPrincipal CustomUserDetails userDetails) {
+    public String saveTeamColor(@RequestParam("color") String color,
+                                @AuthenticationPrincipal CustomUserDetails userDetails) {
         if (userDetails != null && color != null && !color.isEmpty()) {
             User user = userDetails.getUser();
             user.setTeamColor(color);
-            userAccountService.updateUser(user); // ユーザー情報を保存
-            
+            userAccountService.updateUser(user);
             calculateAndBroadcastScores();
         }
-        return "redirect:/Pinit"; 
+        return "redirect:/Pinit";
     }
 
-    // ★★★ 修正箇所: チュートリアル完了APIを追加 ★★★
+    // === チュートリアル完了API ===
     @PostMapping("/api/user/completeTutorial")
     @ResponseBody
     public ResponseEntity<Void> completeTutorial(@AuthenticationPrincipal CustomUserDetails userDetails) {
-        if (userDetails == null) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-        }
-        
+        if (userDetails == null) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+
         User user = userDetails.getUser();
-        // ★ Userモデルに tutorialSeen フィールドが追加されている前提 ★
-        if (!user.isTutorialSeen()) { 
+        if (!user.isTutorialSeen()) {
             user.setTutorialSeen(true);
-            userAccountService.updateUser(user); // ユーザー情報を保存し、キャッシュを更新
+            userAccountService.updateUser(user);
         }
-        
         return ResponseEntity.ok().build();
     }
-    // ★★★ 修正箇所ここまで ★★★
 
+    // === 全ピン取得 ===
     @GetMapping("/api/photopins")
     @ResponseBody
     public ResponseEntity<List<Pinit>> getAllPhotoPins(@RequestParam(required = false) String season) {
         String targetSeason = (season != null && !season.isEmpty()) ? season : getCurrentSeason();
-        List<Pinit> pinsForSeason = PinitRepository.findAll().stream()
+        List<Pinit> pins = pinitRepository.findAll().stream()
                 .filter(pin -> targetSeason.equals(pin.getSeason()))
                 .collect(Collectors.toList());
-        return ResponseEntity.ok(pinsForSeason);
+        return ResponseEntity.ok(pins);
     }
-    
+
+    // === シーズン一覧 ===
     @GetMapping("/api/photopins/seasons")
     @ResponseBody
     public ResponseEntity<Set<String>> getAvailableSeasons() {
-        Set<String> seasons = PinitRepository.findAll().stream()
+        Set<String> seasons = pinitRepository.findAll().stream()
                 .map(Pinit::getSeason)
-                .filter(s -> s != null && !s.isEmpty())
+                .filter(Objects::nonNull)
                 .collect(Collectors.toSet());
         return ResponseEntity.ok(seasons);
     }
 
-    // ★★★ PinItの初期スコア取得API (home.htmlが使用) ★★★
+    // === 現在のスコア取得 ===
     @GetMapping("/api/scores")
     @ResponseBody
     public ScoreUpdateDto getPinItScores() {
         return calculateScoresInternal();
     }
-    
-    // ★★★ 新規追加: リアクションAPI ★★★
+
+    // === リアクション（いいね/行きたい/見た） ===
     @PostMapping("/api/photopins/{pinId}/react")
     @ResponseBody
-    public ResponseEntity<?> toggleReaction(@PathVariable String pinId, 
-                                            @RequestParam String type, // "like", "want", "seen"
+    public ResponseEntity<?> toggleReaction(@PathVariable String pinId,
+                                            @RequestParam String type, // ★ @RequestParam はここで使われているのでOK
                                             @AuthenticationPrincipal CustomUserDetails userDetails) {
-        if (userDetails == null) {
+        if (userDetails == null)
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("ログインが必要です。");
-        }
-        
+
         String currentUserId = userDetails.getUser().getUserId();
-        Optional<Pinit> pinOpt = PinitRepository.findById(pinId);
+        Optional<Pinit> pinOpt = pinitRepository.findById(pinId);
+        if (pinOpt.isEmpty()) return ResponseEntity.notFound().build();
 
-        if (pinOpt.isEmpty()) {
-            return ResponseEntity.notFound().build();
-        }
-        
         Pinit pin = pinOpt.get();
-        
-        // Pinモデルに reactions マップが存在しない場合は初期化
-        if (pin.getReactions() == null) {
+        if (pin.getReactions() == null)
             pin.setReactions(new HashMap<>());
-        }
-        
-        // 指定されたタイプのリアクションリストを取得 (存在しなければ新規作成)
+
         List<String> usersReacted = pin.getReactions().computeIfAbsent(type, k -> new ArrayList<>());
-
-        if (usersReacted.contains(currentUserId)) {
-            // 既にリアクションしている場合 -> 削除 (トグル)
+        if (usersReacted.contains(currentUserId))
             usersReacted.remove(currentUserId);
-            System.out.println("User " + currentUserId + " removed reaction " + type + " from pin " + pinId);
-        } else {
-            // リアクションしていない場合 -> 追加 (トグル)
+        else
             usersReacted.add(currentUserId);
-            System.out.println("User " + currentUserId + " added reaction " + type + " to pin " + pinId);
-        }
-        
-        // データを永続化
-        Pinit savedPin = PinitRepository.savePin(pin);
 
+        Pinit savedPin = pinitRepository.savePin(pin);
         calculateAndBroadcastScores();
-        
-        // クライアント側に更新されたピンオブジェクトを返す
         return ResponseEntity.ok(savedPin);
     }
-    // ★★★ 新規追加: リアクションAPI (ここまで) ★★★
 
-
+    // === 新規ピン登録 (★ 修正箇所) ===
     @PostMapping("/api/photopins")
     @ResponseBody
-    public ResponseEntity<?> createPhotoPin(@RequestParam("title") String title, @RequestParam(value = "description", required = false) String description, @RequestParam("latitude") double latitude, @RequestParam("longitude") double longitude, @RequestParam("file") MultipartFile file, @AuthenticationPrincipal CustomUserDetails customUserDetails) {
-        if (customUserDetails == null || file.isEmpty()) { return ResponseEntity.status(HttpStatus.BAD_REQUEST).build(); }
+    public ResponseEntity<?> createPhotoPin(
+            @RequestPart("title") String title,
+            @RequestPart(value = "description", required = false) String description,
+            @RequestPart("latitude") String latitudeStr,   // ★ Stringで受け取る
+            @RequestPart("longitude") String longitudeStr, // ★ Stringで受け取る
+            @RequestPart("file") MultipartFile file,
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
         
-        // チームカラーチェック
-        if (customUserDetails.getUser().getTeamColor() == null || customUserDetails.getUser().getTeamColor().isEmpty()) {
-             return ResponseEntity.status(HttpStatus.FORBIDDEN).body("ピンを置く前に、チームカラーを選択してください。");
+        // ★ Stringをdoubleに手動で変換
+        double latitude;
+        double longitude;
+        try {
+            latitude = Double.parseDouble(latitudeStr);
+            longitude = Double.parseDouble(longitudeStr);
+        } catch (NumberFormatException e) {
+            return ResponseEntity.badRequest().body("緯度経度の形式が不正です。");
         }
+        // ★ 変換ここまで
 
-        String currentUserId = customUserDetails.getUser().getUserId();
+        if (userDetails == null || file.isEmpty())
+            return ResponseEntity.badRequest().build();
+
+        User user = userDetails.getUser();
+        if (user.getTeamColor() == null || user.getTeamColor().isEmpty())
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("ピンを置く前にチームカラーを選択してください。");
+
+        String currentUserId = user.getUserId();
         String currentSeason = getCurrentSeason();
 
-        LocalDateTime lastPinTime = customUserDetails.getUser().getLastPinTimestamp();
+        // クールタイム制限
+        LocalDateTime lastPinTime = user.getLastPinTimestamp();
         if (lastPinTime != null) {
-            long hoursSinceLastPin = ChronoUnit.HOURS.between(lastPinTime, LocalDateTime.now());
-            if (hoursSinceLastPin < 1) {
+            long hours = ChronoUnit.HOURS.between(lastPinTime, LocalDateTime.now());
+            if (hours < 1) {
                 long minutesToWait = 60 - ChronoUnit.MINUTES.between(lastPinTime, LocalDateTime.now());
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("次のピンを置くまで、あと " + minutesToWait + " 分お待ちください。");
+                return ResponseEntity.badRequest().body("次のピンまであと " + minutesToWait + " 分お待ちください。");
             }
         }
 
-        List<Pinit> myPins = PinitRepository.findAll().stream()
-                .filter(pin -> currentSeason.equals(pin.getSeason()) && currentUserId.equals(pin.getCreatedBy()))
-                .collect(Collectors.toList());
-        for (Pinit myPin : myPins) {
-            double dist = distance(latitude, longitude, myPin.getLocation().getLatitude(), myPin.getLocation().getLongitude());
-            if (dist < 100) {
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("自分の他のピンから100m以内に新しいピンを置くことはできません。");
-            }
-        }
-        
+        // 距離制限
+        boolean tooClose = pinitRepository.findAll().stream()
+                .filter(p -> currentSeason.equals(p.getSeason()) && currentUserId.equals(p.getCreatedBy()))
+                .anyMatch(p -> distance(latitude, longitude, p.getLocation().getLatitude(), p.getLocation().getLongitude()) < 100);
+        if (tooClose)
+            return ResponseEntity.badRequest().body("他のピンから100m以内には設置できません。");
+
         Pinit newPin = new Pinit();
         newPin.setPinId(UUID.randomUUID().toString());
         newPin.setTitle(title);
@@ -234,199 +247,184 @@ public class PinitController {
         newPin.setCreatedDate(LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME));
         newPin.setSeason(currentSeason);
 
+        // ボーナス判定
         for (BonusZone zone : bonusZones) {
-            double dist = distance(latitude, longitude, zone.latitude(), zone.longitude());
-            if (dist <= zone.radius()) {
+            if (distance(latitude, longitude, zone.latitude(), zone.longitude()) <= zone.radius()) {
                 newPin.setBonusPoints(zone.points());
-                break; 
+                break;
             }
         }
 
+        // ファイル保存処理
         try {
             Path uploadPath = Paths.get(photopinUploadDir);
-            if (!Files.exists(uploadPath)) { Files.createDirectories(uploadPath); }
+            if (!Files.exists(uploadPath))
+                Files.createDirectories(uploadPath);
+
             String fileName = newPin.getPinId() + "_" + file.getOriginalFilename();
             Path filePath = uploadPath.resolve(fileName);
-            Files.copy(file.getInputStream(), filePath);
-            Photo newPhoto = new Photo();
-            newPhoto.setPhotoId(UUID.randomUUID().toString());
-            newPhoto.setImageUrl("/images/photopins/" + fileName);
-            newPhoto.setUploadedBy(currentUserId);
-            newPhoto.setUploadedDate(newPin.getCreatedDate());
-            newPin.getPhotos().add(newPhoto);
-            Pinit savedPin = PinitRepository.savePin(newPin);
-            
-            customUserDetails.getUser().setLastPinTimestamp(LocalDateTime.now());
-            userAccountService.updateUser(customUserDetails.getUser());
-            
+
+            // 既存ファイルがあっても上書き
+            Files.copy(file.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
+
+            Photo photo = new Photo();
+            photo.setPhotoId(UUID.randomUUID().toString());
+            photo.setImageUrl("/images/photopins/" + fileName);
+            photo.setUploadedBy(currentUserId);
+            photo.setUploadedDate(newPin.getCreatedDate());
+            newPin.getPhotos().add(photo);
+
+            Pinit savedPin = pinitRepository.savePin(newPin);
+
+            user.setLastPinTimestamp(LocalDateTime.now());
+            userAccountService.updateUser(user);
             calculateAndBroadcastScores();
-            
+
             return ResponseEntity.status(HttpStatus.CREATED).body(savedPin);
         } catch (IOException e) {
             e.printStackTrace();
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+            return ResponseEntity.internalServerError().body("画像保存に失敗しました。");
         }
     }
 
-    private Optional<Pinit> findPinByIdForCurrentSeason(String pinId) {
-        return PinitRepository.findById(pinId)
-            .filter(pin -> getCurrentSeason().equals(pin.getSeason()));
-    }
-    
+    // === ピン更新 ===
     @PutMapping("/api/photopins/{pinId}")
     @ResponseBody
-    public ResponseEntity<Pinit> updatePin(@PathVariable String pinId, @RequestBody Pinit updatedPinData, @AuthenticationPrincipal CustomUserDetails userDetails) {
-        Optional<Pinit> pinOpt = findPinByIdForCurrentSeason(pinId);
-        if (pinOpt.isEmpty()) { return ResponseEntity.notFound().build(); }
+    public ResponseEntity<Pinit> updatePin(@PathVariable String pinId,
+                                           @RequestBody Pinit updatedPin, // ★ ここはJSONなので @RequestBody のまま
+                                           @AuthenticationPrincipal CustomUserDetails userDetails) {
+        Optional<Pinit> pinOpt = pinitRepository.findById(pinId);
+        if (pinOpt.isEmpty()) return ResponseEntity.notFound().build();
+
         Pinit pin = pinOpt.get();
-        if (!pin.getCreatedBy().equals(userDetails.getUser().getUserId())) { return ResponseEntity.status(HttpStatus.FORBIDDEN).build(); }
-        pin.setTitle(updatedPinData.getTitle());
-        pin.setDescription(updatedPinData.getDescription());
-        PinitRepository.savePin(pin);
-        
+        if (!pin.getCreatedBy().equals(userDetails.getUser().getUserId()))
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+
+        pin.setTitle(updatedPin.getTitle());
+        pin.setDescription(updatedPin.getDescription());
+        pinitRepository.savePin(pin);
         calculateAndBroadcastScores();
-        
         return ResponseEntity.ok(pin);
     }
 
+    // === ピン削除 ===
     @DeleteMapping("/api/photopins/{pinId}")
     @ResponseBody
-    public ResponseEntity<Void> deletePin(@PathVariable String pinId, @AuthenticationPrincipal CustomUserDetails userDetails) {
-        Optional<Pinit> pinOpt = findPinByIdForCurrentSeason(pinId);
-        if (pinOpt.isEmpty()) { return ResponseEntity.notFound().build(); }
-        
-        Pinit pinToDelete = pinOpt.get();
+    public ResponseEntity<Void> deletePin(@PathVariable String pinId,
+                                          @AuthenticationPrincipal CustomUserDetails userDetails) {
+        Optional<Pinit> pinOpt = pinitRepository.findById(pinId);
+        if (pinOpt.isEmpty()) return ResponseEntity.notFound().build();
 
-        // 権限チェック
-        if (!pinToDelete.getCreatedBy().equals(userDetails.getUser().getUserId())) { return ResponseEntity.status(HttpStatus.FORBIDDEN).build(); }
-        
-        // ファイルシステムの画像削除処理 (省略)
-        if (pinToDelete.getPhotos() != null) {
-             for (Photo photo : pinToDelete.getPhotos()) {
-                 try {
-                     String imageUrl = photo.getImageUrl();
-                     String fileName = imageUrl.substring(imageUrl.lastIndexOf("/") + 1);
-                     Path filePath = Paths.get(photopinUploadDir, fileName);
-                     Files.deleteIfExists(filePath);
-                     System.out.println("✅ Pin Photo Deleted: " + fileName);
-                 } catch (IOException | StringIndexOutOfBoundsException e) {
-                     System.err.println("Failed to delete photo file: " + e.getMessage());
-                 }
-             }
+        Pinit pin = pinOpt.get();
+        if (!pin.getCreatedBy().equals(userDetails.getUser().getUserId()))
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+
+        if (pin.getPhotos() != null) {
+            for (Photo photo : pin.getPhotos()) {
+                try {
+                    String fileName = photo.getImageUrl().substring(photo.getImageUrl().lastIndexOf("/") + 1);
+                    Files.deleteIfExists(Paths.get(photopinUploadDir, fileName));
+                } catch (Exception e) {
+                    System.err.println("写真削除失敗: " + e.getMessage());
+                }
+            }
         }
-        
-        PinitRepository.deleteById(pinId);
-        
+
+        pinitRepository.deleteById(pinId);
         calculateAndBroadcastScores();
-        
         return ResponseEntity.noContent().build();
     }
-    
+
+    // === コメント取得 ===
     @GetMapping("/api/photopins/{pinId}/comments")
     @ResponseBody
     public ResponseEntity<List<Comment>> getComments(@PathVariable String pinId) {
-        Optional<Pinit> pinOpt = PinitRepository.findById(pinId);
-        if (pinOpt.isPresent()) { return ResponseEntity.ok(pinOpt.get().getComments()); }
-        return ResponseEntity.ok(Collections.emptyList());
+        return pinitRepository.findById(pinId)
+                .map(pin -> ResponseEntity.ok(pin.getComments()))
+                .orElse(ResponseEntity.ok(Collections.emptyList()));
     }
 
+    // === コメント投稿 ===
     @PostMapping("/api/photopins/{pinId}/comments")
     @ResponseBody
-    public ResponseEntity<Comment> addComment(@PathVariable String pinId, @RequestBody Comment newComment, @AuthenticationPrincipal CustomUserDetails userDetails) {
-        Optional<Pinit> pinOpt = findPinByIdForCurrentSeason(pinId);
-        if (pinOpt.isEmpty()) { return ResponseEntity.notFound().build(); }
+    public ResponseEntity<Comment> addComment(@PathVariable String pinId,
+                                              @RequestBody Comment newComment, // ★ ここはJSONなので @RequestBody のまま
+                                              @AuthenticationPrincipal CustomUserDetails userDetails) {
+        Optional<Pinit> pinOpt = pinitRepository.findById(pinId);
+        if (pinOpt.isEmpty()) return ResponseEntity.notFound().build();
+
         newComment.setCommentId(UUID.randomUUID().toString());
         newComment.setPinId(pinId);
         newComment.setUserId(userDetails.getUser().getUserId());
         newComment.setTimestamp(LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME));
+
         Pinit pin = pinOpt.get();
         pin.getComments().add(newComment);
-        Pinit savedPin = PinitRepository.savePin(pin);
-        
-        calculateAndBroadcastScores(); 
-        
+        pinitRepository.savePin(pin);
+        calculateAndBroadcastScores();
         return ResponseEntity.status(HttpStatus.CREATED).body(newComment);
     }
 
+    // === スコア計算ロジック ===
     private ScoreUpdateDto calculateScoresInternal() {
-        
         String currentSeason = getCurrentSeason();
-        
-        Map<String, String> userTeamColorMap = userRepository.findAll().stream()
-            .filter(user -> user.getTeamColor() != null) 
-            .collect(Collectors.toMap(User::getUserId, User::getTeamColor, (c1, c2) -> c1));
+        Map<String, String> userTeamMap = userRepository.findAll().stream()
+                .filter(u -> u.getTeamColor() != null)
+                .collect(Collectors.toMap(User::getUserId, User::getTeamColor, (a, b) -> a));
 
-        List<Pinit> pins = PinitRepository.findAll().stream()
-            .filter(pin -> currentSeason.equals(pin.getSeason()))
-            .sorted(Comparator.comparing(Pinit::getCreatedDate))
-            .collect(Collectors.toList());
-        Map<String, String> gridState = new HashMap<>();
-        
-        // スコア計算の定数 (home.htmlのJSと一致)
-        final double CELL_SIZE_METERS = 5.0; 
-        final double INFLUENCE_RANGE_METERS = 50.0;
-        final int MAX_TILE_STEPS = (int) Math.ceil(INFLUENCE_RANGE_METERS / CELL_SIZE_METERS); // 10
+        List<Pinit> pins = pinitRepository.findAll().stream()
+                .filter(p -> currentSeason.equals(p.getSeason()))
+                .sorted(Comparator.comparing(Pinit::getCreatedDate))
+                .collect(Collectors.toList());
 
-        final double METERS_PER_DEGREE_LAT = 111320.0; 
-        
-        for (Pinit pin : pins) {
-            String teamColor = userTeamColorMap.get(pin.getCreatedBy());
-            if (teamColor == null) continue; 
-            
-            Location loc = pin.getLocation();
-            
-            double initialMetersPerLng = 40075000.0 * Math.cos(Math.toRadians(loc.getLatitude())) / 360.0;
-            
-            // 原点からの距離をマス数（整数）に変換
-            long latStepCenter = Math.round(loc.getLatitude() * METERS_PER_DEGREE_LAT / CELL_SIZE_METERS);
-            long lngStepCenter = Math.round(loc.getLongitude() * initialMetersPerLng / CELL_SIZE_METERS);
-            
-            int maxSteps = MAX_TILE_STEPS; // 10
+        Map<String, String> grid = new HashMap<>();
+        final double CELL_SIZE = 5.0;
+        final double RANGE = 50.0;
+        final double LAT_M = 111320.0;
+        int STEPS = (int) Math.ceil(RANGE / CELL_SIZE);
 
-            for (int i = -maxSteps; i <= maxSteps; i++) {
-                for (int j = -maxSteps; j <= maxSteps; j++) {
-                    
-                    long tileLatStep = latStepCenter + i;
-                    long tileLngStep = lngStepCenter + j;
+        for (Pinit p : pins) {
+            String color = userTeamMap.get(p.getCreatedBy());
+            if (color == null) continue;
+            Location loc = p.getLocation();
+            double lngM = 40075000.0 * Math.cos(Math.toRadians(loc.getLatitude())) / 360.0;
+            long latStep = Math.round(loc.getLatitude() * LAT_M / CELL_SIZE);
+            long lngStep = Math.round(loc.getLongitude() * lngM / CELL_SIZE);
 
-                    String cellId = tileLatStep + "_" + tileLngStep;
-                    
-                    gridState.put(cellId, teamColor);
-                }
-            }
+            for (int i = -STEPS; i <= STEPS; i++)
+                for (int j = -STEPS; j <= STEPS; j++)
+                    grid.put((latStep + i) + "_" + (lngStep + j), color);
         }
-        
-        Map<String, Integer> scores = new HashMap<>();
-        scores.put("red", 0); scores.put("blue", 0); scores.put("yellow", 0);
-        gridState.values().forEach(color -> {
-            if (scores.containsKey(color)) {
-                scores.merge(color, 1, Integer::sum);
-            }
+
+        Map<String, Integer> scores = new HashMap<>(Map.of("red", 0, "blue", 0, "yellow", 0));
+        grid.values().forEach(c -> scores.merge(c, 1, Integer::sum));
+        pins.forEach(p -> {
+            String color = userTeamMap.get(p.getCreatedBy());
+            if (color != null && scores.containsKey(color))
+                scores.merge(color, p.getBonusPoints(), Integer::sum);
         });
-        pins.forEach(pin -> {
-            if (pin.getBonusPoints() > 0) {
-                String teamColor = userTeamColorMap.get(pin.getCreatedBy());
-                if (teamColor != null && scores.containsKey(teamColor)) {
-                    scores.merge(teamColor, pin.getBonusPoints(), Integer::sum);
-                }
-            }
-        });
-        
         return new ScoreUpdateDto(scores.get("red"), scores.get("blue"), scores.get("yellow"));
     }
 
+    // === スコアブロードキャスト ===
     private void calculateAndBroadcastScores() {
-        // calculateAndBroadcastScoresはブロードキャスト専用とし、スコア計算はcalculateScoresInternal()を使う
-        ScoreUpdateDto scoreUpdate = calculateScoresInternal();
-        messagingTemplate.convertAndSend("/topic/scores", scoreUpdate);
-        System.out.println("スコア更新を送信: " + scoreUpdate);
+        ScoreUpdateDto update = calculateScoresInternal();
+        messagingTemplate.convertAndSend("/topic/scores", update);
+        System.out.println("スコア更新送信: " + update);
     }
 
+    // === 距離計算 ===
     private double distance(double lat1, double lon1, double lat2, double lon2) {
-        double R = 6378137.0; lat1 = Math.toRadians(lat1); lon1 = Math.toRadians(lon1); lat2 = Math.toRadians(lat2); lon2 = Math.toRadians(lon2);
-        double dLon = lon2 - lon1; double dLat = lat2 - lat1;
-        double a = Math.pow(Math.sin(dLat / 2), 2) + Math.cos(lat1) * Math.cos(lat2) * Math.pow(Math.sin(dLon / 2), 2);
-        double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-        return R * c;
+        double R = 6378137.0;
+        lat1 = Math.toRadians(lat1);
+        lon1 = Math.toRadians(lon1);
+        lat2 = Math.toRadians(lat2);
+        lon2 = Math.toRadians(lon2);
+        double dLon = lon2 - lon1;
+        double dLat = lat2 - lat1;
+        double a = Math.pow(Math.sin(dLat / 2), 2)
+                + Math.cos(lat1) * Math.cos(lat2)
+                * Math.pow(Math.sin(dLon / 2), 2);
+        return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
     }
 }

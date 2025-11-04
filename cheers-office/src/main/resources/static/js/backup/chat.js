@@ -12,20 +12,7 @@ const DEFAULT_ICON = "/images/default_icon.png";
 const DEFAULT_GROUP_ICON = "/images/groups/default-group-icon.png";
 
 // --- ユーティリティ関数 ---
-
-/**
- * タイムゾーンをJSTに修正済み
- */
-function jstTime(iso) {
-    try {
-        // デプロイ環境でも日本時間で表示するように timeZone を指定
-        return new Date(iso).toLocaleTimeString("ja-JP", {
-            hour: "2-digit",
-            minute: "2-digit",
-            timeZone: "Asia/Tokyo"
-        });
-    } catch (e) { return ""; }
-};
+function jstTime(iso) { try { return new Date(iso).toLocaleTimeString("ja-JP", { hour: "2-digit", minute: "2-digit" }); } catch (e) { return ""; }};
 function scrollToBottom() { const box = $("#messages")[0]; if (box) box.scrollTop = box.scrollHeight; };
 function getOtherId(room) { return (room.members || []).find(id => id !== me.id); }
 function findUser(id) { return users.find(u => u.userId === id); }
@@ -35,14 +22,15 @@ function getOtherUserIcon(room) { return (getOtherUser(room)?.icon) || DEFAULT_I
 function escapeHtml(str) { return String(str).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"); }
 
 /**
- * ★ 1. URLをリンクに変換する関数 (ここが追加されました) ★
+ * ★★★ URLをリンクに変換する関数 (ここが追加されました) ★★★
+ * テキスト内のURLを検出し、クリック可能なリンクに変換する関数
  */
 function linkify(text) {
-  // http:// または https:// で始まるURLを検出
+  // http:// または https://... で始まるURL
   const urlPattern = /(\b(https?|ftp|file):\/\/[-A-Z0-9+&@#\/%?=~_|!:,.;]*[-A-Z0-9+&@#\/%=~_|])/ig;
-  // www. から始まるURLを検出 (http:// を補完)
+  // www. から始まるURL
   const pseudoUrlPattern = /(^|[^\/])(www\.[\S]+(\b|$))/gim;
-
+  
   let linkedText = text.replace(urlPattern, '<a href="$1" target="_blank" rel="noopener noreferrer">$1</a>');
   linkedText = linkedText.replace(pseudoUrlPattern, '$1<a href="http://$2" target="_blank" rel="noopener noreferrer">$2</a>');
   return linkedText;
@@ -103,9 +91,8 @@ function renderMessages(msgs) {
   let lastDate = ""; // 直前のメッセージ日付を保持
 
   (msgs || []).forEach(m => {
-    // JSTで日付表示
     const msgDate = new Date(m.timestamp).toLocaleDateString("ja-JP", {
-      year: "numeric", month: "2-digit", day: "2-digit", timeZone: "Asia/Tokyo"
+      year: "numeric", month: "2-digit", day: "2-digit"
     });
 
     // 日付が変わったら区切りを挿入
@@ -134,8 +121,10 @@ function renderMessages(msgs) {
       messageBodyHtml = `<img src="${m.content}" alt="添付画像" class="chat-image-standalone" onclick="window.open('${m.content}')">`;
       if (m.caption) messageBodyHtml += `<div class="msg">${escapeHtml(m.caption)}</div>`;
     } else {
-      // ★ 2. 履歴表示で linkify を使うように修正
+      // ★★★ ここが修正されました ★★★
+      // 1. まずHTMLエスケープを行う（安全のため）
       const safeText = escapeHtml(m.content || "");
+      // 2. 安全なテキストからURLを探してリンク化する
       const linkedText = linkify(safeText);
       messageBodyHtml = `<div class="msg">${linkedText}</div>`;
     }
@@ -156,7 +145,6 @@ function renderMessages(msgs) {
 
   scrollToBottom();
 }
-
 
 // --- WebSocket・通信関連 ---
 function subscribeRoom(roomId) {
@@ -197,8 +185,10 @@ function subscribeRoom(roomId) {
       messageBodyHtml = `<img src="${payload.content}" alt="添付画像" class="chat-image-standalone" onclick="window.open('${payload.content}')">`;
       if (payload.caption) messageBodyHtml += `<div class="msg">${escapeHtml(payload.caption)}</div>`;
     } else {
-      // ★ 3. リアルタイム受信で linkify を使うように修正
+      // ★★★ ここが修正されました ★★★
+      // 1. まずHTMLエスケープを行う（安全のため）
       const safeText = escapeHtml(payload.content || "");
+      // 2. 安全なテキストからURLを探してリンク化する
       const linkedText = linkify(safeText);
       messageBodyHtml = `<div class="msg">${linkedText}</div>`;
     }
@@ -218,7 +208,6 @@ function subscribeRoom(roomId) {
     $("#messages").append(html);
     scrollToBottom();
 
-    // 相手のメッセージを画面表示中に受け取ったら既読にする
     if (!isMine && document.visibilityState === 'visible') {
       stomp.send(`/app/chat/${roomId}/read`, {}, JSON.stringify({ messageId: payload.messageId, userId: me.id }));
     }
@@ -236,14 +225,12 @@ function connectWS(cb) {
   }
   const sock = new SockJS("/ws");
   stomp = Stomp.over(sock);
-  stomp.debug = null; // デバッグログを非表示に
+  stomp.debug = null;
   stomp.connect({}, () => {
-    // 自分の通知を購読
     if (me.id) {
       stomp.subscribe(`/topic/notifications/${me.id}`, msg => {
         const notification = JSON.parse(msg.body);
         if (notification.type === 'NEW_MESSAGE') {
-          // 現在開いていないルームの通知ならバッジを更新
           if (!currentRoom || currentRoom.roomId !== notification.roomId) {
             notificationCounts[notification.roomId] = (notificationCounts[notification.roomId] || 0) + 1;
             renderRooms();
@@ -251,57 +238,62 @@ function connectWS(cb) {
         }
       });
     }
-    // 接続完了後のコールバックを実行
     if (typeof cb === "function") cb();
   });
 }
 
 // --- メインの操作ロジック ---
 
-// 既読処理
+// ▼▼▼ ★★★ ここは元の修正（既読処理）が反映されたままです ★★★ ▼▼▼
 function selectRoomById(roomId) {
   const room = rooms.find(r => r.roomId === roomId);
   if(!room) return;
 
-  // 1. UIを更新（選択状態、入力欄表示、バッジ消去）
+  // 1. バッジを先に消す
   notificationCounts[roomId] = 0;
   currentRoom = room;
-  renderRooms(); // ルームリストの選択状態とバッジを更新
-  renderHeader(); // ヘッダーのルーム名を更新
-  $("#inputArea").css("display", "flex"); // 入力欄を表示
-  $("#sendBtn").prop("disabled", false); // 送信ボタンを有効化
+  renderRooms();
+  renderHeader();
+  $("#inputArea").css("display", "flex");
+  $("#sendBtn").prop("disabled", false);
 
-  // 2. メッセージ履歴をサーバーから読み込む
+  // 2. メッセージをサーバーから読み込む
   loadMessages(roomId).then(loadedMessages => {
-    
-    // 未読メッセージIDをすべて保存する配列
+
+    // ★ 修正: 既読にするメッセージIDをすべて保存する配列
     const unreadMessageIds = [];
 
-    // 3. 画面に表示する *前* に、未読メッセージをローカルデータ上で既読にする
+    // 3. 【自分用の修正】
+    // 画面に表示する *前* に、未読メッセージをローカルデータ上で既読にする
     (loadedMessages || []).forEach(msg => {
         if (msg.userId !== me.id && !(msg.readBy || []).includes(me.id)) {
             if (!msg.readBy) {
                 msg.readBy = [];
             }
             msg.readBy.push(me.id); // ローカルの 'readBy' リストに自分を追加
-            unreadMessageIds.push(msg.messageId); // 既読にしたIDを保存
+
+            // ★ 修正: 最後の1件だけでなく、すべての未読IDを保存
+            unreadMessageIds.push(msg.messageId);
         }
     });
 
-    // 4. (linkifyが適用される) 既読に書き換えたデータで画面を描画する
+    // 4. 既読に書き換えたデータで画面を描画する (自分の画面が正しくなる)
     renderMessages(loadedMessages);
 
     // 5. WebSocketに接続
     connectWS(() => {
-      subscribeRoom(roomId); // このルームのメッセージ受信を開始
+      subscribeRoom(roomId);
 
-      // 6. 未読メッセージが1件でもあれば
+      // 6. ★ 修正: unreadMessageIds配列にIDが1件でもあれば
       if (unreadMessageIds.length > 0) {
-          
-          // 6a. サーバーのJSONファイルを *1回だけ* 更新
+
+          // 6a. 【サーバー用の修正】
+          // バックエンドのJSONファイルを *1回だけ* 更新
           stomp.send(`/app/chat/${roomId}/markAllAsRead`, {}, JSON.stringify({ userId: me.id }));
-          
-          // 6b. 相手（送信者）に「既読」を伝える
+
+          // 6b. 【相手用の修正】
+          // 相手（送信者）に「既読」を伝えるため、
+          // 既読にした *すべてのメッセージ* について 'read' リクエストを送信する
           unreadMessageIds.forEach(msgId => {
              stomp.send(`/app/chat/${roomId}/read`, {}, JSON.stringify({
                   messageId: msgId,
@@ -312,194 +304,114 @@ function selectRoomById(roomId) {
     });
   });
 }
+// ▲▲▲ ★★★ 既読処理の修正箇所はここまで ★★★ ▲▲▲
 
 function sendMessage() {
   if(!currentRoom || !stomp || !stomp.connected) return;
   const text = $("#messageInput").val().trim();
-  if(!text && !selectedFile) return; // テキストもファイルもなければ何もしない
-
-  if(selectedFile) {
-      uploadAndSendMessage(selectedFile, text); // 画像とキャプションを送信
-  } else {
-      sendTextMessage(text); // テキストメッセージを送信
-  }
+  if(!text && !selectedFile) return;
+  if(selectedFile) uploadAndSendMessage(selectedFile, text);
+  else sendTextMessage(text);
 }
 
 function sendTextMessage(text) {
-  const meUser = findUser(me.id) || me; // 自分の情報を取得
-  const payload = {
-    roomId: currentRoom.roomId,
-    userId: me.id,
-    userName: me.name, // 自分の名前
-    type: "TEXT",
-    content: text,
-    timestamp: new Date().toISOString(), // ISO 8601形式のタイムスタンプ
-    icon: meUser.icon || DEFAULT_ICON // 自分のアイコン
-  };
+  const meUser = findUser(me.id) || me;
+  const payload = { roomId: currentRoom.roomId, userId: me.id, userName: me.name, type: "TEXT", content: text, timestamp: new Date().toISOString(), icon: meUser.icon || DEFAULT_ICON };
   stomp.send(`/app/chat/${payload.roomId}`, {}, JSON.stringify(payload));
-  // 送信後に入力欄をクリアし、高さをリセット
   $("#messageInput").val("").css("height", "44px");
 }
 
 function uploadAndSendMessage(file, caption) {
   const formData = new FormData();
   formData.append("file", file);
-
-  // 送信中はボタンを無効化
   $("#sendBtn, #attachFileBtn").prop("disabled", true);
-
-  // 画像アップロードAPIを叩く
-  $.ajax({
-      url: "/api/chat/upload", // 画像アップロードAPIのエンドポイント
-      method: "POST",
-      data: formData,
-      processData: false, // jQueryがデータを処理しないように
-      contentType: false  // jQueryがContent-Typeヘッダを設定しないように
-  })
-  .done(res => {
-      // アップロード成功時
+  $.ajax({ url: "/api/chat/upload", method: "POST", data: formData, processData: false, contentType: false })
+    .done(res => {
       if(res && res.imageUrl) {
-        const meUser = findUser(me.id) || me; // 自分の情報を取得
-        // 画像メッセージとしてWebSocketで送信
-        const payload = {
-          roomId: currentRoom.roomId,
-          userId: me.id,
-          userName: me.name,
-          type: "IMAGE",
-          content: res.imageUrl, // アップロードされた画像のURL
-          caption: caption,      // キャプション（テキスト入力欄の内容）
-          timestamp: new Date().toISOString(),
-          icon: meUser.icon || DEFAULT_ICON // 自分のアイコン
-        };
+        const meUser = findUser(me.id) || me;
+        const payload = { roomId: currentRoom.roomId, userId: me.id, userName: me.name, type: "IMAGE", content: res.imageUrl, caption: caption, timestamp: new Date().toISOString(), icon: meUser.icon || DEFAULT_ICON };
         stomp.send(`/app/chat/${payload.roomId}`, {}, JSON.stringify(payload));
-        // プレビューと入力欄をクリア
         clearPreview();
         $("#messageInput").val("").css("height", "44px");
       }
-  })
-  .fail(() => {
-      alert("画像アップロードに失敗しました。");
-  })
-  .always(() => {
-      // 成功・失敗どちらでもボタンを有効化
-      $("#sendBtn, #attachFileBtn").prop("disabled", false);
-  });
+    }).fail(() => alert("画像アップロード失敗"))
+    .always(() => $("#sendBtn, #attachFileBtn").prop("disabled", false));
 }
 
-// --- 画像プレビュー関連 ---
 function setupPreview(file) {
-  // 画像ファイル以外は処理しない
-  if(!file.type.startsWith("image/")) {
-      alert("画像ファイルを選択してください。");
-      $("#fileInput").val(""); // inputをクリア
-      return;
-  }
-  selectedFile = file; // 送信用のファイルを保持
+  if(!file.type.startsWith("image/")) { alert("画像ファイルを選択してください"); return; }
+  selectedFile = file;
   const reader = new FileReader();
-  reader.onload = e => {
-      // プレビューエリアに画像と削除ボタンを表示
-      $("#previewArea").html(
-        `<div class="preview-container">
-          <img src="${e.target.result}" class="preview-image" alt="プレビュー" />
-          <button class="preview-remove">×</button>
-        </div>`
-      ).show(); // 表示する
-  };
-  reader.readAsDataURL(file); // ファイルをDataURLとして読み込む
+  reader.onload = e => $("#previewArea").html(
+    `<div class="preview-container">
+      <img src="${e.target.result}" class="preview-image" />
+      <button class="preview-remove">×</button>
+    </div>`).show();
+  reader.readAsDataURL(file);
 }
 function clearPreview() {
-  selectedFile = null; // 送信用のファイルを削除
-  $("#fileInput").val(""); // inputをクリア (同じファイルを再度選択できるように)
-  $("#previewArea").empty().hide(); // プレビューエリアを空にして非表示に
+  selectedFile = null;
+  $("#fileInput").val("");
+  $("#previewArea").empty().hide();
 }
 
-// --- モーダル関連 ---
 function openCreateModal() {
   const $ul = $("#userList").empty();
-  // 自分を除外
   users.forEach(u => $ul.append(
     `<div class="user-row">
-      <img src="${u.icon || DEFAULT_ICON}" class="user-icon" alt="${escapeHtml(u.userName)}" />
+      <img src="${u.icon || DEFAULT_ICON}" class="user-icon" />
       <label><input type="checkbox" name="targetUser" value="${u.userId}" />${escapeHtml(u.userName)}</label>
     </div>`
   ));
-  $("#createModal").css("display", "flex"); // モーダルを表示
+  $("#createModal").css("display", "flex");
 }
 
 function createRoom() {
-  // チェックされたユーザーIDのリストを取得
   const selectedUsers = $('input[name="targetUser"]:checked').map(function() { return $(this).val(); }).get();
-
-  if (selectedUsers.length === 0) {
-      alert("チャット相手を1人以上選択してください。");
-      return;
-  }
-
+  if (selectedUsers.length === 0) { alert("相手を1人以上選択してください。"); return; }
   if (selectedUsers.length === 1) {
-      // 1人選択 -> 1対1チャット作成
-      createSingleChat(selectedUsers[0]);
+    createSingleChat(selectedUsers[0]);
   } else {
-      // 複数選択 -> グループ作成モーダルへ
-      window.selectedGroupMembers = [me.id, ...selectedUsers]; // 自分を含むメンバーリスト
-      const $memberList = $("#selectedMemberList").empty();
-      // 選択されたメンバーのアイコンと名前を表示
-      window.selectedGroupMembers.forEach(id => {
-        const user = (id === me.id) ? me : findUser(id);
-        if (user) {
-          const userName = (id === me.id) ? user.name : user.userName;
-          const userIcon = user.icon || DEFAULT_ICON;
-          $memberList.append(
-            `<div class="member-item">
-              <img src="${userIcon}" class="member-icon" alt="${escapeHtml(userName)}" />
-              <span class="member-name">${escapeHtml(userName)}</span>
-            </div>`
-          );
-        }
-      });
-      $("#createModal").hide(); // ユーザー選択モーダルを閉じる
-      $("#groupModal").css("display", "flex"); // グループ作成モーダルを開く
+    window.selectedGroupMembers = [me.id, ...selectedUsers];
+    const $memberList = $("#selectedMemberList").empty();
+    window.selectedGroupMembers.forEach(id => {
+      const user = (id === me.id) ? me : findUser(id);
+      if (user) {
+        const userName = (id === me.id) ? user.name : user.userName;
+        const userIcon = user.icon || DEFAULT_ICON;
+        $memberList.append(
+          `<div class="member-item">
+            <img src="${userIcon}" class="member-icon" />
+            <span class="member-name">${escapeHtml(userName)}</span>
+          </div>`
+        );
+      }
+    });
+    $("#createModal").hide();
+    $("#groupModal").css("display", "flex");
   }
 }
 
 function createSingleChat(targetId) {
-  // 1対1チャットルーム作成APIを叩く
-  $.ajax({
-      url: "/api/rooms",
-      method: "POST",
-      contentType: "application/json",
-      data: JSON.stringify({ members: [me.id, targetId] }) // 自分と相手のID
-  })
-  .then(newRoom => {
-      // ルームリストに追加（重複チェック）
+  $.ajax({ url: "/api/rooms", method: "POST", contentType: "application/json", data: JSON.stringify({ members: [me.id, targetId] }) })
+    .then(newRoom => {
       if (!rooms.some(r => r.roomId === newRoom.roomId)) { rooms.push(newRoom); }
-      renderRooms(); // ルームリストを再描画
-      $("#createModal").hide(); // モーダルを閉じる
-      selectRoomById(newRoom.roomId); // 作成したルームを開く
-  })
-  .fail((jqXHR) => {
-      console.error("1対1チャット作成失敗:", jqXHR.responseText);
-      alert("チャットの作成に失敗しました: " + (jqXHR.responseJSON?.message || "不明なエラー"));
-  });
+      renderRooms();
+      $("#createModal").hide();
+      selectRoomById(newRoom.roomId);
+    });
 }
 
 function openDeleteModal() {
-  if(!currentRoom) {
-      alert("削除するチャットを選択してください。");
-      return;
-  }
-  $("#deleteModal").css("display", "flex"); // 削除確認モーダルを表示
+  if(!currentRoom) { alert("削除するチャットを選択してください"); return; }
+  $("#deleteModal").css("display", "flex");
 }
 
 function deleteRoomConfirm() {
   if(!currentRoom) return;
   const rid = currentRoom.roomId;
-  // チャットルーム削除APIを叩く
-  $.ajax({
-      url: `/api/rooms/${rid}`,
-      method: "DELETE"
-  })
-  .then(() => {
-      // 成功したらリストから削除し、画面をリセット
+  $.ajax({ url: `/api/rooms/${rid}`, method: "DELETE" })
+    .then(() => {
       rooms = rooms.filter(r => r.roomId !== rid);
       currentRoom = null;
       renderRooms();
@@ -507,206 +419,125 @@ function deleteRoomConfirm() {
       $("#messages").empty();
       $("#inputArea").hide();
       $("#deleteModal").hide();
-  })
-  .fail((jqXHR) => {
-      console.error("チャット削除失敗:", jqXHR.responseText);
-      alert("チャットの削除に失敗しました: " + (jqXR.responseJSON?.message || "不明なエラー"));
-      $("#deleteModal").hide();
-  });
+    });
 }
 
-// グループアイコンアップロード (成功したら画像のURLを返す)
 function uploadGroupIcon(file) {
   const formData = new FormData();
   formData.append("file", file);
-  return $.ajax({
-      url: "/api/rooms/uploadIcon", // グループアイコン専用のアップロードAPI
-      method: "POST",
-      data: formData,
-      processData: false,
-      contentType: false
-  })
-  .then(response => {
-      if (response && response.iconUrl) {
-          return response.iconUrl; // 成功したらURLを返す
-      } else {
-          throw new Error("アイコンURLがレスポンスに含まれていません。");
-      }
-  });
+  return $.ajax({ url: "/api/rooms/uploadIcon", method: "POST", data: formData, processData: false, contentType: false })
+    .then(response => response.iconUrl);
 }
 
 function createGroupRoom(name, icon) {
-  // グループチャットルーム作成APIを叩く
-  const payload = {
-      members: window.selectedGroupMembers, // 選択されたメンバー
-      roomName: name, // グループ名
-      icon: icon // アイコンURL (デフォルトまたはアップロードされたもの)
-  };
-  $.ajax({
-      url: "/api/rooms",
-      method: "POST",
-      contentType: "application/json",
-      data: JSON.stringify(payload)
-  })
-  .then(newRoom => {
-      // 成功したらリストに追加し、モーダルを閉じてルームを開く
+  const payload = { members: window.selectedGroupMembers, roomName: name, icon: icon };
+  $.ajax({ url: "/api/rooms", method: "POST", contentType: "application/json", data: JSON.stringify(payload) })
+    .then(newRoom => {
       if (!rooms.some(r => r.roomId === newRoom.roomId)) { rooms.push(newRoom); }
       renderRooms();
       $("#groupModal").hide();
-      resetGroupModal(); // モーダルの入力内容をリセット
+      resetGroupModal();
       selectRoomById(newRoom.roomId);
-  })
-  .fail((jqXHR) => {
-      console.error("グループ作成失敗:", jqXHR.responseText);
-      alert("グループの作成に失敗しました: " + (jqXHR.responseJSON?.message || "不明なエラー"));
-  });
+    });
 }
 
-// グループ作成モーダルを初期状態に戻す
 function resetGroupModal() {
   $("#groupNameInput").val("");
-  $("#groupIconInput").val(""); // ファイル選択をリセット
-  $("#groupIconPreview").attr("src", DEFAULT_GROUP_ICON); // プレビューをデフォルトに
-  $("#selectedMemberList").empty(); // メンバーリスト表示をクリア
-  window.selectedGroupMembers = []; // グローバル変数もクリア
+  $("#groupIconInput").val("");
+  $("#groupIconPreview").attr("src", DEFAULT_GROUP_ICON);
+  $("#selectedMemberList").empty();
+  window.selectedGroupMembers = [];
 }
 
 // --- ページの初期化・イベントリスナー設定 ---
 $(async function init() {
-    // CSRFトークンをAjaxリクエストのヘッダーに自動で設定
+    // ★★★ この CSRF 設定コードを追加 ★★★
     const token = $("meta[name='_csrf']").attr("content");
     const header = $("meta[name='_csrf_header']").attr("content");
     if (token && header) {
         $.ajaxSetup({
             beforeSend: function(xhr) {
+                // console.log("★ beforeSend が実行されました ★ ヘッダー:", header, "トークン:", token); // デバッグ用
                 xhr.setRequestHeader(header, token);
             }
         });
+        // console.log("CSRF setup complete. Header:", header, "Token:", token); // デバッグ用
     } else {
         console.error("CSRF token meta tags not found!");
     }
-
-    // --- 各種イベントリスナー設定 ---
-    // ルーム選択
+    // ★★★ ここまで追加 ★★★
+    
+    // --- イベントリスナー設定 ---
     $(document).on("click", ".room-item", function() { selectRoomById($(this).data("room-id")); });
-    // 画像プレビュー削除
     $(document).on("click", ".preview-remove", clearPreview);
-    // 送信ボタンクリック
     $("#sendBtn").on("click", sendMessage);
-    // Enterキーで送信 (Shift+Enterで改行)
     $("#messageInput").on("keydown", function(e) {
         if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendMessage(); }
     });
-    // テキストエリアの高さ自動調整
     $("#messageInput").on("input", function() {
-        this.style.height = 'auto'; // 一旦高さをリセット
-        this.style.height = (this.scrollHeight) + 'px'; // スクロール高さに合わせる
+        this.style.height = 'auto';
+        this.style.height = (this.scrollHeight) + 'px';
     });
-    // 画像添付ボタンクリック -> ファイル選択を開く
     $("#attachFileBtn").on("click", () => { if (!$("#attachFileBtn").prop("disabled")) $("#fileInput").click(); });
-    // ファイル選択 -> プレビュー表示
     $("#fileInput").on("change", function(e) { if (e.target.files.length > 0) setupPreview(e.target.files[0]); });
 
-    // 画像ドラッグ＆ドロップ
+    // ドラッグ＆ドロップ
     const $chatMain = $(".chat-main");
     $chatMain.on({
-        "dragover": (e) => { e.preventDefault(); e.stopPropagation(); $chatMain.addClass("drag-over"); }, // ドラッグ中スタイル
-        "dragleave": (e) => { e.preventDefault(); e.stopPropagation(); $chatMain.removeClass("drag-over"); }, // ドラッグ離脱スタイル
-        "drop": (e) => { // ドロップ時
-            e.preventDefault();
-            e.stopPropagation();
-            $chatMain.removeClass("drag-over");
-            if (e.originalEvent.dataTransfer.files.length > 0) {
-                setupPreview(e.originalEvent.dataTransfer.files[0]); // 最初のファイルでプレビュー表示
-            }
-        }
+        "dragover": (e) => { e.preventDefault(); e.stopPropagation(); $chatMain.addClass("drag-over"); },
+        "dragleave": (e) => { e.preventDefault(); e.stopPropagation(); $chatMain.removeClass("drag-over"); },
+        "drop": (e) => { e.preventDefault(); e.stopPropagation(); $chatMain.removeClass("drag-over"); if (e.originalEvent.dataTransfer.files.length > 0) setupPreview(e.originalEvent.dataTransfer.files[0]); }
     });
 
-    // 相手アイコンクリック -> プロフィールモーダル表示
+    // プロフィールモーダル
     $("#messages").on("click", ".msg-wrapper.other .msg-icon", function() {
         const userId = $(this).closest(".msg-wrapper").data("user-id");
         if (!userId) return;
 
-        // ユーザー詳細情報APIを叩く (GETなのでCSRF不要)
-        $.getJSON(`/api/users/${userId}`).done(fullUser => {
+        $.getJSON(`/api/users/${userId}`).done(fullUser => { // GETリクエストなのでCSRF不要
             if (fullUser) {
-                // モーダルに情報をセット
                 $("#profileIcon").attr("src", fullUser.icon || DEFAULT_ICON);
                 $("#profileUsername").text(fullUser.userName || "不明");
                 $("#profileStatus").text(fullUser.statusMessage || "");
                 $("#profileGroup").text(fullUser.group || "未設定");
                 $("#profileHobby").text(fullUser.hobby || "未設定");
                 $("#profileMyBoom").text(fullUser.myBoom || "未設定");
-                $("#profileModal").css("display", "flex"); // モーダル表示
+                $("#profileModal").css("display", "flex");
             }
         }).fail(() => {
             alert("ユーザー情報の取得に失敗しました。");
         });
     });
-    // プロフィールモーダルを閉じる (背景または閉じるボタンクリック)
     $("#closeProfileBtn, #profileModal").on("click", function(e) {
         if (e.target === this || $(e.target).is("#closeProfileBtn")) {
             $("#profileModal").hide();
         }
     });
-    // モーダルの中身クリックで閉じないようにイベント伝播を停止
-    $(".profile-modal-content").on("click", function(e) { e.stopPropagation(); });
+    $(".profile-modal-content").on("click", function(e) {
+        e.stopPropagation();
+    });
 
-    // 新規チャット作成モーダルを開く
+    // 新規・削除モーダル
     $("#openCreateBtn").on("click", openCreateModal);
-    // 新規チャット作成モーダルを閉じる
-    $("#cancelCreateBtn, #createModal").on("click", function(e) {
-        if (e.target === this || $(e.target).is("#cancelCreateBtn")) {
-            $('input[name="targetUser"]').prop('checked', false); // チェックボックスをリセット
-            $("#createModal").hide();
-        }
-    });
-    // モーダルの中身クリックで閉じないように
-    $("#createModal .modal-content").on("click", function(e){ e.stopPropagation(); });
-    // 「作成」ボタン（ユーザー選択後）
+    $("#cancelCreateBtn").on("click", () => $("#createModal").hide());
     $("#createRoomBtn").on("click", createRoom);
-
-    // チャット削除モーダルを開く
     $("#openDeleteBtn").on("click", openDeleteModal);
-    // チャット削除モーダルを閉じる
-    $("#cancelDeleteBtn, #deleteModal").on("click", function(e) {
-        if (e.target === this || $(e.target).is("#cancelDeleteBtn")) {
-            $("#deleteModal").hide();
-        }
-    });
-     // モーダルの中身クリックで閉じないように
-    $("#deleteModal .modal-content").on("click", function(e){ e.stopPropagation(); });
-    // 「削除する」ボタン（確認後）
+    $("#cancelDeleteBtn").on("click", () => $("#deleteModal").hide());
     $("#confirmDeleteBtn").on("click", deleteRoomConfirm);
 
-    // グループ作成モーダル「作成」ボタン
+    // グループ作成モーダル
     $("#createGroupBtn").on("click", function() {
         const groupName = $("#groupNameInput").val().trim();
         const iconFile = $("#groupIconInput")[0].files[0];
         if (!groupName) { alert("グループ名を入力してください。"); return; }
-
         if (iconFile) {
-            // アイコンファイルがあればアップロードしてからグループ作成
             uploadGroupIcon(iconFile).then(iconUrl => createGroupRoom(groupName, iconUrl))
-                .catch((jqXHR) => {
-                    console.error("グループアイコンアップロード失敗:", jqXHR.responseText);
-                    alert("アイコンのアップロードに失敗しました。" + (jqXHR.responseJSON?.message || ""));
-                });
+                .catch(() => { alert("アイコンのアップロードに失敗しました。"); });
         } else {
-            // アイコンファイルがなければデフォルトアイコンでグループ作成
             createGroupRoom(groupName, DEFAULT_GROUP_ICON);
         }
     });
-    // グループ作成モーダルを閉じる
-    $("#cancelGroupBtn, #groupModal").on("click", function(e) {
-        if (e.target === this || $(e.target).is("#cancelGroupBtn")) {
-            resetGroupModal();
-            $("#groupModal").hide();
-        }
-    });
-    // モーダルの中身クリックで閉じないように
-    $("#groupModal .modal-content").on("click", function(e){ e.stopPropagation(); });
-    // グループアイコン選択 -> プレビュー表示
+    $("#cancelGroupBtn").on("click", function() { $("#groupModal").hide(); resetGroupModal(); });
     $("#groupIconInput").on("change", function(e) {
         if (e.target.files && e.target.files[0]) {
             const reader = new FileReader();
@@ -715,16 +546,15 @@ $(async function init() {
         }
     });
 
-    // --- 初期データの非同期読み込み ---
+    // --- 初期データ読み込み ---
     try {
-        await loadMe();    // 自分の情報を取得
-        await loadUsers(); // 全ユーザーリストを取得 (自分を除く)
+        await loadMe();
+        await loadUsers();
 
-        // 参加しているチャットルームリストを取得 (GETなのでCSRF不要)
-        await $.getJSON("/api/rooms").then(res => {
+        await $.getJSON("/api/rooms").then(res => { // GETリクエストなのでCSRF不要
             rooms = (res || []).filter(r => (r.members || []).includes(me.id));
 
-            // 未読カウントを初期化
+            // 既読カウントの初期化
             notificationCounts = {};
             rooms.forEach(room => {
                 if (room.unreadCount > 0) {
@@ -733,31 +563,32 @@ $(async function init() {
             });
         });
 
-        renderRooms(); // ルームリストを表示
-        connectWS();   // WebSocketに接続（通知購読のため）
+        renderRooms();
+        connectWS(); // WebSocketに接続（通知購読のため）
     } catch (e) {
-        console.error("チャット初期化に失敗しました:", e);
-        alert("チャットの初期化に失敗しました。ページをリロードしてください。");
+        console.error("初期化に失敗しました:", e);
+        alert("初期化に失敗しました。リロードしてください。");
     }
 });
 
-/* === 🔍 チャット検索機能 === */
+/* === 🔍 チャット検索機能（掲示板と同じEnterキー確定） === */
 function searchRooms() {
   const keyword = $("#roomSearchInput").val().toLowerCase().trim();
   let found = false;
 
-  // ルームリストの各アイテムに対して処理
   $(".room-item").each(function() {
     const roomName = $(this).find(".room-name").text().toLowerCase();
-    const isVisible = roomName.includes(keyword); // 名前にキーワードが含まれていれば表示
-    $(this).toggle(isVisible); // 表示/非表示を切り替え
-    if(isVisible) found = true; // 1件でも見つかったらフラグを立てる
+    const isVisible = roomName.includes(keyword);
+    $(this).toggle(isVisible);
+    if(isVisible) found = true;
   });
 
-  // 検索結果が0件の場合のメッセージ表示/非表示
-  $("#roomList .empty-hint").remove(); // 既存のメッセージを削除
-  if (!found && $("#roomList .room-item:visible").length === 0) { // 表示中のアイテムが0件か再確認
+  // 検索結果が0件の場合のメッセージ表示
+  $("#roomList .empty-hint").remove(); // 既存のメッセージを全て削除
+  if (!found) {
+    if ($("#roomList .room-item:visible").length === 0) { // 表示されているアイテムが本当に0か確認
       const message = keyword ? "該当するチャットはありません" : "まだチャットがありません";
       $("#roomList").append(`<div class="empty-hint" style="text-align:center; color:#777; padding:20px 0;">${message}</div>`);
+    }
   }
 }

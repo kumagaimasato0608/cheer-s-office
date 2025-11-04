@@ -118,9 +118,9 @@ main {
 
 .notification-badge {
   position: absolute;
-  top: 50%;      /* ★ 追加: 上下中央に配置 */
-  right: 20px;     /* ★ 変更: 右端からの距離を少し増やす (20px程度に調整) */
-  transform: translateY(-50%); /* ★ 追加: 上下中央揃えのための調整 */
+  top: 50%;
+  right: 20px;
+  transform: translateY(-50%);
   min-width: 18px;
   height: 18px;
   background-color: #dc3545;
@@ -405,3 +405,30 @@ main {
 }
 .date-separator::before { left: 0; }
 .date-separator::after { right: 0; }
+
+/* === リンクのスタイル (ここから追記) === */
+
+/*
+ * 自分のメッセージ (.me .msg) 内のリンク
+ * 青い吹き出しの中なので、リンクを白(#FFFFFF)にします。
+ */
+.me .msg a {
+  color: #FFFFFF;
+  text-decoration: underline; /* リンクだと分かるように下線を引く */
+}
+.me .msg a:hover {
+  text-decoration: none; /* ホバー時は下線を消す */
+}
+
+/*
+ * 相手のメッセージ (.other .msg) 内のリンク
+ * 白い吹き出しの中なので、リンクを青(#0056b3)にします。
+ */
+.other .msg a {
+  color: #0056b3; /* 読みやすい濃い青色 */
+  text-decoration: underline;
+}
+.other .msg a:hover {
+  text-decoration: none;
+}
+
